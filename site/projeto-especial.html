@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeto especial de sapatas | Traco Base</title>
+  <meta name="description" content="Envie um briefing para desenvolver uma sapata fora da matriz padrao. Informe familia de referencia, medidas, aplicacao, quantidade e acabamento desejado.">
+  <link rel="canonical" href="https://www.tracobase.com.br/projeto-especial.html">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-badge" aria-hidden="true"></span>
+        <span class="brand-copy">
+          <span class="brand-title"><strong>Traco Base</strong></span>
+          <small>Sapatas 3D sob demanda</small>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="/">Home</a>
+        <a href="/catalogo.html">Catalogo</a>
+        <a href="/como-funciona.html">Como funciona</a>
+        <a href="/processo.html">Processo</a>
+        <a class="active" href="/projeto-especial.html">Projeto especial</a>
+        <a href="/faq.html">FAQ</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="page-hero reveal">
+        <p class="eyebrow">Linha premium</p>
+        <h1>Quando a matriz nao resolve, o briefing ja entra no ponto certo.</h1>
+        <p class="lede">Use este fluxo para medidas fora do padrao, novas regras de fixacao, demandas esteticas especificas ou familias ainda nao catalogadas.</p>
+      </section>
+
+      <section class="brief-layout reveal">
+        <form id="special-request-form" class="brief-card">
+          <div class="field-group">
+            <label for="brief-family">Familia de referencia</label>
+            <select id="brief-family"></select>
+          </div>
+          <div class="field-group">
+            <label for="brief-application">Aplicacao do movel</label>
+            <input id="brief-application" type="text" placeholder="Ex.: mesa de jantar com pe metalico">
+          </div>
+          <div class="field-group">
+            <label for="brief-dimensions">Medidas desejadas</label>
+            <textarea id="brief-dimensions" placeholder="Ex.: tubo 24 mm interno, base 28 mm, altura 14 mm"></textarea>
+          </div>
+          <div class="grid-2">
+            <div class="field-group">
+              <label for="brief-quantity">Quantidade estimada</label>
+              <input id="brief-quantity" type="number" min="1" placeholder="Ex.: 32">
+            </div>
+            <div class="field-group">
+              <label for="brief-color">Cor desejada</label>
+              <input id="brief-color" type="text" placeholder="Ex.: areia quente">
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="brief-finish">Acabamento e restricoes</label>
+            <input id="brief-finish" type="text" placeholder="Ex.: fosco tecnico, evitar leitura industrial">
+          </div>
+          <div class="field-group">
+            <label for="brief-notes">Observacoes adicionais</label>
+            <textarea id="brief-notes" placeholder="Conte contexto, referencias visuais ou requisitos de prazo."></textarea>
+          </div>
+        </form>
+
+        <aside class="brief-card">
+          <p class="eyebrow">Resumo do briefing</p>
+          <h2>Mensagem pronta para o comercial</h2>
+          <p>O objetivo aqui e reduzir ida e volta improdutiva e capturar o pedido especial com densidade suficiente para avaliacao tecnica.</p>
+          <output id="brief-preview" class="brief-preview"></output>
+          <div class="cta-row">
+            <a id="brief-whatsapp" class="btn btn-primary btn-block" href="#" target="_blank" rel="noopener noreferrer">Enviar no WhatsApp</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        <strong>Projeto especial com margem e processo proprios</strong>
+        <p>Nem toda demanda vira produto de linha. Mas toda demanda bem capturada vira decisao melhor.</p>
+      </div>
+      <div class="footer-nav">
+        <a href="/catalogo.html">Voltar ao catalogo</a>
+        <a href="/faq.html">Ler FAQ</a>
+      </div>
+    </footer>
+  </div>
+  <script src="/assets/script.js"></script>
+</body>
+</html>

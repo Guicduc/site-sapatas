@@ -1,0 +1,12 @@
+<svg width="512" height="128" viewBox="0 0 512 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Traco Base</title>
+  <desc id="desc">Logotipo Traco Base para sapatas 3D sob demanda.</desc>
+  <rect x="16" y="16" width="96" height="96" rx="16" fill="#006f67"/>
+  <path d="M40 82V46h48v36H40Z" fill="#f4f6f5"/>
+  <path d="M50 72V56h28v16H50Z" fill="#202124"/>
+  <path d="M60 34h8v58h-8V34Z" fill="#d06a49"/>
+  <path d="M36 88h56v8H36v-8Z" fill="#7a8f7e"/>
+  <text x="144" y="72" fill="#202124" font-family="Space Grotesk, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="0">Traco Base</text>
+  <text x="146" y="96" fill="#5f666a" font-family="Space Grotesk, Arial, sans-serif" font-size="17" font-weight="500" letter-spacing="0">Sapatas 3D sob demanda para mobiliario</text>
+  <path d="M145 31.2h341v5.6H145v-5.6Z" fill="#006f67"/>
+</svg>

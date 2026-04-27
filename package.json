@@ -1,0 +1,16 @@
+{
+  "name": "site-sapatas",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.2.3",
+    "pg": "^8.20.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  }
+}
