@@ -98,7 +98,7 @@ export function ProductConfigurator({ category }) {
       <div className="configurator-heading">
         <div>
           <p className="eyebrow">{category.name}</p>
-          <h1>Configure o formato e as medidas funcionais.</h1>
+          <h1>Configure a forma e medidas</h1>
           <p className="lead">{category.description}</p>
         </div>
         <Link className="button button-secondary" href="/">
@@ -140,6 +140,19 @@ export function ProductConfigurator({ category }) {
             onFocus={setActiveKey}
           />
 
+          <ConfigurationSummary
+            format={format}
+            sku={sku}
+            issues={issues}
+            unitPrice={unitPrice}
+            totalPrice={totalPrice}
+            priceBreakdown={priceBreakdown}
+            leadTime={leadTime}
+            validForCart={validForCart}
+            added={added}
+            onAddToCart={handleAddToCart}
+          />
+
           <div className="option-panel">
             <label className="field">
               <span>Cor</span>
@@ -171,19 +184,6 @@ export function ProductConfigurator({ category }) {
               />
             </label>
           </div>
-
-          <ConfigurationSummary
-            format={format}
-            sku={sku}
-            issues={issues}
-            unitPrice={unitPrice}
-            totalPrice={totalPrice}
-            priceBreakdown={priceBreakdown}
-            leadTime={leadTime}
-            validForCart={validForCart}
-            added={added}
-            onAddToCart={handleAddToCart}
-          />
         </aside>
       </div>
     </section>
@@ -210,6 +210,8 @@ function FormatSelector({ category, selectedSlug, onChange }) {
 }
 
 function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onChange, onFocus }) {
+  const [editingKey, setEditingKey] = useState("");
+
   return (
     <div className="parameter-panel">
       <div>
@@ -218,22 +220,49 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       </div>
       {format.parameters.map((parameter) => (
         <label className={`field parameter-field${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
-          <span>{parameter.label}</span>
-          <input
-            ref={(element) => {
-              fieldsRef.current[parameter.key] = element;
+          <span>
+            <span className="parameter-label">{parameter.label}</span>
+            <small>
+              {parameter.min}-{parameter.max} {parameter.unit}
+            </small>
+          </span>
+          <div
+            className="parameter-slider"
+            style={{
+              "--value-position": `${getValuePosition(values[parameter.key], parameter)}%`
             }}
-            type="number"
-            min={parameter.min}
-            max={parameter.max}
-            step={parameter.step}
-            value={values[parameter.key] ?? ""}
-            onChange={(event) => onChange(parameter.key, event.target.value)}
-            onFocus={() => onFocus(parameter.key)}
-          />
-          <small>
-            {parameter.min} a {parameter.max} {parameter.unit}
-          </small>
+            onDoubleClick={() => {
+              setEditingKey(parameter.key);
+              window.requestAnimationFrame(() => fieldsRef.current[parameter.key]?.select());
+            }}
+          >
+            <input
+              className="parameter-range"
+              type="range"
+              min={parameter.min}
+              max={parameter.max}
+              step={parameter.step}
+              value={values[parameter.key] ?? parameter.min}
+              onChange={(event) => onChange(parameter.key, event.target.value)}
+              onFocus={() => onFocus(parameter.key)}
+            />
+            <input
+              className={`parameter-value${editingKey === parameter.key ? " is-editing" : ""}`}
+              ref={(element) => {
+                fieldsRef.current[parameter.key] = element;
+              }}
+              type="number"
+              min={parameter.min}
+              max={parameter.max}
+              step={parameter.step}
+              value={values[parameter.key] ?? ""}
+              readOnly={editingKey !== parameter.key}
+              onChange={(event) => onChange(parameter.key, event.target.value)}
+              onFocus={() => onFocus(parameter.key)}
+              onBlur={() => setEditingKey("")}
+              aria-label={parameter.label}
+            />
+          </div>
         </label>
       ))}
       <div className="note-list">
@@ -248,6 +277,17 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       </div>
     </div>
   );
+}
+
+function getValuePosition(value, parameter) {
+  const numericValue = Number(value ?? parameter.min);
+  const range = parameter.max - parameter.min;
+
+  if (!Number.isFinite(numericValue) || range <= 0) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, ((numericValue - parameter.min) / range) * 100));
 }
 
 function ConfigurationSummary({

@@ -3,6 +3,36 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { colorMap } from "@/lib/brand-colors";
+
+const moodTerms = [
+  {
+    code: "TB-01",
+    label: "Tecnologia",
+    text: "cotação, geometria e produção conectadas no mesmo fluxo"
+  },
+  {
+    code: "TB-02",
+    label: "Adaptável",
+    text: "medidas abertas por família, formato e uso real do móvel"
+  },
+  {
+    code: "TB-03",
+    label: "Paramétrico",
+    text: "matriz de cotas que vira SKU, preço e prazo antes da compra"
+  },
+  {
+    code: "TB-04",
+    label: "Impressão 3D",
+    text: "séries curtas sem estoque pesado de produto acabado"
+  },
+  {
+    code: "TB-05",
+    label: "Borracha",
+    text: "TPU fosco, contato tecnico e leitura macia no piso"
+  }
+];
+
 export function ProductCatalog({ categories }) {
   const [application, setApplication] = useState("all");
   const [baseType, setBaseType] = useState("all");
@@ -28,7 +58,7 @@ export function ProductCatalog({ categories }) {
       <div className="shop-hero">
         <div className="shop-hero__copy">
           <p className="eyebrow">Configurador de compra</p>
-          <h1>Escolha a sapata pela geometria real do movel.</h1>
+          <h1>Escolha a sapata pela geometria real do móvel.</h1>
           <p className="lead">
             Selecione uma categoria, escolha o formato e ajuste as cotas do produto antes de
             colocar no carrinho.
@@ -37,17 +67,27 @@ export function ProductCatalog({ categories }) {
         <img
           className="shop-hero__image"
           src="/brand/traco-base-hero.png"
-          alt="Sapatas e ponteiras Traco Base aplicadas em pes tubulares de mobiliario"
+          alt="Sapatas e ponteiras Traço Base aplicadas em pés tubulares de mobiliário"
         />
         <div className="shop-hero__note">
-          <strong>Pedido parametrico</strong>
-          <span>Preco e prazo estimados antes de gerar pagamento e fila de producao.</span>
+          <strong>Pedido paramétrico</strong>
+          <span>Preço e prazo estimados antes de gerar pagamento e fila de produção.</span>
         </div>
+      </div>
+
+      <div className="brand-mood" aria-label="Pilares da identidade Traço Base">
+        {moodTerms.map((term) => (
+          <article key={term.code}>
+            <strong>{term.code}</strong>
+            <span>{term.label}</span>
+            <p>{term.text}</p>
+          </article>
+        ))}
       </div>
 
       <div className="filter-bar">
         <label className="field">
-          <span>Aplicacao</span>
+          <span>Aplicação</span>
           <select value={application} onChange={(event) => setApplication(event.target.value)}>
             <option value="all">Todas</option>
             {applications.map((item) => (
@@ -83,6 +123,18 @@ export function ProductCatalog({ categories }) {
               <span>{category.primaryFixation}</span>
               <span>{category.formats.map((format) => format.name).join(" / ")}</span>
             </div>
+            <div className="swatch-row" aria-label="Cores disponíveis">
+              {category.colors.map((color) => (
+                <span
+                  key={color}
+                  className="swatch"
+                  style={{ "--swatch": colorMap[color] || "#808784" }}
+                  title={color}
+                >
+                  <span className="visually-hidden">{color}</span>
+                </span>
+              ))}
+            </div>
             <div className="format-preview">
               {category.formats.map((format) => (
                 <Link key={format.slug} href={`/configurar/${category.slug}?formato=${format.slug}`}>
@@ -99,4 +151,3 @@ export function ProductCatalog({ categories }) {
     </section>
   );
 }
-

@@ -9,17 +9,25 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
     <div className="drawing-panel">
       <div className="drawing-toolbar">
         <div>
-          <p className="eyebrow">Vista parametrica</p>
+          <p className="eyebrow">Vista paramétrica</p>
           <h2>{format.name}</h2>
         </div>
-        <span>SVG placeholder para futura integração Grasshopper/3D</span>
+        <span>Cotas editáveis para matriz Grasshopper/3D</span>
       </div>
       <svg viewBox={viewBox} role="img" aria-label={`Vista cotada de ${format.name}`}>
         <defs>
+          <pattern id="drawing-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+            <path d="M 32 0 H 0 V 32" />
+          </pattern>
           <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" />
           </marker>
         </defs>
+        <rect className="drawing-grid-fill" width="640" height="380" />
+        <path className="drawing-axis" d="M 76 304 H 574 M 132 58 V 328" />
+        <circle className="drawing-node" cx="132" cy="304" r="4" />
+        <circle className="drawing-node" cx="574" cy="304" r="4" />
+        <circle className="drawing-node" cx="132" cy="58" r="4" />
         {type === "tube-round" && <TubeRound values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "tube-rect" && <TubeRect values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "tube-oblong" && <TubeOblong values={values} activeKey={activeKey} onSelect={onSelectParameter} />}

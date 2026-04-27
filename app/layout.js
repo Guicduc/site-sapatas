@@ -1,17 +1,9 @@
-import { Space_Grotesk } from "next/font/google";
-
 import { CartProvider } from "@/components/cart-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { brand, siteUrl } from "@/lib/site-data";
 
 import "./globals.css";
-
-const bodyFont = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-body",
-  weight: ["400", "500", "700"]
-});
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
@@ -51,7 +43,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body className={bodyFont.variable}>
+      <body>
         <CartProvider>
           <div className="page-background" aria-hidden="true" />
           <div className="site-shell">

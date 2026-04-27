@@ -1,6 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Traco Base">
-  <rect width="64" height="64" rx="14" fill="#1e2a23"/>
-  <path d="M14 44h36v6H14z" fill="#d8925b"/>
-  <path d="M20 18h24v20H20z" fill="#f2eee6"/>
-  <path d="M26 24h12v8H26z" fill="#1e2a23"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Traço Base">
+  <rect x="4" y="4" width="56" height="56" rx="10" fill="#181c1d"/>
+  <path d="M14 46h36v5H14v-5Z" fill="#c76345"/>
+  <path d="M17 18h30v23H17V18Z" fill="#f5f7f4"/>
+  <path d="M23 25h18v10H23V25Z" fill="#202629"/>
+  <path d="M29 12h6v40h-6V12Z" fill="#007a70"/>
+  <circle cx="17" cy="18" r="2.5" fill="#2c6b9a"/>
+  <circle cx="47" cy="41" r="2.5" fill="#2c6b9a"/>
 </svg>

@@ -41,19 +41,25 @@ export function CartPage() {
                   <span>{item.sku}</span>
                 </div>
                 <dl>
-                  {Object.entries(item.values).map(([key, value]) => (
-                    <div key={key}>
-                      <dt>{formatKey(key)}</dt>
-                      <dd>{value} mm</dd>
-                    </div>
-                  ))}
-                  <div>
-                    <dt>Cor</dt>
-                    <dd>{item.color}</dd>
+                  <div className="cart-info-block cart-info-block--measures">
+                    <dt>Medidas</dt>
+                    <dd>
+                      {Object.entries(item.values).map(([key, value]) => (
+                        <span key={key}>
+                          <span>{formatKey(key)}</span>
+                          <strong>{value} mm</strong>
+                        </span>
+                      ))}
+                    </dd>
                   </div>
-                  <div>
-                    <dt>Acabamento</dt>
-                    <dd>{item.finish}</dd>
+                  <div className="cart-info-block">
+                    <dt>Outras informacoes</dt>
+                    <dd>
+                      <span>
+                        <span>Cor</span>
+                        <strong>{item.color}</strong>
+                      </span>
+                    </dd>
                   </div>
                 </dl>
                 <div className="cart-item__footer">
@@ -66,7 +72,6 @@ export function CartPage() {
                       onChange={(event) => updateQuantity(item.id, event.target.value)}
                     />
                   </label>
-                  <strong>{formatCurrency(item.priceBrl)}</strong>
                   <button type="button" className="text-button" onClick={() => removeItem(item.id)}>
                     Remover
                   </button>
@@ -91,7 +96,6 @@ function CheckoutForm() {
   const { items, clearCart } = useCart();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
@@ -116,7 +120,7 @@ function CheckoutForm() {
         body: JSON.stringify({
           source: "configurator",
           customer: { name, contact },
-          notes,
+          notes: "",
           items
         })
       });
@@ -175,10 +179,6 @@ function CheckoutForm() {
           onChange={(event) => setContact(event.target.value)}
         />
       </label>
-      <label className="field">
-        <span>Observacoes</span>
-        <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
-      </label>
       {createdOrder && (
         <div className="success-box">
           <strong>Pedido criado</strong>
@@ -208,4 +208,3 @@ function formatKey(key) {
     .replace("Apoio", "apoio")
     .replace("Aparente", "aparente");
 }
-

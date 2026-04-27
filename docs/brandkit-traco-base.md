@@ -1,25 +1,44 @@
-# Brandkit Traco Base
+# Brandkit Traço Base
 
 ## Posicionamento
 
-Traco Base e uma marca tecnica para sapatas e ponteiras 3D sob demanda para mobiliario. A percepcao desejada e precisa, industrial, limpa e premium, sem parecer decorativa ou generica.
+Traço Base é uma marca técnica para sapatas e ponteiras 3D sob demanda para mobiliário. A percepção desejada é precisa, industrial, adaptável e premium, sem parecer decorativa ou genérica.
+
+## Mood
+
+- **Tecnologia:** interface de cotas, matriz de dados, cálculo de preço e produção conectada.
+- **Adaptável:** famílias que recebem variações reais de uso, medida, fixação e cor.
+- **Paramétrico:** geometria definida por regras, limites e presets publicáveis.
+- **Impressão 3D:** produção sob demanda, séries curtas e prototipagem sem estoque pesado.
+- **Borracha:** TPU fosco, toque técnico, aderência e contato mais gentil com o piso.
 
 ## Identidade visual
 
-- **Nome:** Traco Base
-- **Assinatura:** Sapatas 3D sob demanda para mobiliario
-- **Tom:** tecnico, direto, seguro e de especificacao
-- **Estetica:** produto real em bancada clara, linhas parametricas, TPU fosco, metal preto e detalhes minerais
+- **Nome:** Traço Base
+- **Assinatura:** Sapatas 3D sob demanda para mobiliário
+- **Tom:** técnico, direto, seguro e de especificação
+- **Estética:** produto real em bancada clara, grade paramétrica, TPU fosco, metal preto, terracota técnico e detalhes minerais
+- **Forma:** cantos controlados, seções tubulares, cortes cotados, linhas finas e marcadores de medida
 
 ## Paleta
 
-- **Grafite tecnico:** `#202124`
-- **Verde petroleo:** `#006f67`
-- **Azul tecnico:** `#2f6f8f`
-- **Terracota TPU:** `#d06a49`
-- **Verde mineral:** `#7a8f7e`
-- **Nevoa:** `#f4f6f5`
-- **Linha:** `#d8dfdc`
+- **Borracha grafite:** `#202629`
+- **Preto técnico:** `#181c1d`
+- **Verde matriz:** `#007a70`
+- **Azul cotagem:** `#2c6b9a`
+- **Terracota TPU:** `#c76345`
+- **Verde mineral:** `#7f9488`
+- **Névoa:** `#f5f7f4`
+- **Linha técnica:** `#d5ddda`
+- **Linha forte:** `#9faca7`
+
+## Uso visual
+
+- Fundo claro com grade fina, sem excesso de efeitos.
+- Produto sempre nítido, com textura TPU visível e encaixe compreensível.
+- Verde matriz para ação e estado ativo; azul apenas para cotas, dados e leitura técnica.
+- Terracota e mineral como sinais de material/acabamento, não como fundo dominante.
+- Bordas secas e raio maximo de 8 px na interface.
 
 ## Assets
 
@@ -32,4 +51,4 @@ Traco Base e uma marca tecnica para sapatas e ponteiras 3D sob demanda para mobi
 
 ## Direcao de imagem
 
-Usar imagens com fundo claro, sombras suaves, produto nitido e ausencia de texto dentro do render. Evitar imagens muito escuras, genericas de marcenaria ou mockups que escondam o encaixe real da peca.
+Usar imagens com fundo claro, sombras suaves, produto nítido e ausência de texto dentro do render. Evitar imagens muito escuras, genéricas de marcenaria ou mockups que escondam o encaixe real da peça. A composição deve mostrar o componente como peça técnica pequena, não como objeto decorativo.

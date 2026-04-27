@@ -1,101 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 
 import { buildWhatsAppUrl } from "@/lib/format";
 import { brand } from "@/lib/site-data";
 
-export function SpecialRequestBuilder({ families }) {
-  const params = useSearchParams();
+export function SpecialRequestBuilder() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
-  const [family, setFamily] = useState("");
-  const [application, setApplication] = useState("");
   const [dimensions, setDimensions] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [color, setColor] = useState("");
-  const [finish, setFinish] = useState("");
-  const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [createdOrder, setCreatedOrder] = useState(null);
-
-  useEffect(() => {
-    const incoming = params.get("family") || params.get("familia") || "";
-
-    if (incoming && families.some((item) => item.slug === incoming)) {
-      setFamily(incoming);
-    }
-  }, [families, params]);
-
-  const selectedFamilyName =
-    families.find((item) => item.slug === family)?.name || "Projeto especial";
-  const canSubmit = name.trim() && contact.trim();
 
   const message = [
     "Oi, quero solicitar um projeto especial para sapatas.",
     `Nome: ${name || "Nao informado"}`,
     `Contato: ${contact || "Nao informado"}`,
-    `Familia de referencia: ${selectedFamilyName}`,
-    `Aplicacao: ${application || "Nao informada"}`,
-    `Medidas desejadas: ${dimensions || "Nao informadas"}`,
-    `Quantidade estimada: ${quantity || "Nao informada"}`,
-    `Cor desejada: ${color || "Nao informada"}`,
-    `Acabamento: ${finish || "Nao informado"}`,
-    `Observacoes: ${notes || "Nao informadas"}`
+    `Projeto: ${dimensions || "Nao informado"}`,
+    `Quantidade estimada: ${quantity || "Nao informada"}`
   ].join("\n");
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    if (!canSubmit || submitting) {
-      return;
-    }
-
-    setSubmitting(true);
-    setError("");
-
-    try {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          source: "special_request",
-          customer: { name, contact },
-          specialRequest: {
-            family,
-            familyName: selectedFamilyName,
-            application,
-            dimensions,
-            quantity,
-            color,
-            finish,
-            notes
-          }
-        })
-      });
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw new Error(payload.message || "Nao foi possivel salvar o briefing.");
-      }
-
-      setCreatedOrder(payload.order);
-      window.sessionStorage.setItem("traco-base-last-order-id", payload.order.id);
-    } catch (caughtError) {
-      setError(caughtError.message || "Nao foi possivel salvar o briefing.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   return (
     <div className="brief-grid">
-      <form className="surface-card brief-form" onSubmit={handleSubmit}>
+      <div className="surface-card brief-form">
         <div className="field-row">
           <label className="field">
             <span>Nome</span>
@@ -113,31 +39,9 @@ export function SpecialRequestBuilder({ families }) {
         </div>
 
         <label className="field">
-          <span>Familia de referencia</span>
-          <select value={family} onChange={(event) => setFamily(event.target.value)}>
-            <option value="">Selecione uma familia</option>
-            {families.map((item) => (
-              <option key={item.slug} value={item.slug}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="field">
-          <span>Aplicacao do movel</span>
-          <input
-            type="text"
-            placeholder="Ex.: mesa de jantar com pe metalico"
-            value={application}
-            onChange={(event) => setApplication(event.target.value)}
-          />
-        </label>
-
-        <label className="field">
-          <span>Medidas desejadas</span>
+          <span>Descreva seu projeto</span>
           <textarea
-            placeholder="Ex.: tubo 24 mm interno, base 28 mm, altura 14 mm"
+            placeholder="Ex.: tubo 24 mm interno, base 28 mm, altura 14 mm, uso em mesa de jantar com pe metalico"
             value={dimensions}
             onChange={(event) => setDimensions(event.target.value)}
           />
@@ -155,73 +59,29 @@ export function SpecialRequestBuilder({ families }) {
             />
           </label>
 
-          <label className="field">
-            <span>Cor desejada</span>
-            <input
-              type="text"
-              placeholder="Ex.: areia quente"
-              value={color}
-              onChange={(event) => setColor(event.target.value)}
-            />
-          </label>
         </div>
 
-        <label className="field">
-          <span>Acabamento e restricoes</span>
-          <input
-            type="text"
-            placeholder="Ex.: fosco tecnico, evitar leitura industrial"
-            value={finish}
-            onChange={(event) => setFinish(event.target.value)}
-          />
-        </label>
-
-        <label className="field">
-          <span>Observacoes adicionais</span>
-          <textarea
-            placeholder="Conte contexto, referencias visuais ou requisitos de prazo."
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-          />
-        </label>
-
-        {createdOrder && (
-          <div className="success-box">
-            <strong>Briefing salvo</strong>
-            <span>{createdOrder.orderNumber}</span>
-            <Link href={`/pedido-confirmado?orderId=${createdOrder.id}`}>Ver status da revisao</Link>
-          </div>
-        )}
-        {error && (
-          <div className="issue-box">
-            <strong>Falha ao salvar</strong>
-            <span>{error}</span>
-          </div>
-        )}
-
-        <button className="button button-dark button-block" type="submit" disabled={!canSubmit || submitting}>
-          {submitting ? "Salvando briefing..." : "Salvar briefing tecnico"}
-        </button>
-      </form>
+      </div>
 
       <aside className="surface-card brief-preview-card">
-        <p className="eyebrow">Resumo do briefing</p>
-        <h2>Mensagem pronta para o comercial</h2>
+        <p className="eyebrow">WhatsApp</p>
+        <h2>Enviar para o comercial</h2>
         <p>
           O objetivo aqui e reduzir ida e volta improdutiva e capturar o pedido especial com
           densidade suficiente para avaliacao tecnica.
         </p>
-        <pre className="brief-preview">{message}</pre>
         <a
-          className="button button-primary button-block"
+          className="button button-primary button-block whatsapp-button"
           href={buildWhatsAppUrl(brand.whatsappNumber, message)}
           rel="noreferrer"
           target="_blank"
         >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M12.04 2C6.58 2 2.14 6.34 2.14 11.68c0 1.7.46 3.36 1.33 4.82L2 22l5.66-1.43a10.1 10.1 0 0 0 4.38.99c5.46 0 9.9-4.34 9.9-9.68S17.5 2 12.04 2Zm0 17.9c-1.4 0-2.76-.37-3.96-1.06l-.28-.16-3.34.84.87-3.2-.18-.3a8 8 0 0 1-1.3-4.34c0-4.42 3.67-8.02 8.19-8.02 4.51 0 8.18 3.6 8.18 8.02 0 4.43-3.67 8.02-8.18 8.02Zm4.5-6.01c-.25-.12-1.46-.7-1.68-.78-.23-.08-.4-.12-.56.12-.16.23-.64.78-.78.94-.14.16-.29.18-.54.06-.25-.12-1.05-.38-2-1.22-.74-.64-1.24-1.44-1.39-1.68-.14-.23-.01-.36.11-.48.12-.11.25-.29.37-.43.12-.14.16-.23.25-.39.08-.16.04-.29-.02-.41-.06-.12-.56-1.32-.76-1.8-.2-.47-.4-.4-.56-.41h-.48c-.16 0-.41.06-.62.29-.21.23-.82.78-.82 1.9 0 1.12.84 2.2.95 2.35.12.16 1.65 2.47 4 3.46.56.23 1 .37 1.34.47.56.17 1.07.15 1.47.09.45-.07 1.46-.58 1.66-1.14.21-.56.21-1.03.15-1.14-.06-.1-.22-.16-.47-.28Z" />
+          </svg>
           Enviar no WhatsApp
         </a>
       </aside>
     </div>
   );
 }
-
