@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ParametricDrawing } from "@/components/parametric-drawing";
+import { canRenderParametricModel, ParametricModelViewer } from "@/components/parametric-model-viewer";
 import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -29,14 +30,17 @@ export function ProductConfigurator({ category }) {
   const [finish, setFinish] = useState(category.finishes[0]);
   const [quantity, setQuantity] = useState(4);
   const [added, setAdded] = useState(false);
+  const [previewMode, setPreviewMode] = useState("3d");
   const fieldsRef = useRef({});
   const { addItem } = useCart();
+  const has3dPreview = canRenderParametricModel(format);
 
   useEffect(() => {
     const nextFormat = getFormat(category, formatSlug) || category.formats[0];
     setValues(getInitialValues(nextFormat));
     setActiveKey(nextFormat.parameters[0]?.key || "");
     setAdded(false);
+    setPreviewMode(canRenderParametricModel(nextFormat) ? "3d" : "drawing");
   }, [category, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
@@ -113,18 +117,21 @@ export function ProductConfigurator({ category }) {
             selectedSlug={format.slug}
             onChange={handleFormatChange}
           />
-          <ParametricDrawing
+          <ParametricPreview
             format={format}
             values={values}
+            color={color}
             activeKey={activeKey}
+            mode={previewMode}
+            has3dPreview={has3dPreview}
+            onModeChange={setPreviewMode}
             onSelectParameter={handleSelectParameter}
           />
           <article className="integration-note">
-            <strong>Preparado para 3D e Grasshopper</strong>
+            <strong>Modelo paramétrico conectado ao CAD</strong>
             <p>
-              Esta vista SVG é o placeholder editável. A estrutura separa formato,
-              parâmetros e desenho para substituir a visualização por modelo 3D e corte
-              derivados do Grasshopper sem mudar o fluxo de compra.
+              A ponteira redonda já mostra uma prévia 3D técnica no navegador. O pedido
+              salva o mesmo snapshot paramétrico usado para gerar o STL no Rhino/Grasshopper.
             </p>
           </article>
         </div>
@@ -187,6 +194,60 @@ export function ProductConfigurator({ category }) {
         </aside>
       </div>
     </section>
+  );
+}
+
+function ParametricPreview({
+  format,
+  values,
+  color,
+  activeKey,
+  mode,
+  has3dPreview,
+  onModeChange,
+  onSelectParameter
+}) {
+  const activeMode = has3dPreview ? mode : "drawing";
+
+  return (
+    <div className="preview-panel">
+      <div className="preview-toolbar">
+        <div>
+          <p className="eyebrow">Prévia paramétrica</p>
+          <h2>{format.name}</h2>
+        </div>
+        <div className="preview-tabs" role="tablist" aria-label="Modo de visualização">
+          <button
+            type="button"
+            className={activeMode === "3d" ? "is-selected" : ""}
+            aria-pressed={activeMode === "3d"}
+            disabled={!has3dPreview}
+            onClick={() => onModeChange("3d")}
+          >
+            3D
+          </button>
+          <button
+            type="button"
+            className={activeMode === "drawing" ? "is-selected" : ""}
+            aria-pressed={activeMode === "drawing"}
+            onClick={() => onModeChange("drawing")}
+          >
+            Cotas
+          </button>
+        </div>
+      </div>
+
+      {activeMode === "3d" ? (
+        <ParametricModelViewer format={format} values={values} color={color} />
+      ) : (
+        <ParametricDrawing
+          format={format}
+          values={values}
+          activeKey={activeKey}
+          onSelectParameter={onSelectParameter}
+        />
+      )}
+    </div>
   );
 }
 
