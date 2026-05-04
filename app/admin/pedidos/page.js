@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 
+import { AdminCadPanel } from "@/components/admin-cad-panel";
+import { CAD_STATUS, getGrasshopperPayload, shouldRequireCad } from "@/lib/cad-contract";
 import { formatCurrency } from "@/lib/format";
-import { getStoreMode, listOrders } from "@/lib/order-store";
+import { getStoreMode, listOrders, updateOrderCadState } from "@/lib/order-store";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
@@ -99,6 +102,18 @@ export default async function AdminOrdersPage({ searchParams }) {
                 </details>
               )}
 
+              {shouldRequireCad(order) && (
+                <AdminCadPanel
+                  order={{
+                    id: order.id,
+                    orderNumber: order.orderNumber,
+                    cad: order.metadata?.cad || {}
+                  }}
+                  payload={getGrasshopperPayload(order)}
+                  action={registerCadFile}
+                />
+              )}
+
               {order.payments?.length > 0 && (
                 <details>
                   <summary>Pagamento Mercado Pago</summary>
@@ -124,6 +139,25 @@ export default async function AdminOrdersPage({ searchParams }) {
       )}
     </section>
   );
+}
+
+async function registerCadFile(formData) {
+  "use server";
+
+  const orderId = String(formData.get("orderId") || "");
+  const cadFileName = String(formData.get("cadFileName") || "").trim();
+  const cadModelVersion = String(formData.get("cadModelVersion") || "").trim();
+
+  if (!orderId || !cadFileName || !cadModelVersion) {
+    return;
+  }
+
+  await updateOrderCadState(orderId, {
+    cadStatus: CAD_STATUS.READY_FOR_PRINT,
+    cadFileName,
+    cadModelVersion
+  });
+  revalidatePath("/admin/pedidos");
 }
 
 function canViewAdmin(token) {

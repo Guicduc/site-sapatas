@@ -1244,7 +1244,10 @@ dt {
 .admin-order-list,
 .admin-order-card,
 .status-stack,
-.admin-payment-grid {
+.admin-payment-grid,
+.cad-panel,
+.cad-form,
+.cad-checklist {
   display: grid;
   gap: 14px;
 }
@@ -1279,6 +1282,29 @@ dt {
 .admin-payment-grid dd {
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.cad-panel {
+  padding-top: 12px;
+}
+
+.cad-panel__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.cad-checklist {
+  gap: 6px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--primary);
+  color: var(--ink-soft);
+}
+
+.cad-form {
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.8fr) auto;
+  align-items: end;
 }
 
 .brief-preview {
@@ -1418,6 +1444,7 @@ summary {
   .hero-stats,
   .admin-order-header,
   .admin-payment-grid,
+  .cad-form,
   .cart-item dl,
   .cart-item__footer {
     grid-template-columns: 1fr;

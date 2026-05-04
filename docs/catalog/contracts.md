@@ -82,6 +82,57 @@
 }
 ```
 
+### `Order.metadata.cad`
+
+```json
+{
+  "contractVersion": "rhino-gh-v1",
+  "status": "cad_pending",
+  "modelVersion": "tube-round-gh-v1",
+  "fileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.stl",
+  "generatedAt": "2026-05-04T14:20:00.000Z",
+  "items": [
+    {
+      "contractVersion": "rhino-gh-v1",
+      "modelVersion": "tube-round-gh-v1",
+      "engine": "rhino_grasshopper",
+      "generationMode": "local_manual",
+      "orderNumber": "TB-260504-AB12",
+      "sku": "TB-RD-PI-22X28X18",
+      "categorySlug": "ponteira-interna-tubo",
+      "formatSlug": "redondo",
+      "quantity": 4,
+      "units": "mm",
+      "parameters": {
+        "diametroInterno": 22,
+        "diametroBase": 28,
+        "profundidadeInsercao": 18,
+        "alturaApoio": 8
+      },
+      "technicalDefaults": {
+        "fitAllowanceMm": -0.2,
+        "topChamferMm": 0.8,
+        "baseBottomChamferMm": 0.6,
+        "shoulderRadiusMm": 1.2,
+        "meshToleranceMm": 0.15
+      },
+      "outputs": {
+        "stlFileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.stl",
+        "optionalPreviewFileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.glb"
+      }
+    }
+  ]
+}
+```
+
+Estados CAD:
+
+- `pending_payment`: pedido configurado, ainda sem pagamento aprovado;
+- `cad_pending`: pagamento aprovado e STL pendente de geracao local;
+- `cad_generated`: STL gerado;
+- `ready_for_print`: STL registrado e pedido liberado para impressao;
+- `not_required`: pedido sem modelo CAD automatizado no v1.
+
 ## `Payment`
 
 ```json
