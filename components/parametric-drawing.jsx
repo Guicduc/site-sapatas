@@ -22,6 +22,9 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
           <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" />
           </marker>
+          <pattern id="section-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <path d="M 0 0 V 8" />
+          </pattern>
         </defs>
         <rect className="drawing-grid-fill" width="640" height="380" />
         <path className="drawing-axis" d="M 76 304 H 574 M 132 58 V 328" />
@@ -45,16 +48,70 @@ function TubeRound({ values, activeKey, onSelect }) {
   const base = clamp(Number(values.diametroBase || 28) * 4, diameter + 20, 190);
   const insertion = clamp(Number(values.profundidadeInsercao || 18) * 5, 54, 170);
   const support = clamp(Number(values.alturaApoio || 8) * 6, 28, 96);
+  const centerX = 320;
+  const baseTopY = 260;
+  const baseBottomY = baseTopY + support;
+  const plugTopY = baseTopY - insertion;
+  const plugLeft = centerX - diameter / 2;
+  const plugRight = centerX + diameter / 2;
+  const baseLeft = centerX - base / 2;
+  const baseRight = centerX + base / 2;
+  const chamfer = 10;
+  const shoulder = 14;
 
   return (
     <>
-      <rect className="part muted" x={320 - base / 2} y={260} width={base} height={support} rx="18" />
-      <rect className="part" x={320 - diameter / 2} y={260 - insertion} width={diameter} height={insertion} rx="14" />
-      <line className="cut-line" x1="190" x2="450" y1="260" y2="260" />
-      <Dimension x1={320 - diameter / 2} y1={78} x2={320 + diameter / 2} y2={78} label={`${values.diametroInterno} mm`} paramKey="diametroInterno" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={320 - base / 2} y1={350} x2={320 + base / 2} y2={350} label={`${values.diametroBase} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={460} y1={260 - insertion} x2={460} y2={260} label={`${values.profundidadeInsercao} mm`} paramKey="profundidadeInsercao" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={510} y1={260} x2={510} y2={260 + support} label={`${values.alturaApoio} mm`} paramKey="alturaApoio" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1={centerX} x2={centerX} y1={plugTopY - 28} y2={baseBottomY + 22} />
+      <line className="technical-datum" x1={baseLeft - 72} x2={baseRight + 72} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-projection" x1={plugLeft} x2={plugLeft} y1={plugTopY - 18} y2={plugTopY} />
+      <line className="technical-projection" x1={plugRight} x2={plugRight} y1={plugTopY - 18} y2={plugTopY} />
+      <line className="technical-projection" x1={baseLeft} x2={baseLeft} y1={baseBottomY} y2={baseBottomY + 18} />
+      <line className="technical-projection" x1={baseRight} x2={baseRight} y1={baseBottomY} y2={baseBottomY + 18} />
+      <line className="technical-projection" x1={baseRight + 28} x2={baseRight + 52} y1={plugTopY} y2={plugTopY} />
+      <line className="technical-projection" x1={baseRight + 28} x2={baseRight + 52} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-projection" x1={baseRight + 74} x2={baseRight + 98} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-projection" x1={baseRight + 74} x2={baseRight + 98} y1={baseBottomY} y2={baseBottomY} />
+
+      <path
+        className="technical-section base-section"
+        d={`M ${baseLeft + chamfer} ${baseBottomY}
+            H ${baseRight - chamfer}
+            Q ${baseRight} ${baseBottomY} ${baseRight} ${baseBottomY - chamfer}
+            V ${baseTopY + shoulder}
+            Q ${baseRight} ${baseTopY} ${baseRight - shoulder} ${baseTopY}
+            H ${baseLeft + shoulder}
+            Q ${baseLeft} ${baseTopY} ${baseLeft} ${baseTopY + shoulder}
+            V ${baseBottomY - chamfer}
+            Q ${baseLeft} ${baseBottomY} ${baseLeft + chamfer} ${baseBottomY}
+            Z`}
+      />
+      <path
+        className="technical-section plug-section"
+        d={`M ${plugLeft + 8} ${baseTopY}
+            H ${plugRight - 8}
+            Q ${plugRight} ${baseTopY} ${plugRight} ${baseTopY - 8}
+            V ${plugTopY + 10}
+            L ${plugRight - 10} ${plugTopY}
+            H ${plugLeft + 10}
+            L ${plugLeft} ${plugTopY + 10}
+            V ${baseTopY - 8}
+            Q ${plugLeft} ${baseTopY} ${plugLeft + 8} ${baseTopY}
+            Z`}
+      />
+      <path
+        className="section-hatch-fill"
+        d={`M ${plugLeft + 12} ${baseTopY - 6}
+            H ${plugRight - 12}
+            V ${plugTopY + 14}
+            H ${plugLeft + 12}
+            Z`}
+      />
+      <line className="technical-outline-heavy" x1={baseLeft + 16} x2={baseRight - 16} y1={baseBottomY} y2={baseBottomY} />
+
+      <Dimension x1={plugLeft} y1={plugTopY - 34} x2={plugRight} y2={plugTopY - 34} label={`${values.diametroInterno} mm`} paramKey="diametroInterno" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseLeft} y1={baseBottomY + 30} x2={baseRight} y2={baseBottomY + 30} label={`${values.diametroBase} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseRight + 52} y1={plugTopY} x2={baseRight + 52} y2={baseTopY} label={`${values.profundidadeInsercao} mm`} paramKey="profundidadeInsercao" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseRight + 98} y1={baseTopY} x2={baseRight + 98} y2={baseBottomY} label={`${values.alturaApoio} mm`} paramKey="alturaApoio" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }

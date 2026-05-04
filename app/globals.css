@@ -625,9 +625,9 @@ section {
 .drawing-panel svg {
   width: 100%;
   min-height: clamp(280px, 46vh, 360px);
-  border: 1px solid var(--line);
+  border: 1px solid #cfd8d4;
   border-radius: 0;
-  background: #f8faf7;
+  background: #fbfcfa;
 }
 
 .drawing-grid-fill {
@@ -636,44 +636,100 @@ section {
 
 #drawing-grid path {
   fill: none;
-  stroke: rgba(159, 172, 167, 0.32);
+  stroke: rgba(159, 172, 167, 0.22);
   stroke-width: 1;
 }
 
 .drawing-axis {
   fill: none;
-  stroke: rgba(0, 122, 112, 0.32);
-  stroke-dasharray: 10 10;
-  stroke-width: 1.4;
+  stroke: rgba(0, 122, 112, 0.42);
+  stroke-dasharray: 12 9 2 9;
+  stroke-width: 1.2;
 }
 
 .drawing-node {
-  fill: var(--clay);
+  fill: var(--primary);
   stroke: #f8faf7;
   stroke-width: 2;
 }
 
 .part {
-  fill: var(--rubber-mid);
-  stroke: var(--rubber-dark);
-  stroke-width: 2;
+  fill: rgba(89, 104, 102, 0.18);
+  stroke: #111b1e;
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
 }
 
 .part.muted {
-  fill: var(--clay);
+  fill: rgba(0, 122, 112, 0.08);
 }
 
 .void,
 .cut-line-fill {
   fill: var(--surface);
-  stroke: #7d8782;
-  stroke-width: 2;
+  stroke: #314044;
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
 }
 
 .cut-line {
-  stroke: #7d8782;
-  stroke-dasharray: 8 7;
-  stroke-width: 2;
+  stroke: #6f7d79;
+  stroke-dasharray: 10 8;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.technical-section {
+  stroke: #0f1a1d;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.technical-section.base-section {
+  fill: rgba(0, 122, 112, 0.07);
+}
+
+.technical-section.plug-section {
+  fill: rgba(89, 104, 102, 0.12);
+}
+
+.technical-centerline {
+  stroke: var(--primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 12 8 2 8;
+  vector-effect: non-scaling-stroke;
+}
+
+.technical-datum {
+  stroke: #6d7976;
+  stroke-width: 1.5;
+  stroke-dasharray: 10 8;
+  vector-effect: non-scaling-stroke;
+}
+
+.technical-projection {
+  stroke: #8d9b97;
+  stroke-width: 1;
+  stroke-dasharray: 5 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.technical-outline-heavy {
+  stroke: #0f1a1d;
+  stroke-width: 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.section-hatch-fill {
+  fill: url("#section-hatch");
+  opacity: 0.18;
+  stroke: 0;
+}
+
+#section-hatch path {
+  stroke: #0f1a1d;
+  stroke-width: 1;
 }
 
 .dimension {
@@ -681,32 +737,38 @@ section {
 }
 
 .dimension line {
-  stroke: var(--accent);
-  stroke-width: 2;
+  stroke: #0f1a1d;
+  stroke-width: 1.7;
+  vector-effect: non-scaling-stroke;
 }
 
 .dimension marker path {
-  fill: var(--accent);
+  fill: #0f1a1d;
 }
 
 .dimension text {
-  fill: var(--ink);
+  fill: #0f1a1d;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   text-anchor: middle;
   paint-order: stroke;
-  stroke: #f8faf7;
-  stroke-width: 5px;
+  stroke: #fbfcfa;
+  stroke-width: 4px;
+  stroke-linejoin: round;
 }
 
 .dimension.is-active line,
 .dimension.is-active text {
-  stroke: var(--danger);
+  stroke: var(--primary);
+}
+
+.dimension.is-active text {
+  fill: var(--primary-dark);
 }
 
 .dimension.is-active marker path {
-  fill: var(--danger);
+  fill: var(--primary);
 }
 
 .parameter-panel {
