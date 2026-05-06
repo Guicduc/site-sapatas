@@ -17,10 +17,10 @@ export default function ProjetoEspecialPage() {
     <>
       <section className="page-panel narrow-panel">
         <p className="eyebrow">Linha premium</p>
-        <h1>Quando a matriz não resolve, o briefing já entra no ponto certo.</h1>
+        <h1>Precisa de algo mais específico? Nós desenvolvemos.</h1>
         <p className="lead">
-          Use este fluxo para medidas fora do padrão, novas regras de fixação, demandas
-          estéticas específicas ou famílias ainda não catalogadas.
+          Aqui desenvolvemos formatos especiais sem necessidade de pedido mínimo, entre em
+          contato e vamos solucionar sua demanda.
         </p>
       </section>
 

@@ -59,12 +59,11 @@ button:disabled {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(237, 241, 239, 0.68)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(237, 241, 239, 0.72)),
     linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(213, 221, 218, 0.72) 1px, transparent 1px),
-    linear-gradient(135deg, transparent 0 48%, rgba(0, 122, 112, 0.08) 48% 50%, transparent 50%);
-  background-size: 100% 100%, 100% 96px, 96px 100%, 192px 192px;
-  opacity: 0.72;
+    linear-gradient(90deg, rgba(213, 221, 218, 0.56) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 96px, 96px 100%;
+  opacity: 0.58;
 }
 
 .site-shell {
@@ -81,19 +80,19 @@ button:disabled {
 
 .site-header {
   position: sticky;
-  top: 12px;
+  top: 0;
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  margin-top: 12px;
+  margin-top: 0;
   padding: 10px 0;
   border: 1px solid var(--line);
   border-right: 0;
   border-left: 0;
   border-radius: 0;
-  background: rgba(245, 247, 244, 0.9);
+  background: var(--bg);
   backdrop-filter: blur(14px);
 }
 
@@ -219,33 +218,24 @@ section {
   overflow: hidden;
   isolation: isolate;
   grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
-  min-height: 420px;
-  align-items: stretch;
-  background:
-    linear-gradient(90deg, rgba(245, 247, 244, 0.96) 0 46%, rgba(245, 247, 244, 0.5) 46% 100%),
-    linear-gradient(90deg, rgba(0, 122, 112, 0.12) 1px, transparent 1px),
-    linear-gradient(rgba(44, 107, 154, 0.1) 1px, transparent 1px);
-  background-size: 100% 100%, 72px 72px, 72px 72px;
+  min-height: 360px;
+  align-items: start;
+  background: transparent;
 }
 
 .shop-hero::before {
-  content: "";
-  position: absolute;
-  inset: 26px auto 26px 0;
-  z-index: -1;
-  width: min(430px, 42vw);
-  border-left: 3px solid var(--primary);
-  background:
-    linear-gradient(90deg, rgba(199, 99, 69, 0.16), transparent 68%),
-    repeating-linear-gradient(0deg, transparent 0 17px, rgba(24, 28, 29, 0.08) 17px 18px);
+  content: none;
 }
 
 .shop-hero__copy {
   position: relative;
   z-index: 1;
-  align-self: end;
+  align-self: start;
   max-width: 620px;
-  padding-bottom: 18px;
+}
+
+.shop-hero .lead {
+  color: var(--primary-dark);
 }
 
 .shop-hero__image {
@@ -305,21 +295,27 @@ section {
 
 .brand-mood {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .brand-mood article {
   display: grid;
-  gap: 6px;
-  min-height: 148px;
-  padding: 16px 18px 18px 0;
+  align-content: start;
+  gap: 8px;
+  min-height: 96px;
+  padding: 12px 14px 12px 0;
 }
 
 .brand-mood article + article {
   padding-left: 18px;
   border-left: 1px solid var(--line);
+}
+
+.brand-mood article:nth-child(6n + 1) {
+  padding-left: 0;
+  border-left: 0;
 }
 
 .brand-mood strong {
@@ -336,7 +332,7 @@ section {
 
 .brand-mood p {
   color: var(--ink-soft);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
 }
 
 .category-grid {
@@ -349,11 +345,16 @@ section {
 .category-card {
   display: grid;
   gap: 18px;
-  align-content: start;
+  align-content: stretch;
   min-height: 520px;
   padding: 24px;
   border-bottom: 1px solid var(--line);
   background: transparent;
+}
+
+.category-card .button {
+  align-self: end;
+  margin-top: auto;
 }
 
 .category-card:nth-child(odd) {
@@ -429,7 +430,7 @@ section {
 .configurator-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 476px);
-  gap: 14px;
+  gap: 0;
   align-items: start;
 }
 
@@ -440,9 +441,15 @@ section {
   gap: 12px;
 }
 
+.configurator-main {
+  padding-right: 24px;
+}
+
 .configurator-side {
   position: sticky;
   top: 106px;
+  padding-left: 24px;
+  border-left: 1px solid var(--line-strong);
 }
 
 .format-selector {
@@ -764,17 +771,9 @@ section {
   stroke-linejoin: round;
 }
 
-.dimension.is-active line,
-.dimension.is-active text {
-  stroke: var(--primary);
-}
-
-.dimension.is-active text {
-  fill: var(--primary-dark);
-}
-
-.dimension.is-active marker path {
-  fill: var(--primary);
+.dimension.is-active line {
+  stroke: var(--primary-dark);
+  stroke-width: 2;
 }
 
 .parameter-panel {
@@ -1346,6 +1345,7 @@ dt {
 .site-footer {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
   padding: 24px 0 34px;
@@ -1355,6 +1355,32 @@ dt {
 
 .footer-links a {
   color: var(--ink-soft);
+}
+
+.page-panel.narrow-panel {
+  border-bottom: 0;
+}
+
+.brief-preview-card {
+  align-content: start;
+  gap: 8px;
+  padding: 18px 24px;
+  border-top: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.brief-preview-card h2 {
+  font-size: 1.55rem;
+}
+
+.brief-preview-card p:not(.eyebrow) {
+  max-width: 520px;
+  color: var(--ink-soft);
+}
+
+.brief-preview-card .button {
+  margin-top: 4px;
 }
 
 /* Compatibility for older content pages that still exist in the app. */
@@ -1415,6 +1441,13 @@ dt {
   border-right: 1px solid var(--line);
 }
 
+.brief-grid > .brief-preview-card {
+  align-content: start;
+  padding: 18px 24px;
+  border-top: 0;
+  border-bottom: 0;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
@@ -1425,6 +1458,7 @@ dt {
 .status-stack,
 .admin-payment-grid,
 .cad-panel,
+.pricing-panel,
 .cad-form,
 .cad-checklist {
   display: grid;
@@ -1467,11 +1501,31 @@ dt {
   padding-top: 12px;
 }
 
-.cad-panel__header {
+.cad-panel__header,
+.pricing-panel__header {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: 14px;
+}
+
+.pricing-panel {
+  padding-top: 12px;
+}
+
+.pricing-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-note,
+.admin-error {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.admin-error {
+  color: #9f2f25;
+  font-weight: 700;
 }
 
 .cad-checklist {
@@ -1566,6 +1620,13 @@ summary {
   .configurator-side,
   .cart-summary {
     position: static;
+  }
+
+  .configurator-main,
+  .configurator-side {
+    padding-right: 0;
+    padding-left: 0;
+    border-left: 0;
   }
 
   .format-selector {
