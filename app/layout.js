@@ -13,6 +13,10 @@ export const metadata = {
   },
   description: brand.description,
   applicationName: brand.name,
+  icons: {
+    icon: "/brand/traco-base-mark-novo.png",
+    apple: "/brand/traco-base-mark-novo.png"
+  },
   alternates: {
     canonical: "/"
   },
@@ -25,7 +29,7 @@ export const metadata = {
     url: siteUrl,
     images: [
       {
-        url: "/brand/traco-base-og.png",
+        url: "/brand/traco-base-og-novo.png",
         width: 1200,
         height: 630,
         alt: "Sapatas 3D sob demanda Traço Base"
@@ -36,7 +40,7 @@ export const metadata = {
     card: "summary_large_image",
     title: `${brand.name} | Sapatas 3D sob demanda para mobiliário`,
     description: brand.description,
-    images: ["/brand/traco-base-og.png"]
+    images: ["/brand/traco-base-og-novo.png"]
   }
 };
 

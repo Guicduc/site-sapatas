@@ -104,6 +104,12 @@ button:disabled {
   text-decoration: none;
 }
 
+.brand-mark__logo {
+  display: block;
+  width: clamp(188px, 18vw, 258px);
+  height: auto;
+}
+
 .brand-mark__icon {
   width: 40px;
   height: 40px;

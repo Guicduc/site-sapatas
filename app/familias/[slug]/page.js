@@ -16,8 +16,9 @@ export function generateStaticParams() {
   return families.map((family) => ({ slug: family.slug }));
 }
 
-export function generateMetadata({ params }) {
-  const family = getFamilyBySlug(params.slug);
+export async function generateMetadata({ params }) {
+  const resolvedParams = await params;
+  const family = getFamilyBySlug(resolvedParams.slug);
 
   if (!family) {
     return {};
@@ -32,8 +33,9 @@ export function generateMetadata({ params }) {
   };
 }
 
-export default function FamilyPage({ params }) {
-  const family = getFamilyBySlug(params.slug);
+export default async function FamilyPage({ params }) {
+  const resolvedParams = await params;
+  const family = getFamilyBySlug(resolvedParams.slug);
 
   if (!family) {
     notFound();

@@ -23,8 +23,8 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <Link className="brand-mark" href="/" onClick={() => setOpen(false)}>
-        <img className="brand-mark__icon" src="/brand/traco-base-mark.svg" alt="" aria-hidden="true" />
-        <span>
+        <img className="brand-mark__logo" src="/brand/traco-base-logo-novo.png" alt={brand.name} />
+        <span className="visually-hidden">
           <strong>{brand.name}</strong>
           <small>{brand.tagline}</small>
         </span>

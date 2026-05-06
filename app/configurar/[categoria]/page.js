@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 import { ProductConfigurator } from "@/components/product-configurator";
 import { getCategoryBySlug, productCategories } from "@/lib/configurator-data";
@@ -22,17 +21,14 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function ConfigurePage({ params }) {
+export default async function ConfigurePage({ params, searchParams }) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const category = getCategoryBySlug(resolvedParams.categoria);
 
   if (!category) {
     notFound();
   }
 
-  return (
-    <Suspense fallback={<div className="surface-card">Carregando configurador...</div>}>
-      <ProductConfigurator category={category} />
-    </Suspense>
-  );
+  return <ProductConfigurator category={category} initialFormatSlug={resolvedSearchParams?.formato} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ParametricDrawing } from "@/components/parametric-drawing";
@@ -17,11 +17,9 @@ import {
   validateConfiguration
 } from "@/lib/configurator-data";
 
-export function ProductConfigurator({ category }) {
+export function ProductConfigurator({ category, initialFormatSlug }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialFormat = searchParams.get("formato");
-  const firstFormat = getFormat(category, initialFormat) || category.formats[0];
+  const firstFormat = getFormat(category, initialFormatSlug) || category.formats[0];
   const [formatSlug, setFormatSlug] = useState(firstFormat.slug);
   const format = getFormat(category, formatSlug) || category.formats[0];
   const [values, setValues] = useState(() => getInitialValues(format));
