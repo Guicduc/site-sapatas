@@ -9,14 +9,12 @@ export function SpecialRequestBuilder() {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [dimensions, setDimensions] = useState("");
-  const [quantity, setQuantity] = useState("");
 
   const message = [
     "Oi, quero solicitar um projeto especial para sapatas.",
     `Nome: ${name || "Nao informado"}`,
-    `Contato: ${contact || "Nao informado"}`,
-    `Projeto: ${dimensions || "Nao informado"}`,
-    `Quantidade estimada: ${quantity || "Nao informada"}`
+    `WhatsApp ou email: ${contact || "Nao informado"}`,
+    `Projeto: ${dimensions || "Nao informado"}`
   ].join("\n");
 
   return (
@@ -29,7 +27,7 @@ export function SpecialRequestBuilder() {
           </label>
 
           <label className="field">
-            <span>Contato</span>
+            <span>WhatsApp ou email</span>
             <input
               value={contact}
               placeholder="WhatsApp ou email"
@@ -46,21 +44,6 @@ export function SpecialRequestBuilder() {
             onChange={(event) => setDimensions(event.target.value)}
           />
         </label>
-
-        <div className="field-row">
-          <label className="field">
-            <span>Quantidade estimada</span>
-            <input
-              type="number"
-              min="1"
-              placeholder="Ex.: 32"
-              value={quantity}
-              onChange={(event) => setQuantity(event.target.value)}
-            />
-          </label>
-
-        </div>
-
       </div>
 
       <aside className="surface-card brief-preview-card">

@@ -1,0 +1,5 @@
+family_slug,sample_id,profile_id,stl_file,gcode_file,material_grams,print_minutes,orca_version,sliced_at,notes
+ponteira-interna-tubo-redondo,RD-PI-DI18-DB24-P14-A6,tpu-default,ponteira-interna-tubo-redondo__RD-PI-DI18-DB24-P14-A6.stl,,,,,,Preencher apos fatiar
+ponteira-interna-tubo-redondo,RD-PI-DI22-DB28-P18-A8,tpu-default,ponteira-interna-tubo-redondo__RD-PI-DI22-DB28-P18-A8.stl,,,,,,Preencher apos fatiar
+ponteira-interna-tubo-redondo,RD-PI-DI26-DB34-P22-A10,tpu-default,ponteira-interna-tubo-redondo__RD-PI-DI26-DB34-P22-A10.stl,,,,,,Preencher apos fatiar
+ponteira-interna-tubo-redondo,RD-PI-DI30-DB40-P26-A12,tpu-default,ponteira-interna-tubo-redondo__RD-PI-DI30-DB40-P26-A12.stl,,,,,,Preencher apos fatiar

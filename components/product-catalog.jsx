@@ -1,67 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
 
 import { colorMap } from "@/lib/brand-colors";
 
 const moodTerms = [
   {
-    code: "TB-01",
-    label: "Tecnologia",
-    text: "cotação, geometria e produção conectadas no mesmo fluxo"
+    text: "Peças 100% customizáveis a partir de sua necessidade"
   },
   {
-    code: "TB-02",
-    label: "Adaptável",
-    text: "medidas abertas por família, formato e uso real do móvel"
+    text: "Material resistente para área interna e externa"
   },
   {
-    code: "TB-03",
-    label: "Paramétrico",
-    text: "matriz de cotas que vira SKU, preço e prazo antes da compra"
+    text: "Cores personalizadas"
   },
   {
-    code: "TB-04",
-    label: "Impressão 3D",
-    text: "séries curtas sem estoque pesado de produto acabado"
+    text: "Sem pedido mínimo, produção sob demanda"
   },
   {
-    code: "TB-05",
-    label: "Borracha",
-    text: "TPU fosco, contato tecnico e leitura macia no piso"
+    text: "Material 100% reciclável"
+  },
+  {
+    text: "Se sentir falta de alguma forma, entre em contato para discutir seu projeto"
   }
 ];
 
 export function ProductCatalog({ categories }) {
-  const [application, setApplication] = useState("all");
-  const [baseType, setBaseType] = useState("all");
-
-  const applications = useMemo(
-    () => Array.from(new Set(categories.flatMap((category) => category.applications))).sort(),
-    [categories]
-  );
-  const baseTypes = useMemo(
-    () => Array.from(new Set(categories.map((category) => category.baseType))).sort(),
-    [categories]
-  );
-
-  const filteredCategories = categories.filter((category) => {
-    const applicationMatch = application === "all" || category.applications.includes(application);
-    const baseTypeMatch = baseType === "all" || category.baseType === baseType;
-
-    return applicationMatch && baseTypeMatch;
-  });
-
   return (
     <section className="shop-shell">
       <div className="shop-hero">
         <div className="shop-hero__copy">
-          <p className="eyebrow">Configurador de compra</p>
-          <h1>Escolha a sapata pela geometria real do móvel.</h1>
+          <h1>Sapatas plásticas customizáveis para sua necessidade</h1>
           <p className="lead">
-            Selecione uma categoria, escolha o formato e ajuste as cotas do produto antes de
-            colocar no carrinho.
+            Configure o produto de acordo com seu projeto, com medidas, fixações e cores
+            personalizadas.
           </p>
         </div>
         <img
@@ -69,49 +41,19 @@ export function ProductCatalog({ categories }) {
           src="/brand/traco-base-hero.png"
           alt="Sapatas e ponteiras Traço Base aplicadas em pés tubulares de mobiliário"
         />
-        <div className="shop-hero__note">
-          <strong>Pedido paramétrico</strong>
-          <span>Preço e prazo estimados antes de gerar pagamento e fila de produção.</span>
-        </div>
       </div>
 
       <div className="brand-mood" aria-label="Pilares da identidade Traço Base">
-        {moodTerms.map((term) => (
-          <article key={term.code}>
-            <strong>{term.code}</strong>
-            <span>{term.label}</span>
+        {moodTerms.map((term, index) => (
+          <article key={term.text}>
+            <strong>{String(index + 1).padStart(2, "0")}</strong>
             <p>{term.text}</p>
           </article>
         ))}
       </div>
 
-      <div className="filter-bar">
-        <label className="field">
-          <span>Aplicação</span>
-          <select value={application} onChange={(event) => setApplication(event.target.value)}>
-            <option value="all">Todas</option>
-            {applications.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Tipo de base</span>
-          <select value={baseType} onChange={(event) => setBaseType(event.target.value)}>
-            <option value="all">Todos</option>
-            {baseTypes.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
       <div className="category-grid">
-        {filteredCategories.map((category) => (
+        {categories.map((category) => (
           <article className="category-card" key={category.slug}>
             {category.image && (
               <img className="category-card__image" src={category.image.src} alt={category.image.alt} />
@@ -121,7 +63,9 @@ export function ProductCatalog({ categories }) {
             <p>{category.description}</p>
             <div className="meta-list">
               <span>{category.primaryFixation}</span>
-              <span>{category.formats.map((format) => format.name).join(" / ")}</span>
+              {category.formats.length > 1 && (
+                <span>{category.formats.map((format) => format.name).join(" / ")}</span>
+              )}
             </div>
             <div className="swatch-row" aria-label="Cores disponíveis">
               {category.colors.map((color) => (
@@ -133,13 +77,6 @@ export function ProductCatalog({ categories }) {
                 >
                   <span className="visually-hidden">{color}</span>
                 </span>
-              ))}
-            </div>
-            <div className="format-preview">
-              {category.formats.map((format) => (
-                <Link key={format.slug} href={`/configurar/${category.slug}?formato=${format.slug}`}>
-                  {format.name}
-                </Link>
               ))}
             </div>
             <Link className="button button-primary" href={`/configurar/${category.slug}`}>
