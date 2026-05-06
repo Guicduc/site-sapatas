@@ -1,0 +1,11 @@
+assumption_key,value,unit,notes
+tpu_filament_brl_per_kg,180,BRL/kg,Custo do rolo de TPU
+print_waste_rate,0.12,rate,Perda tecnica para purga falha e margem de seguranca
+machine_cost_brl_per_hour,2.8,BRL/hora,Depreciacao e manutencao da impressora
+energy_cost_brl_per_hour,0.25,BRL/hora,Energia por hora de impressao
+operator_cost_brl_per_hour,18,BRL/hora,Tempo humano operacional
+operator_minutes_per_order,12,minutos,Preparacao conferencia remocao e registro
+packaging_brl_per_order,2,BRL,Embalagem media por pedido
+channel_fee_rate,0.06,rate,Taxa media de canal/pagamento
+markup,2.3,multiplicador,Margem comercial alvo sobre custo direto
+min_order_price_brl,19.9,BRL,Preco minimo comercial

@@ -2,12 +2,14 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { AdminCadPanel } from "@/components/admin-cad-panel";
+import { AdminPricingPanel } from "@/components/admin-pricing-panel";
 import { CAD_STATUS, getGrasshopperPayload, shouldRequireCad } from "@/lib/cad-contract";
 import { formatCurrency } from "@/lib/format";
-import { getStoreMode, listOrders, updateOrderCadState } from "@/lib/order-store";
+import { getOrderById, getStoreMode, listOrders, updateOrderCadState, updateOrderPricingState } from "@/lib/order-store";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export const metadata = {
   title: "Admin pedidos",
@@ -103,15 +105,18 @@ export default async function AdminOrdersPage({ searchParams }) {
               )}
 
               {shouldRequireCad(order) && (
-                <AdminCadPanel
-                  order={{
-                    id: order.id,
-                    orderNumber: order.orderNumber,
-                    cad: order.metadata?.cad || {}
-                  }}
-                  payload={getGrasshopperPayload(order)}
-                  action={registerCadFile}
-                />
+                <>
+                  <AdminCadPanel
+                    order={{
+                      id: order.id,
+                      orderNumber: order.orderNumber,
+                      cad: order.metadata?.cad || {}
+                    }}
+                    payload={getGrasshopperPayload(order)}
+                    action={registerCadFile}
+                  />
+                  <AdminPricingPanel order={order} action={calculateOrcaPricing} />
+                </>
               )}
 
               {order.payments?.length > 0 && (
@@ -157,6 +162,41 @@ async function registerCadFile(formData) {
     cadFileName,
     cadModelVersion
   });
+  revalidatePath("/admin/pedidos");
+}
+
+async function calculateOrcaPricing(formData) {
+  "use server";
+
+  const orderId = String(formData.get("orderId") || "");
+
+  if (!orderId) {
+    return;
+  }
+
+  const order = await getOrderById(orderId);
+
+  if (!order) {
+    return;
+  }
+
+  try {
+    const { priceOrderWithOrca } = await import("@/lib/orca-slicer");
+    const pricing = await priceOrderWithOrca(order);
+    await updateOrderPricingState(orderId, {
+      ...pricing,
+      error: null
+    });
+  } catch (error) {
+    await updateOrderPricingState(orderId, {
+      error: {
+        code: error.code || "orca_pricing_failed",
+        message: error.message || "Nao foi possivel calcular com Orca.",
+        happenedAt: new Date().toISOString()
+      }
+    });
+  }
+
   revalidatePath("/admin/pedidos");
 }
 

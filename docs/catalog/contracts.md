@@ -133,6 +133,31 @@ Estados CAD:
 - `ready_for_print`: STL registrado e pedido liberado para impressao;
 - `not_required`: pedido sem modelo CAD automatizado no v1.
 
+### `Order.metadata.pricing`
+
+```json
+{
+  "mode": "sliced",
+  "source": "orca_slicer",
+  "orcaVersion": "2.3.0",
+  "profileId": "default",
+  "materialGrams": 18.4,
+  "printMinutes": 74,
+  "directCostBrl": 12.68,
+  "suggestedPriceBrl": 30.9,
+  "calculatedAt": "2026-05-05T23:20:00.000Z",
+  "gcodeFileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.gcode"
+}
+```
+
+Regras:
+
+- `estimated`: calculo rapido por aproximacao geometrica, usado antes de existir STL;
+- `sliced`: calculo real gerado por Orca Slicer a partir do STL registrado;
+- o resultado do Orca nao altera automaticamente o preco cobrado do pedido;
+- erros de Orca ficam em `metadata.pricing.error` para diagnostico operacional;
+- resultados anteriores podem ser preservados em `metadata.pricing.previousResults` para calibracao.
+
 ## `Payment`
 
 ```json
