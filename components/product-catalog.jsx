@@ -12,7 +12,7 @@ const moodTerms = [
     text: "Material resistente para área interna e externa"
   },
   {
-    text: "Cores personalizadas"
+    text: "Cor preta no MVP"
   },
   {
     text: "Sem pedido mínimo, produção sob demanda"
@@ -30,10 +30,10 @@ export function ProductCatalog({ categories }) {
     <section className="shop-shell">
       <div className="shop-hero">
         <div className="shop-hero__copy">
-          <h1>Sapatas plásticas customizáveis para sua necessidade</h1>
+          <h1>Sapatas plasticas customizaveis para sua necessidade</h1>
           <p className="lead">
-            Configure o produto de acordo com seu projeto, com medidas, fixações e cores
-            personalizadas.
+            Configure o produto de acordo com seu projeto. No MVP, todas as familias usam cor
+            preta, sem acabamento adicional e sem quantidade minima.
           </p>
         </div>
         <img

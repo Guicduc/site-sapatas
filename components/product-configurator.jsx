@@ -25,8 +25,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [values, setValues] = useState(() => getInitialValues(format));
   const [activeKey, setActiveKey] = useState(format.parameters[0]?.key || "");
   const [color, setColor] = useState(category.colors[0]);
-  const [finish, setFinish] = useState(category.finishes[0]);
-  const [quantity, setQuantity] = useState(4);
+  const [finish, setFinish] = useState(category.finishes[0] || "nao se aplica");
+  const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [previewMode, setPreviewMode] = useState("3d");
   const fieldsRef = useRef({});
@@ -37,6 +37,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     const nextFormat = getFormat(category, formatSlug) || category.formats[0];
     setValues(getInitialValues(nextFormat));
     setActiveKey(nextFormat.parameters[0]?.key || "");
+    setColor(category.colors[0]);
+    setFinish(category.finishes[0] || "nao se aplica");
     setAdded(false);
     setPreviewMode(canRenderParametricModel(nextFormat) ? "3d" : "drawing");
   }, [category, formatSlug]);
@@ -169,16 +171,18 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                 ))}
               </select>
             </label>
-            <label className="field">
-              <span>Acabamento</span>
-              <select value={finish} onChange={(event) => setFinish(event.target.value)}>
-                {category.finishes.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {category.finishes.length > 0 && (
+              <label className="field">
+                <span>Acabamento</span>
+                <select value={finish} onChange={(event) => setFinish(event.target.value)}>
+                  {category.finishes.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="field">
               <span>Quantidade</span>
               <input
@@ -379,9 +383,15 @@ function ConfigurationSummary({
           <span>{formatCurrency(totalPrice)}</span>
         </article>
         <article>
-          <strong>TPU estimado</strong>
+          <strong>{priceBreakdown.pricingMode === "sliced" ? "TPU Orca" : "TPU estimado"}</strong>
           <span>{priceBreakdown.materialGrams} g/un</span>
         </article>
+        {priceBreakdown.pricingMode === "sliced" && (
+          <article>
+            <strong>Tempo Orca</strong>
+            <span>{priceBreakdown.printMinutes} min/un</span>
+          </article>
+        )}
         <article>
           <strong>Prazo</strong>
           <span>{leadTime} dias úteis</span>

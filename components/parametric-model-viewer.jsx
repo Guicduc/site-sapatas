@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 const colorMap = {
+  Preta: "#050505",
   Grafite: "#2d3436",
   Areia: "#c8b89c",
   Terracota: "#b76147",
@@ -18,7 +19,7 @@ export function canRenderParametricModel(format) {
 export function ParametricModelViewer({ format, values, color }) {
   const hostRef = useRef(null);
   const sceneRef = useRef(null);
-  const modelColor = colorMap[color] || colorMap.Grafite;
+  const modelColor = colorMap[color] || colorMap.Preta;
   const dimensions = useMemo(() => getTubeRoundDimensions(values), [values]);
 
   useEffect(() => {
