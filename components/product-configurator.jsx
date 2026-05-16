@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ParametricDrawing } from "@/components/parametric-drawing";
 import { useCart } from "@/components/cart-provider";
+import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
 import {
   buildConfigurationSku,
@@ -113,31 +114,26 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
             selectedSlug={format.slug}
             onChange={handleFormatChange}
           />
-          <ParametricPreview
-            format={format}
-            values={values}
-            activeKey={activeKey}
-            onSelectParameter={handleSelectParameter}
-          />
-          <article className="integration-note">
-            <strong>Modelo paramétrico conectado ao CAD</strong>
-            <p>
-              A vista de cotas esta preparada para receber o SVG final de cada versao. O pedido salva o snapshot parametrico usado para gerar o STL no Rhino/Grasshopper.
-            </p>
-          </article>
+          <div className="configurator-workbench">
+            <ConfiguratorFields
+              format={format}
+              values={values}
+              issues={issues}
+              activeKey={activeKey}
+              fieldsRef={fieldsRef}
+              onChange={handleValueChange}
+              onFocus={setActiveKey}
+            />
+            <ParametricPreview
+              format={format}
+              values={values}
+              activeKey={activeKey}
+              onSelectParameter={handleSelectParameter}
+            />
+          </div>
         </div>
 
         <aside className="configurator-side">
-          <ConfiguratorFields
-            format={format}
-            values={values}
-            issues={issues}
-            activeKey={activeKey}
-            fieldsRef={fieldsRef}
-            onChange={handleValueChange}
-            onFocus={setActiveKey}
-          />
-
           <ConfigurationSummary
             format={format}
             sku={sku}
@@ -152,16 +148,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
           />
 
           <div className="option-panel">
-            <label className="field">
-              <span>Cor</span>
-              <select value={color} onChange={(event) => setColor(event.target.value)}>
-                {category.colors.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <ColorSelector colors={category.colors} value={color} onChange={setColor} />
             {category.finishes.length > 0 && (
               <label className="field">
                 <span>Acabamento</span>
@@ -190,6 +177,31 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   );
 }
 
+function ColorSelector({ colors, value, onChange }) {
+  return (
+    <div className="field color-field">
+      <span>Cor</span>
+      <div className="color-swatch-list" role="group" aria-label="Cor">
+        {colors.map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={`color-swatch${item === value ? " is-selected" : ""}`}
+            style={{ "--swatch": colorMap[item] || "#808784" }}
+            aria-label={item}
+            aria-pressed={item === value}
+            title={item}
+            onClick={() => onChange(item)}
+          >
+            <span className="visually-hidden">{item}</span>
+          </button>
+        ))}
+      </div>
+      <span className="color-field__value">{value}</span>
+    </div>
+  );
+}
+
 function ParametricPreview({
   format,
   values,
@@ -198,14 +210,6 @@ function ParametricPreview({
 }) {
   return (
     <div className="preview-panel">
-      <div className="preview-toolbar">
-        <div>
-          <p className="eyebrow">Prévia paramétrica</p>
-          <h2>{format.name}</h2>
-        </div>
-        <span>SVG preparado para desenho de referencia</span>
-      </div>
-
       <ParametricDrawing
         format={format}
         values={values}
@@ -246,14 +250,19 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       </div>
       {format.parameters.map((parameter) => (
         <label className={`field parameter-field${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
-          <span>
-            <span className="parameter-label">{parameter.label}</span>
-            {parameter.type === "number" && (
-              <small>
-                Min {parameter.min} / max {parameter.max} {parameter.unit}
-              </small>
+          <div className="parameter-field__copy">
+            <span>
+              <span className="parameter-label">{parameter.label}</span>
+              {parameter.type === "number" && (
+                <small>
+                  Min {parameter.min} / max {parameter.max} {parameter.unit}
+                </small>
+              )}
+            </span>
+            {parameter.type === "boolean" && format.notes[0] && (
+              <p>{format.notes[0]}</p>
             )}
-          </span>
+          </div>
           {parameter.type === "boolean" ? (
             <input
               type="checkbox"
@@ -305,11 +314,6 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
           )}
         </label>
       ))}
-      <div className="note-list">
-        {format.notes.map((note) => (
-          <span key={note}>{note}</span>
-        ))}
-      </div>
       <div className={`validation-note${issues.length > 0 ? " has-issues" : ""}`}>
         {issues.length > 0
           ? issues.map((issue) => <span key={issue}>{issue}</span>)
@@ -358,10 +362,6 @@ function ConfigurationSummary({
         <article>
           <strong>Total</strong>
           <span>{formatCurrency(totalPrice)}</span>
-        </article>
-        <article>
-          <strong>{priceBreakdown.pricingMode === "sliced" ? "TPU Orca" : "TPU estimado"}</strong>
-          <span>{priceBreakdown.materialGrams} g/un</span>
         </article>
         {priceBreakdown.pricingMode === "sliced" && (
           <article>

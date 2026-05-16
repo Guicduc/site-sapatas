@@ -7,13 +7,6 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
 
   return (
     <div className="drawing-panel">
-      <div className="drawing-toolbar">
-        <div>
-          <p className="eyebrow">Vista paramétrica</p>
-          <h2>{format.name}</h2>
-        </div>
-        <span>Cotas editáveis para matriz Grasshopper/3D</span>
-      </div>
       <svg viewBox={viewBox} role="img" aria-label={`Vista cotada de ${format.name}`}>
         <defs>
           <pattern id="drawing-grid" width="32" height="32" patternUnits="userSpaceOnUse">
