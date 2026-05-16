@@ -36,11 +36,13 @@ export function ProductCatalog({ categories }) {
             preta, sem acabamento adicional e sem quantidade minima.
           </p>
         </div>
-        <img
-          className="shop-hero__image"
-          src="/brand/traco-base-hero.png"
-          alt="Sapatas e ponteiras Traço Base aplicadas em pés tubulares de mobiliário"
-        />
+        <div className="shop-hero__media">
+          <img
+            className="shop-hero__image"
+            src="/brand/traco-base-hero.png"
+            alt="Sapatas e ponteiras Traço Base aplicadas em pés tubulares de mobiliário"
+          />
+        </div>
       </div>
 
       <div className="brand-mood" aria-label="Pilares da identidade Traço Base">
@@ -58,26 +60,28 @@ export function ProductCatalog({ categories }) {
             {category.image && (
               <img className="category-card__image" src={category.image.src} alt={category.image.alt} />
             )}
-            <p className="eyebrow">{category.eyebrow}</p>
-            <h2>{category.name}</h2>
-            <p>{category.description}</p>
-            <div className="meta-list">
-              <span>{category.primaryFixation}</span>
-              {category.formats.length > 1 && (
-                <span>{category.formats.map((format) => format.name).join(" / ")}</span>
-              )}
-            </div>
-            <div className="swatch-row" aria-label="Cores disponíveis">
-              {category.colors.map((color) => (
-                <span
-                  key={color}
-                  className="swatch"
-                  style={{ "--swatch": colorMap[color] || "#808784" }}
-                  title={color}
-                >
-                  <span className="visually-hidden">{color}</span>
-                </span>
-              ))}
+            <div className="category-card__body">
+              <p className="eyebrow">{category.eyebrow}</p>
+              <h2>{category.name}</h2>
+              <p>{category.description}</p>
+              <div className="meta-list">
+                <span>{category.primaryFixation}</span>
+                {category.formats.length > 1 && (
+                  <span>{category.formats.map((format) => format.name).join(" / ")}</span>
+                )}
+              </div>
+              <div className="swatch-row" aria-label="Cores disponíveis">
+                {category.colors.map((color) => (
+                  <span
+                    key={color}
+                    className="swatch"
+                    style={{ "--swatch": colorMap[color] || "#808784" }}
+                    title={color}
+                  >
+                    <span className="visually-hidden">{color}</span>
+                  </span>
+                ))}
+              </div>
             </div>
             <Link className="button button-primary" href={`/configurar/${category.slug}`}>
               Configurar

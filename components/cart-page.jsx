@@ -24,8 +24,11 @@ export function CartPage() {
 
       {items.length === 0 ? (
         <article className="empty-cart">
-          <h2>O carrinho esta vazio.</h2>
-          <p>Configure uma ponteira ou sapata para gerar o resumo tecnico do pedido.</p>
+          <div>
+            <p className="eyebrow">Carrinho vazio</p>
+            <h2>O carrinho esta vazio.</h2>
+            <p>Configure uma ponteira ou sapata para gerar o resumo tecnico do pedido.</p>
+          </div>
           <Link className="button button-primary" href="/">
             Abrir catalogo
           </Link>
