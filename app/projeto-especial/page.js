@@ -15,7 +15,7 @@ export const metadata = {
 export default function ProjetoEspecialPage() {
   return (
     <>
-      <section className="page-panel narrow-panel">
+      <section className="page-panel narrow-panel special-request-hero">
         <p className="eyebrow">Linha premium</p>
         <h1>Precisa de algo mais específico? Nós desenvolvemos.</h1>
         <p className="lead">

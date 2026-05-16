@@ -1485,6 +1485,36 @@ dt {
   border-bottom: 0;
 }
 
+.special-request-hero {
+  gap: 10px;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, oklch(0.96 0.01 170 / 0.8), transparent 58%),
+    transparent;
+}
+
+.special-request-hero h1 {
+  max-width: 760px;
+  font-size: clamp(1.85rem, 2.7vw, 2.7rem);
+  line-height: 1.06;
+}
+
+.special-request-hero .lead {
+  max-width: 680px;
+  line-height: 1.5;
+}
+
+.brief-grid {
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--line);
+}
+
+.brief-grid > .surface-card {
+  border-bottom: 0;
+}
+
 .brief-preview-card {
   align-content: start;
   gap: 8px;
@@ -1567,7 +1597,7 @@ dt {
 
 .brief-grid > .brief-preview-card {
   align-content: start;
-  padding: 18px 24px;
+  padding: clamp(22px, 3vw, 36px);
   border-top: 0;
   border-bottom: 0;
 }
