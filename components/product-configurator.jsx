@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ParametricDrawing } from "@/components/parametric-drawing";
-import { canRenderParametricModel, ParametricModelViewer } from "@/components/parametric-model-viewer";
 import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -28,10 +27,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [finish, setFinish] = useState(category.finishes[0] || "nao se aplica");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
-  const [previewMode, setPreviewMode] = useState("3d");
   const fieldsRef = useRef({});
   const { addItem } = useCart();
-  const has3dPreview = canRenderParametricModel(format);
 
   useEffect(() => {
     const nextFormat = getFormat(category, formatSlug) || category.formats[0];
@@ -40,7 +37,6 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setColor(category.colors[0]);
     setFinish(category.finishes[0] || "nao se aplica");
     setAdded(false);
-    setPreviewMode(canRenderParametricModel(nextFormat) ? "3d" : "drawing");
   }, [category, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
@@ -120,18 +116,13 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
           <ParametricPreview
             format={format}
             values={values}
-            color={color}
             activeKey={activeKey}
-            mode={previewMode}
-            has3dPreview={has3dPreview}
-            onModeChange={setPreviewMode}
             onSelectParameter={handleSelectParameter}
           />
           <article className="integration-note">
             <strong>Modelo paramétrico conectado ao CAD</strong>
             <p>
-              A ponteira redonda já mostra uma prévia 3D técnica no navegador. O pedido
-              salva o mesmo snapshot paramétrico usado para gerar o STL no Rhino/Grasshopper.
+              A vista de cotas esta preparada para receber o SVG final de cada versao. O pedido salva o snapshot parametrico usado para gerar o STL no Rhino/Grasshopper.
             </p>
           </article>
         </div>
@@ -202,15 +193,9 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 function ParametricPreview({
   format,
   values,
-  color,
   activeKey,
-  mode,
-  has3dPreview,
-  onModeChange,
   onSelectParameter
 }) {
-  const activeMode = has3dPreview ? mode : "drawing";
-
   return (
     <div className="preview-panel">
       <div className="preview-toolbar">
@@ -218,37 +203,15 @@ function ParametricPreview({
           <p className="eyebrow">Prévia paramétrica</p>
           <h2>{format.name}</h2>
         </div>
-        <div className="preview-tabs" role="tablist" aria-label="Modo de visualização">
-          <button
-            type="button"
-            className={activeMode === "3d" ? "is-selected" : ""}
-            aria-pressed={activeMode === "3d"}
-            disabled={!has3dPreview}
-            onClick={() => onModeChange("3d")}
-          >
-            3D
-          </button>
-          <button
-            type="button"
-            className={activeMode === "drawing" ? "is-selected" : ""}
-            aria-pressed={activeMode === "drawing"}
-            onClick={() => onModeChange("drawing")}
-          >
-            Cotas
-          </button>
-        </div>
+        <span>SVG preparado para desenho de referencia</span>
       </div>
 
-      {activeMode === "3d" ? (
-        <ParametricModelViewer format={format} values={values} color={color} />
-      ) : (
-        <ParametricDrawing
-          format={format}
-          values={values}
-          activeKey={activeKey}
-          onSelectParameter={onSelectParameter}
-        />
-      )}
+      <ParametricDrawing
+        format={format}
+        values={values}
+        activeKey={activeKey}
+        onSelectParameter={onSelectParameter}
+      />
     </div>
   );
 }
@@ -285,10 +248,21 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
         <label className={`field parameter-field${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
           <span>
             <span className="parameter-label">{parameter.label}</span>
-            <small>
-              {parameter.min}-{parameter.max} {parameter.unit}
-            </small>
+            {parameter.type === "number" && (
+              <small>
+                Min {parameter.min} / max {parameter.max} {parameter.unit}
+              </small>
+            )}
           </span>
+          {parameter.type === "boolean" ? (
+            <input
+              type="checkbox"
+              checked={Boolean(values[parameter.key])}
+              onChange={(event) => onChange(parameter.key, event.target.checked)}
+              onFocus={() => onFocus(parameter.key)}
+              aria-label={parameter.label}
+            />
+          ) : (
           <div
             className="parameter-slider"
             style={{
@@ -306,6 +280,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               max={parameter.max}
               step={parameter.step}
               value={values[parameter.key] ?? parameter.min}
+              disabled={parameter.dependsOn && !values[parameter.dependsOn]}
               onChange={(event) => onChange(parameter.key, event.target.value)}
               onFocus={() => onFocus(parameter.key)}
             />
@@ -319,6 +294,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               max={parameter.max}
               step={parameter.step}
               value={values[parameter.key] ?? ""}
+              disabled={parameter.dependsOn && !values[parameter.dependsOn]}
               readOnly={editingKey !== parameter.key}
               onChange={(event) => onChange(parameter.key, event.target.value)}
               onFocus={() => onFocus(parameter.key)}
@@ -326,6 +302,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               aria-label={parameter.label}
             />
           </div>
+          )}
         </label>
       ))}
       <div className="note-list">

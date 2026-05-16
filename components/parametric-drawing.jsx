@@ -44,10 +44,10 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
 }
 
 function TubeRound({ values, activeKey, onSelect }) {
-  const diameter = clamp(Number(values.diametroInterno || 22) * 4, 54, 150);
+  const diameter = clamp(Number(values.diametroBase || 22) * 4, 54, 150);
   const base = clamp(Number(values.diametroBase || 28) * 4, diameter + 20, 190);
-  const insertion = clamp(Number(values.profundidadeInsercao || 18) * 5, 54, 170);
-  const support = clamp(Number(values.alturaApoio || 8) * 6, 28, 96);
+  const insertion = clamp(Number(values.alturaPescoco || 18) * 5, 54, 170);
+  const support = clamp(Number(values.alturaBase || 8) * 6, 28, 96);
   const centerX = 320;
   const baseTopY = 260;
   const baseBottomY = baseTopY + support;
@@ -108,64 +108,90 @@ function TubeRound({ values, activeKey, onSelect }) {
       />
       <line className="technical-outline-heavy" x1={baseLeft + 16} x2={baseRight - 16} y1={baseBottomY} y2={baseBottomY} />
 
-      <Dimension x1={plugLeft} y1={plugTopY - 34} x2={plugRight} y2={plugTopY - 34} label={`${values.diametroInterno} mm`} paramKey="diametroInterno" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={plugLeft} y1={plugTopY - 34} x2={plugRight} y2={plugTopY - 34} label={`${values.diametroBase} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={baseLeft} y1={baseBottomY + 30} x2={baseRight} y2={baseBottomY + 30} label={`${values.diametroBase} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseRight + 52} y1={plugTopY} x2={baseRight + 52} y2={baseTopY} label={`${values.profundidadeInsercao} mm`} paramKey="profundidadeInsercao" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseRight + 98} y1={baseTopY} x2={baseRight + 98} y2={baseBottomY} label={`${values.alturaApoio} mm`} paramKey="alturaApoio" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseRight + 52} y1={plugTopY} x2={baseRight + 52} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseRight + 98} y1={baseTopY} x2={baseRight + 98} y2={baseBottomY} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
 
 function TubeRect({ values, activeKey, onSelect }) {
-  const width = clamp(Number(values.larguraInterna || 30) * 4, 92, 230);
-  const height = clamp(Number(values.alturaInterna || 20) * 4, 58, 150);
-  const insertion = clamp(Number(values.profundidadeInsercao || 20) * 5, 70, 170);
+  const width = clamp(Number(values.tamanhoBaseX || 30) * 4, 92, 230);
+  const height = clamp(Number(values.tamanhoBaseY || 20) * 4, 58, 150);
+  const insertion = clamp(Number(values.alturaPescoco || 20) * 5, 70, 170);
   const baseHeight = clamp(Number(values.alturaBase || 8) * 6, 30, 92);
-  const wall = clamp(Number(values.parede || 1.5) * 14, 12, 42);
+  const wall = clamp(Number(values.paredeTubo || 1.5) * 14, 12, 42);
+  const centerX = 320;
+  const baseTopY = 258;
+  const baseBottomY = baseTopY + baseHeight;
+  const plugTopY = baseTopY - insertion;
+  const plugLeft = centerX - width / 2;
+  const plugRight = centerX + width / 2;
+  const baseLeft = plugLeft - wall;
+  const baseRight = plugRight + wall;
+  const voidHeight = Math.max(36, height);
+  const voidTop = plugTopY + 22;
+  const voidLeft = centerX - width / 2 + wall;
+  const voidWidth = Math.max(18, width - wall * 2);
 
   return (
     <>
-      <rect className="part muted" x={320 - width / 2 - wall} y={258} width={width + wall * 2} height={baseHeight} rx="12" />
-      <rect className="part" x={320 - width / 2} y={258 - insertion} width={width} height={insertion} rx="8" />
-      <rect className="void" x={320 - width / 2 + wall} y={258 - insertion + 20} width={width - wall * 2} height={Math.max(36, height)} rx="6" />
-      <Dimension x1={320 - width / 2} y1={74} x2={320 + width / 2} y2={74} label={`${values.larguraInterna} mm`} paramKey="larguraInterna" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={176} y1={150} x2={176} y2={150 + height} label={`${values.alturaInterna} mm`} paramKey="alturaInterna" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={320 + width / 2} y1={106} x2={320 + width / 2 + wall} y2={106} label={`${values.parede} mm`} paramKey="parede" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={500} y1={258 - insertion} x2={500} y2={258} label={`${values.profundidadeInsercao} mm`} paramKey="profundidadeInsercao" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={548} y1={258} x2={548} y2={258 + baseHeight} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1={centerX} x2={centerX} y1={plugTopY - 28} y2={baseBottomY + 22} />
+      <line className="technical-datum" x1={baseLeft - 58} x2={baseRight + 58} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-projection" x1={plugLeft} x2={plugLeft} y1={plugTopY - 20} y2={plugTopY} />
+      <line className="technical-projection" x1={plugRight} x2={plugRight} y1={plugTopY - 20} y2={plugTopY} />
+      <line className="technical-projection" x1={voidLeft} x2={voidLeft} y1={voidTop} y2={voidTop + voidHeight} />
+      <line className="technical-projection" x1={voidLeft + voidWidth} x2={voidLeft + voidWidth} y1={voidTop} y2={voidTop + voidHeight} />
+      <rect className="technical-section base-section" x={baseLeft} y={baseTopY} width={width + wall * 2} height={baseHeight} rx="12" />
+      <rect className="technical-section plug-section" x={plugLeft} y={plugTopY} width={width} height={insertion} rx="8" />
+      <rect className="void" x={voidLeft} y={voidTop} width={voidWidth} height={voidHeight} rx="6" />
+      <path className="section-hatch-fill" d={`M ${plugLeft + 10} ${baseTopY - 8} H ${plugRight - 10} V ${plugTopY + 16} H ${plugLeft + 10} Z`} />
+      <line className="technical-outline-heavy" x1={baseLeft + 14} x2={baseRight - 14} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={plugLeft} y1={plugTopY - 34} x2={plugRight} y2={plugTopY - 34} label={`${values.tamanhoBaseX} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={voidLeft - 34} y1={voidTop} x2={voidLeft - 34} y2={voidTop + voidHeight} label={`${values.tamanhoBaseY} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={plugRight} y1={plugTopY + 24} x2={baseRight} y2={plugTopY + 24} label={`${values.paredeTubo} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseRight + 46} y1={plugTopY} x2={baseRight + 46} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseRight + 92} y1={baseTopY} x2={baseRight + 92} y2={baseBottomY} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
 
 function TubeOblong({ values, activeKey, onSelect }) {
-  const width = clamp(Number(values.larguraInterna || 36) * 4, 100, 240);
-  const height = clamp(Number(values.alturaInterna || 18) * 4, 60, 140);
-  const radius = clamp(Number(values.raioCanto || 9) * 4, 18, 70);
-  const insertion = clamp(Number(values.profundidadeInsercao || 18) * 5, 64, 160);
+  const width = clamp(Number(values.tamanhoBaseX || 36) * 4, 100, 240);
+  const height = clamp(Number(values.tamanhoBaseY || 18) * 4, 60, 140);
+  const radius = clamp(Math.min(Number(values.tamanhoBaseX || 36), Number(values.tamanhoBaseY || 18)) * 2, 18, 70);
+  const insertion = clamp(Number(values.alturaPescoco || 18) * 5, 64, 160);
 
   return (
     <>
       <rect className="part muted" x={320 - width / 2 - 16} y="260" width={width + 32} height="54" rx="24" />
       <rect className="part" x={320 - width / 2} y={260 - insertion} width={width} height={insertion} rx={radius} />
       <ellipse className="void" cx="320" cy={210} rx={width / 2 - 22} ry={height / 2} />
-      <Dimension x1={320 - width / 2} y1={78} x2={320 + width / 2} y2={78} label={`${values.larguraInterna} mm`} paramKey="larguraInterna" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="178" y1={210 - height / 2} x2="178" y2={210 + height / 2} label={`${values.alturaInterna} mm`} paramKey="alturaInterna" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="430" y1="150" x2={430 + radius} y2="150" label={`${values.raioCanto} mm`} paramKey="raioCanto" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="500" y1={260 - insertion} x2="500" y2="260" label={`${values.profundidadeInsercao} mm`} paramKey="profundidadeInsercao" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={320 - width / 2} y1={78} x2={320 + width / 2} y2={78} label={`${values.tamanhoBaseX} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1="178" y1={210 - height / 2} x2="178" y2={210 + height / 2} label={`${values.tamanhoBaseY} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1="430" y1="150" x2={430 + radius} y2="150" label={`${values.paredeTubo} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1="500" y1={260 - insertion} x2="500" y2="260" label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
 
 function BaseRound({ values, activeKey, onSelect }) {
   const diameter = clamp(Number(values.diametro || 28) * 4, 80, 240);
-  const height = clamp(Number(values.altura || 6) * 8, 28, 120);
+  const height = clamp(Number(values.alturaBase || 6) * 8, 28, 120);
+  const left = 320 - diameter / 2;
+  const right = 320 + diameter / 2;
+  const topY = 158;
+  const bottomY = topY + height;
 
   return (
     <>
-      <ellipse className="part" cx="320" cy="180" rx={diameter / 2} ry={diameter / 3.4} />
-      <rect className="part muted" x={320 - diameter / 2} y="180" width={diameter} height={height} rx="22" />
-      <Dimension x1={320 - diameter / 2} y1="94" x2={320 + diameter / 2} y2="94" label={`${values.diametro} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="500" y1="180" x2="500" y2={180 + height} label={`${values.altura} mm`} paramKey="altura" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1="320" x2="320" y1={topY - 62} y2={bottomY + 24} />
+      <ellipse className="technical-section plug-section" cx="320" cy={topY} rx={diameter / 2} ry={diameter / 3.4} />
+      <path className="technical-section base-section" d={`M ${left} ${topY} C ${left} ${topY + 24}, ${left + 22} ${bottomY}, ${left + 44} ${bottomY} H ${right - 44} C ${right - 22} ${bottomY}, ${right} ${topY + 24}, ${right} ${topY} C ${right} ${topY + diameter / 3.4}, ${left} ${topY + diameter / 3.4}, ${left} ${topY} Z`} />
+      <ellipse className="technical-outline-heavy" cx="320" cy={topY} rx={diameter / 2} ry={diameter / 3.4} />
+      <Dimension x1={left} y1={topY - 64} x2={right} y2={topY - 64} label={`${values.diametro} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={right + 58} y1={topY} x2={right + 58} y2={bottomY} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
@@ -175,39 +201,54 @@ function BaseOblong({ values, activeKey, onSelect }) {
   const width = clamp(Number(values.largura || 20) * 4, 60, 170);
   const height = clamp(Number(values.altura || 7) * 7, 28, 110);
   const holes = Number(values.distanciaFuros || 0);
+  const left = 320 - length / 2;
+  const right = 320 + length / 2;
+  const top = 118;
+  const sideTop = top + width;
+  const bottom = sideTop + height;
+  const holeOffset = clamp(holes * 1.5, 24, length / 2 - 24);
 
   return (
     <>
-      <rect className="part" x={320 - length / 2} y="118" width={length} height={width} rx={width / 2} />
-      <rect className="part muted" x={320 - length / 2} y={118 + width} width={length} height={height} rx="18" />
+      <line className="technical-centerline" x1="320" x2="320" y1={top - 36} y2={bottom + 22} />
+      <rect className="technical-section plug-section" x={left} y={top} width={length} height={width} rx={width / 2} />
+      <rect className="technical-section base-section" x={left} y={sideTop} width={length} height={height} rx="18" />
       {holes > 0 && (
         <>
-          <circle className="void" cx={320 - clamp(holes * 1.5, 24, length / 2 - 24)} cy={118 + width / 2} r="13" />
-          <circle className="void" cx={320 + clamp(holes * 1.5, 24, length / 2 - 24)} cy={118 + width / 2} r="13" />
+          <circle className="void" cx={320 - holeOffset} cy={top + width / 2} r="13" />
+          <circle className="void" cx={320 + holeOffset} cy={top + width / 2} r="13" />
+          <line className="technical-datum" x1={320 - holeOffset} x2={320 + holeOffset} y1={top + width / 2} y2={top + width / 2} />
         </>
       )}
-      <Dimension x1={320 - length / 2} y1="76" x2={320 + length / 2} y2="76" label={`${values.comprimento} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="120" y1="118" x2="120" y2={118 + width} label={`${values.largura} mm`} paramKey="largura" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="520" y1={118 + width} x2="520" y2={118 + width + height} label={`${values.altura} mm`} paramKey="altura" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="230" y1="286" x2="410" y2="286" label={`${values.distanciaFuros} mm`} paramKey="distanciaFuros" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={left} y1={top - 42} x2={right} y2={top - 42} label={`${values.comprimento} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={left - 42} y1={top} x2={left - 42} y2={sideTop} label={`${values.largura} mm`} paramKey="largura" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={right + 48} y1={sideTop} x2={right + 48} y2={bottom} label={`${values.altura} mm`} paramKey="altura" activeKey={activeKey} onSelect={onSelect} />
+      {holes > 0 && <Dimension x1={320 - holeOffset} y1={bottom + 26} x2={320 + holeOffset} y2={bottom + 26} label={`${values.distanciaFuros} mm`} paramKey="distanciaFuros" activeKey={activeKey} onSelect={onSelect} />}
     </>
   );
 }
 
 function BaseRect({ values, activeKey, onSelect }) {
-  const length = clamp(Number(values.comprimento || 75) * 2.7, 130, 340);
-  const width = clamp(Number(values.largura || 25) * 3.5, 68, 180);
-  const height = clamp(Number(values.altura || 6) * 8, 28, 112);
-  const radius = clamp(Number(values.raioCanto || 4) * 5, 6, 46);
+  const length = clamp(Number(values.tamanhoBaseX || 75) * 2.7, 130, 340);
+  const width = clamp(Number(values.tamanhoBaseY || 25) * 3.5, 68, 180);
+  const height = clamp(Number(values.alturaBase || 6) * 8, 28, 112);
+  const radius = 10;
+  const left = 320 - length / 2;
+  const right = 320 + length / 2;
+  const top = 112;
+  const sideTop = top + width;
+  const bottom = sideTop + height;
 
   return (
     <>
-      <rect className="part" x={320 - length / 2} y="112" width={length} height={width} rx={radius} />
-      <rect className="part muted" x={320 - length / 2} y={112 + width} width={length} height={height} rx="12" />
-      <Dimension x1={320 - length / 2} y1="72" x2={320 + length / 2} y2="72" label={`${values.comprimento} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="118" y1="112" x2="118" y2={112 + width} label={`${values.largura} mm`} paramKey="largura" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="520" y1={112 + width} x2="520" y2={112 + width + height} label={`${values.altura} mm`} paramKey="altura" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="410" y1="112" x2={410 + radius} y2="112" label={`${values.raioCanto} mm`} paramKey="raioCanto" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1="320" x2="320" y1={top - 32} y2={bottom + 22} />
+      <rect className="technical-section plug-section" x={left} y={top} width={length} height={width} rx={radius} />
+      <rect className="technical-section base-section" x={left} y={sideTop} width={length} height={height} rx="12" />
+      <path className="section-hatch-fill" d={`M ${left + 14} ${sideTop + 8} H ${right - 14} V ${bottom - 8} H ${left + 14} Z`} />
+      <line className="technical-outline-heavy" x1={left + 12} x2={right - 12} y1={bottom} y2={bottom} />
+      <Dimension x1={left} y1={top - 40} x2={right} y2={top - 40} label={`${values.tamanhoBaseX} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={left - 42} y1={top} x2={left - 42} y2={sideTop} label={`${values.tamanhoBaseY} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={right + 48} y1={sideTop} x2={right + 48} y2={bottom} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
@@ -217,16 +258,25 @@ function BaseU({ values, activeKey, onSelect }) {
   const depth = clamp(Number(values.profundidadeCanal || 16) * 5, 60, 170);
   const length = clamp(Number(values.comprimento || 48) * 3, 120, 310);
   const height = clamp(Number(values.alturaAparente || 8) * 7, 34, 120);
+  const left = 320 - length / 2;
+  const right = 320 + length / 2;
+  const channelLeft = 320 - channel / 2;
+  const channelRight = 320 + channel / 2;
+  const top = 130;
+  const bottom = top + Math.max(height, depth + 28);
 
   return (
     <>
-      <path className="part" d={`M ${320 - length / 2} 130 h ${length} v ${height} h -${length} z`} />
-      <rect className="void" x={320 - channel / 2} y="130" width={channel} height={depth} rx="6" />
-      <rect className="cut-line-fill" x={320 - channel / 2 + 6} y="130" width={channel - 12} height={depth + 28} />
-      <Dimension x1={320 - channel / 2} y1="90" x2={320 + channel / 2} y2="90" label={`${values.espessuraChapa} mm`} paramKey="espessuraChapa" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="454" y1="130" x2="454" y2={130 + depth} label={`${values.profundidadeCanal} mm`} paramKey="profundidadeCanal" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={320 - length / 2} y1="304" x2={320 + length / 2} y2="304" label={`${values.comprimento} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="524" y1="130" x2="524" y2={130 + height} label={`${values.alturaAparente} mm`} paramKey="alturaAparente" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1="320" x2="320" y1={top - 48} y2={bottom + 22} />
+      <path className="technical-section base-section" d={`M ${left} ${top} H ${right} V ${bottom} H ${channelRight + 6} V ${top + depth} H ${channelLeft - 6} V ${bottom} H ${left} Z`} />
+      <rect className="void" x={channelLeft} y={top} width={channel} height={depth} rx="6" />
+      <rect className="cut-line-fill" x={channelLeft + 6} y={top} width={Math.max(8, channel - 12)} height={depth + 28} />
+      <line className="technical-datum" x1={left - 34} x2={right + 34} y1={top + height} y2={top + height} />
+      <line className="technical-outline-heavy" x1={left} x2={right} y1={bottom} y2={bottom} />
+      <Dimension x1={channelLeft} y1={top - 40} x2={channelRight} y2={top - 40} label={`${values.espessuraChapa} mm`} paramKey="espessuraChapa" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={right + 42} y1={top} x2={right + 42} y2={top + depth} label={`${values.profundidadeCanal} mm`} paramKey="profundidadeCanal" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={left} y1={bottom + 28} x2={right} y2={bottom + 28} label={`${values.comprimento} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={right + 88} y1={top} x2={right + 88} y2={top + height} label={`${values.alturaAparente} mm`} paramKey="alturaAparente" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
