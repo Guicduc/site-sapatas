@@ -266,8 +266,15 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
         <p className="eyebrow">Medidas</p>
         <h2>{format.name}</h2>
       </div>
-      {format.parameters.map((parameter) => (
-        <label className={`field parameter-field${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
+      {format.parameters.map((parameter) => {
+        if (parameter.dependsOn && !values[parameter.dependsOn]) {
+          return null;
+        }
+
+        const isBoolean = parameter.type === "boolean";
+
+        return (
+        <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
           <div className="parameter-field__copy">
             <span>
               <span className="parameter-label">{parameter.label}</span>
@@ -277,18 +284,18 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
                 </small>
               )}
             </span>
-            {parameter.type === "boolean" && format.notes[0] && (
-              <p>{format.notes[0]}</p>
-            )}
           </div>
-          {parameter.type === "boolean" ? (
-            <input
-              type="checkbox"
-              checked={Boolean(values[parameter.key])}
-              onChange={(event) => onChange(parameter.key, event.target.checked)}
-              onFocus={() => onFocus(parameter.key)}
-              aria-label={parameter.label}
-            />
+          {isBoolean ? (
+            <span className="parameter-toggle">
+              <input
+                type="checkbox"
+                checked={Boolean(values[parameter.key])}
+                onChange={(event) => onChange(parameter.key, event.target.checked)}
+                onFocus={() => onFocus(parameter.key)}
+                aria-label={parameter.label}
+              />
+              <span aria-hidden="true" />
+            </span>
           ) : (
           <div
             className="parameter-slider"
@@ -331,7 +338,8 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
           </div>
           )}
         </label>
-      ))}
+      );
+      })}
       <div className={`validation-note${issues.length > 0 ? " has-issues" : ""}`}>
         {issues.length > 0
           ? issues.map((issue) => <span key={issue}>{issue}</span>)
