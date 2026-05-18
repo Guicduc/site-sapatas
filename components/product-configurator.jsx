@@ -134,20 +134,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
         </div>
 
         <aside className="configurator-side">
-          <ConfigurationSummary
-            format={format}
-            sku={sku}
-            issues={issues}
-            unitPrice={unitPrice}
-            totalPrice={totalPrice}
-            priceBreakdown={priceBreakdown}
-            leadTime={leadTime}
-            validForCart={validForCart}
-            added={added}
-            onAddToCart={handleAddToCart}
-          />
-
           <div className="option-panel">
+            <p className="eyebrow">Escolhas</p>
             <ColorSelector colors={category.colors} value={color} onChange={setColor} />
             {category.finishes.length > 0 && (
               <label className="field">
@@ -161,16 +149,46 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                 </select>
               </label>
             )}
-            <label className="field">
+            <div className="field quantity-field">
               <span>Quantidade</span>
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
-              />
-            </label>
+              <div className="quantity-stepper" role="group" aria-label="Quantidade">
+                <button
+                  type="button"
+                  aria-label="Diminuir quantidade"
+                  onClick={() => setQuantity((current) => Math.max(1, Number(current) - 1))}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
+                  aria-label="Quantidade"
+                />
+                <button
+                  type="button"
+                  aria-label="Aumentar quantidade"
+                  onClick={() => setQuantity((current) => Number(current) + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
+
+          <ConfigurationSummary
+            format={format}
+            sku={sku}
+            issues={issues}
+            unitPrice={unitPrice}
+            totalPrice={totalPrice}
+            priceBreakdown={priceBreakdown}
+            leadTime={leadTime}
+            validForCart={validForCart}
+            added={added}
+            onAddToCart={handleAddToCart}
+          />
         </aside>
       </div>
     </section>
@@ -348,18 +366,17 @@ function ConfigurationSummary({
 }) {
   return (
     <div className="summary-panel">
-      <p className="eyebrow">Resumo</p>
-      <h2>{format.status === "review" ? "Sob avaliação" : format.name}</h2>
+      <div className="summary-heading">
+        <p className="eyebrow">Resumo</p>
+        <h2>{format.status === "review" ? "Sob avaliação" : format.name}</h2>
+        <span>{sku}</span>
+      </div>
       <div className="summary-stats">
         <article>
-          <strong>SKU</strong>
-          <span>{sku}</span>
-        </article>
-        <article>
-          <strong>Unidade</strong>
+          <strong>Preço unitário</strong>
           <span>{formatCurrency(unitPrice)}</span>
         </article>
-        <article>
+        <article className="summary-total">
           <strong>Total</strong>
           <span>{formatCurrency(totalPrice)}</span>
         </article>
