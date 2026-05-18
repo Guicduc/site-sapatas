@@ -192,20 +192,84 @@ function TubeRect({ values, activeKey, onSelect }) {
 }
 
 function TubeOblong({ values, activeKey, onSelect }) {
-  const width = clamp(Number(values.tamanhoBaseX || 36) * 4, 100, 240);
-  const height = clamp(Number(values.tamanhoBaseY || 18) * 4, 60, 140);
-  const radius = clamp(Math.min(Number(values.tamanhoBaseX || 36), Number(values.tamanhoBaseY || 18)) * 2, 18, 70);
-  const insertion = clamp(Number(values.alturaPescoco || 18) * 5, 64, 160);
+  const sizeXValue = Number(values.tamanhoBaseX || 36);
+  const sizeYValue = Number(values.tamanhoBaseY || 18);
+  const baseHeightValue = Number(values.alturaBase || 6);
+  const neckHeightValue = Number(values.alturaPescoco || 18);
+  const wallValue = Number(values.paredeTubo || 1.5);
+  const sizeX = clamp(sizeXValue * 2.7, 130, 260);
+  const sizeY = clamp(sizeYValue * 3, 58, 118);
+  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const neckHeight = clamp(neckHeightValue * 2.05, 34, 84);
+  const wall = clamp(wallValue * 11, 9, Math.max(11, sizeY * 0.24));
+  const ribWidth = Math.min(7, Math.max(4, wall * 0.5));
+  const innerX = Math.max(42, sizeX - wall * 2);
+  const innerY = Math.max(24, sizeY - wall * 2);
+  const coreInset = 12;
+  const topCx = 330;
+  const topBottom = clamp(188 - neckHeight * 0.35, 150, 178);
+  const topTop = topBottom - sizeY;
+  const topCy = topTop + sizeY / 2;
+  const topLeft = topCx - sizeX / 2;
+  const topRight = topCx + sizeX / 2;
+  const frontCx = 330;
+  const sideCx = 520;
+  const baseBottomY = 304;
+  const baseTopY = baseBottomY - baseHeight;
+  const neckTopY = baseTopY - neckHeight;
+  const frontLeft = frontCx - sizeX / 2;
+  const frontRight = frontCx + sizeX / 2;
+  const sideLeft = sideCx - sizeY / 2;
+  const sideRight = sideCx + sizeY / 2;
+  const frontNeckLeft = frontCx - innerX / 2;
+  const frontNeckRight = frontCx + innerX / 2;
+  const sideNeckLeft = sideCx - innerY / 2;
+  const sideNeckRight = sideCx + innerY / 2;
+  const bottomRadius = Math.min(baseHeight, 12);
+  const ribCount = neckHeightValue <= 20 ? 3 : 4;
+  const ribGap = neckHeight / (ribCount + 1);
+  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, bottomRadius);
+  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
 
   return (
     <>
-      <rect className="part muted" x={320 - width / 2 - 16} y="260" width={width + 32} height="54" rx="24" />
-      <rect className="part" x={320 - width / 2} y={260 - insertion} width={width} height={insertion} rx={radius} />
-      <ellipse className="void" cx="320" cy={210} rx={width / 2 - 22} ry={height / 2} />
-      <Dimension x1={320 - width / 2} y1={78} x2={320 + width / 2} y2={78} label={`${values.tamanhoBaseX} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="178" y1={210 - height / 2} x2="178" y2={210 + height / 2} label={`${values.tamanhoBaseY} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="430" y1="150" x2={430 + radius} y2="150" label={`${values.paredeTubo} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1="500" y1={260 - insertion} x2="500" y2="260" label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+      <ViewTitle x="124" y={topBottom - 11} lines={["Vista", "superior"]} anchor="end" />
+      <ViewTitle x="124" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
+      <ViewTitle x={sideLeft - 18} y={baseBottomY - 24} lines={["Vista", "lateral"]} anchor="end" />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 18} y2={topBottom + 18} />
+      <line className="technical-centerline" x1={topLeft - 18} x2={topRight + 18} y1={topCy} y2={topCy} />
+      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx={sizeY / 2} />
+      <rect className="part muted" x={topCx - innerX / 2} y={topCy - innerY / 2} width={innerX} height={innerY} rx={innerY / 2} />
+      <rect className="void" x={topCx - Math.max(16, innerX - coreInset * 2) / 2} y={topCy - Math.max(12, innerY - coreInset * 2) / 2} width={Math.max(16, innerX - coreInset * 2)} height={Math.max(12, innerY - coreInset * 2)} rx={Math.max(6, (innerY - coreInset * 2) / 2)} />
+      <Dimension x1={topLeft} y1={topTop - 28} x2={topRight} y2={topTop - 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={topLeft - 42} y1={topTop} x2={topLeft - 42} y2={topBottom} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={topCx - innerX / 2} y1={topBottom + 18} x2={topLeft} y2={topBottom + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
+      <line className="technical-datum" x1="132" x2="574" y1={baseBottomY} y2={baseBottomY} />
+      <rect className="part" x={frontNeckLeft} y={neckTopY} width={innerX} height={neckHeight} rx="0" />
+      <path className="section-hatch-fill" d={`M ${frontNeckLeft + 5} ${neckTopY + 5} H ${frontNeckRight - 5} V ${baseTopY - 5} H ${frontNeckLeft + 5} Z`} />
+      {Array.from({ length: ribCount }, (_, index) => {
+        const ribY = neckTopY + ribGap * (index + 1);
+        return <rect className="part muted" key={`front-ob-${ribY}`} x={frontNeckLeft - ribWidth} y={ribY - 3} width={innerX + ribWidth * 2} height="6" rx="3" />;
+      })}
+      <path className="part muted" d={frontPath} />
+      <line className="technical-outline-heavy" x1={frontLeft + bottomRadius} x2={frontRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={frontLeft} y1={baseBottomY + 28} x2={frontRight} y2={baseBottomY + 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={frontLeft - 48} y1={neckTopY} x2={frontLeft - 48} y2={baseTopY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={frontLeft - 48} y1={baseTopY} x2={frontLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={sideCx} x2={sideCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
+      <rect className="part" x={sideNeckLeft} y={neckTopY} width={innerY} height={neckHeight} rx="0" />
+      <path className="section-hatch-fill" d={`M ${sideNeckLeft + 5} ${neckTopY + 5} H ${sideNeckRight - 5} V ${baseTopY - 5} H ${sideNeckLeft + 5} Z`} />
+      {Array.from({ length: ribCount }, (_, index) => {
+        const ribY = neckTopY + ribGap * (index + 1);
+        return <rect className="part muted" key={`side-ob-${ribY}`} x={sideNeckLeft - ribWidth} y={ribY - 3} width={innerY + ribWidth * 2} height="6" rx="3" />;
+      })}
+      <path className="part muted" d={sidePath} />
+      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={sideLeft} y1={baseBottomY + 28} x2={sideRight} y2={baseBottomY + 28} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
