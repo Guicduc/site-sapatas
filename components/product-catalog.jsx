@@ -12,9 +12,6 @@ const moodTerms = [
     text: "Material resistente para área interna e externa"
   },
   {
-    text: "Cor preta no MVP"
-  },
-  {
     text: "Sem pedido mínimo, produção sob demanda"
   },
   {

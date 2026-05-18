@@ -134,20 +134,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
         </div>
 
         <aside className="configurator-side">
-          <ConfigurationSummary
-            format={format}
-            sku={sku}
-            issues={issues}
-            unitPrice={unitPrice}
-            totalPrice={totalPrice}
-            priceBreakdown={priceBreakdown}
-            leadTime={leadTime}
-            validForCart={validForCart}
-            added={added}
-            onAddToCart={handleAddToCart}
-          />
-
           <div className="option-panel">
+            <p className="eyebrow">Escolhas</p>
             <ColorSelector colors={category.colors} value={color} onChange={setColor} />
             {category.finishes.length > 0 && (
               <label className="field">
@@ -161,16 +149,46 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                 </select>
               </label>
             )}
-            <label className="field">
+            <div className="field quantity-field">
               <span>Quantidade</span>
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
-              />
-            </label>
+              <div className="quantity-stepper" role="group" aria-label="Quantidade">
+                <button
+                  type="button"
+                  aria-label="Diminuir quantidade"
+                  onClick={() => setQuantity((current) => Math.max(1, Number(current) - 1))}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
+                  aria-label="Quantidade"
+                />
+                <button
+                  type="button"
+                  aria-label="Aumentar quantidade"
+                  onClick={() => setQuantity((current) => Number(current) + 1)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
           </div>
+
+          <ConfigurationSummary
+            format={format}
+            sku={sku}
+            issues={issues}
+            unitPrice={unitPrice}
+            totalPrice={totalPrice}
+            priceBreakdown={priceBreakdown}
+            leadTime={leadTime}
+            validForCart={validForCart}
+            added={added}
+            onAddToCart={handleAddToCart}
+          />
         </aside>
       </div>
     </section>
@@ -248,8 +266,15 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
         <p className="eyebrow">Medidas</p>
         <h2>{format.name}</h2>
       </div>
-      {format.parameters.map((parameter) => (
-        <label className={`field parameter-field${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
+      {format.parameters.map((parameter) => {
+        if (parameter.dependsOn && !values[parameter.dependsOn]) {
+          return null;
+        }
+
+        const isBoolean = parameter.type === "boolean";
+
+        return (
+        <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
           <div className="parameter-field__copy">
             <span>
               <span className="parameter-label">{parameter.label}</span>
@@ -259,18 +284,18 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
                 </small>
               )}
             </span>
-            {parameter.type === "boolean" && format.notes[0] && (
-              <p>{format.notes[0]}</p>
-            )}
           </div>
-          {parameter.type === "boolean" ? (
-            <input
-              type="checkbox"
-              checked={Boolean(values[parameter.key])}
-              onChange={(event) => onChange(parameter.key, event.target.checked)}
-              onFocus={() => onFocus(parameter.key)}
-              aria-label={parameter.label}
-            />
+          {isBoolean ? (
+            <span className="parameter-toggle">
+              <input
+                type="checkbox"
+                checked={Boolean(values[parameter.key])}
+                onChange={(event) => onChange(parameter.key, event.target.checked)}
+                onFocus={() => onFocus(parameter.key)}
+                aria-label={parameter.label}
+              />
+              <span aria-hidden="true" />
+            </span>
           ) : (
           <div
             className="parameter-slider"
@@ -313,7 +338,8 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
           </div>
           )}
         </label>
-      ))}
+      );
+      })}
       <div className={`validation-note${issues.length > 0 ? " has-issues" : ""}`}>
         {issues.length > 0
           ? issues.map((issue) => <span key={issue}>{issue}</span>)
@@ -348,18 +374,17 @@ function ConfigurationSummary({
 }) {
   return (
     <div className="summary-panel">
-      <p className="eyebrow">Resumo</p>
-      <h2>{format.status === "review" ? "Sob avaliação" : format.name}</h2>
+      <div className="summary-heading">
+        <p className="eyebrow">Resumo</p>
+        <h2>{format.status === "review" ? "Sob avaliação" : format.name}</h2>
+        <span>{sku}</span>
+      </div>
       <div className="summary-stats">
         <article>
-          <strong>SKU</strong>
-          <span>{sku}</span>
-        </article>
-        <article>
-          <strong>Unidade</strong>
+          <strong>Preço unitário</strong>
           <span>{formatCurrency(unitPrice)}</span>
         </article>
-        <article>
+        <article className="summary-total">
           <strong>Total</strong>
           <span>{formatCurrency(totalPrice)}</span>
         </article>
