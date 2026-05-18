@@ -679,6 +679,14 @@ section {
   background: #fbfcfa;
 }
 
+.drawing-view-title {
+  fill: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+
 .drawing-grid-fill {
   fill: url("#drawing-grid");
 }
@@ -766,6 +774,14 @@ section {
 .technical-outline-heavy {
   stroke: #0f1a1d;
   stroke-width: 3;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.scale-limit-mark {
+  fill: none;
+  stroke: var(--warning);
+  stroke-width: 2.4;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }

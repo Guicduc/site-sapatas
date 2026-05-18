@@ -1,6 +1,7 @@
 "use client";
 
 const viewBox = "0 0 640 380";
+const viewLabelX = 84;
 
 export function ParametricDrawing({ format, values, activeKey, onSelectParameter }) {
   const type = format.drawingType;
@@ -170,21 +171,73 @@ function TubeOblong({ values, activeKey, onSelect }) {
 }
 
 function BaseRound({ values, activeKey, onSelect }) {
-  const diameter = clamp(Number(values.diametro || 28) * 4, 80, 240);
-  const height = clamp(Number(values.alturaBase || 6) * 8, 28, 120);
-  const left = 320 - diameter / 2;
-  const right = 320 + diameter / 2;
-  const topY = 158;
-  const bottomY = topY + height;
+  const hasNeck = values.pescoco === true || values.pescoco === "true";
+  const baseDiameterValue = Number(values.diametroBase ?? values.diametro ?? 28);
+  const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 6);
+  const neckDiameterValue = Number(values.diametroPescoco ?? 8);
+  const neckHeightValue = Number(values.alturaPescoco ?? 12);
+  const diameter = clamp(baseDiameterValue * 2.5, 58, 130);
+  const height = clamp(baseHeightValue * 6, 16, 60);
+  const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, diameter - 18));
+  const neckHeight = clamp(neckHeightValue * 2.8, 24, 98);
+  const topCx = 320;
+  const topCy = 104;
+  const frontCx = topCx;
+  const baseBottomY = 304;
+  const baseTopY = baseBottomY - height;
+  const sideLeft = frontCx - diameter / 2;
+  const sideRight = frontCx + diameter / 2;
+  const neckLeft = frontCx - neckDiameter / 2;
+  const neckRight = frontCx + neckDiameter / 2;
+  const neckTopY = baseTopY - neckHeight;
+  const bottomRadius = Math.min(height, diameter / 2);
+  const diameterScaleLimited = baseDiameterValue * 2.5 !== diameter;
+  const basePath = `
+    M ${sideLeft} ${baseTopY}
+    H ${sideRight}
+    V ${baseBottomY - bottomRadius}
+    Q ${sideRight} ${baseBottomY} ${sideRight - bottomRadius} ${baseBottomY}
+    H ${sideLeft + bottomRadius}
+    Q ${sideLeft} ${baseBottomY} ${sideLeft} ${baseBottomY - bottomRadius}
+    Z`;
 
   return (
     <>
-      <line className="technical-centerline" x1="320" x2="320" y1={topY - 62} y2={bottomY + 24} />
-      <ellipse className="technical-section plug-section" cx="320" cy={topY} rx={diameter / 2} ry={diameter / 3.4} />
-      <path className="technical-section base-section" d={`M ${left} ${topY} C ${left} ${topY + 24}, ${left + 22} ${bottomY}, ${left + 44} ${bottomY} H ${right - 44} C ${right - 22} ${bottomY}, ${right} ${topY + 24}, ${right} ${topY} C ${right} ${topY + diameter / 3.4}, ${left} ${topY + diameter / 3.4}, ${left} ${topY} Z`} />
-      <ellipse className="technical-outline-heavy" cx="320" cy={topY} rx={diameter / 2} ry={diameter / 3.4} />
-      <Dimension x1={left} y1={topY - 64} x2={right} y2={topY - 64} label={`${values.diametro} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={right + 58} y1={topY} x2={right + 58} y2={bottomY} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <ViewTitle x={viewLabelX} y={topCy - 8} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={baseBottomY - height / 2 - 8} lines={["Vista", "frontal"]} />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 20} y2={topCy + diameter / 2 + 20} />
+      <line className="technical-centerline" x1={topCx - diameter / 2 - 20} x2={topCx + diameter / 2 + 20} y1={topCy} y2={topCy} />
+      <circle className="part" cx={topCx} cy={topCy} r={diameter / 2} />
+      {diameterScaleLimited && <ScaleLimitMarks x1={topCx - diameter / 2} x2={topCx + diameter / 2} y={topCy} />}
+      {hasNeck && (
+        <>
+          <circle className="void" cx={topCx} cy={topCy} r={neckDiameter / 2} />
+          <Dimension x1={topCx - neckDiameter / 2} y1={topCy + 16} x2={topCx + neckDiameter / 2} y2={topCy + 16} label={`${neckDiameterValue} mm`} paramKey="diametroPescoco" activeKey={activeKey} onSelect={onSelect} />
+        </>
+      )}
+      <Dimension x1={topCx - diameter / 2} y1={topCy - diameter / 2 - 28} x2={topCx + diameter / 2} y2={topCy - diameter / 2 - 28} label={`${baseDiameterValue} mm`} paramKey={values.diametroBase !== undefined ? "diametroBase" : "diametro"} activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={hasNeck ? neckTopY - 24 : baseTopY - 30} y2={baseBottomY + 24} />
+      {hasNeck && (
+        <>
+          <rect className="part" x={neckLeft} y={neckTopY} width={neckDiameter} height={neckHeight} rx="0" />
+          <path
+            className="section-hatch-fill"
+            d={`M ${neckLeft + 5} ${neckTopY + 5}
+                H ${neckRight - 5}
+                V ${baseTopY - 5}
+                H ${neckLeft + 5}
+                Z`}
+          />
+          <Dimension x1={sideLeft - 40} y1={neckTopY} x2={sideLeft - 40} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+        </>
+      )}
+
+      <path className="part muted" d={basePath} />
+      <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={sideLeft - 48} y1={baseTopY} x2={sideLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey={values.alturaBase !== undefined ? "alturaBase" : "altura"} activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
@@ -274,10 +327,62 @@ function BaseU({ values, activeKey, onSelect }) {
   );
 }
 
+function ScaleLimitMarks({ x1, x2, y, vertical = false }) {
+  const center = (Number(x1) + Number(x2)) / 2;
+
+  if (vertical) {
+    return (
+      <g className="scale-limit-mark" aria-hidden="true">
+        <path d={`M ${center - 12} ${y - 24} l 8 -8 M ${center + 4} ${y - 24} l 8 -8`} />
+        <path d={`M ${center - 12} ${y + 24} l 8 8 M ${center + 4} ${y + 24} l 8 8`} />
+      </g>
+    );
+  }
+
+  return (
+    <g className="scale-limit-mark" aria-hidden="true">
+      <path d={`M ${x1 - 14} ${y - 12} l -8 8 M ${x1 - 4} ${y - 12} l -8 8`} />
+      <path d={`M ${x2 + 14} ${y - 12} l 8 8 M ${x2 + 4} ${y - 12} l 8 8`} />
+    </g>
+  );
+}
+
+function ViewTitle({ x, y, lines }) {
+  return (
+    <text className="drawing-view-title" x={x} y={y}>
+      {lines.map((line, index) => (
+        <tspan key={line} x={x} dy={index === 0 ? 0 : 13}>
+          {line}
+        </tspan>
+      ))}
+    </text>
+  );
+}
+
 function Dimension({ x1, y1, x2, y2, label, paramKey, activeKey, onSelect }) {
   const active = activeKey === paramKey;
-  const labelX = (Number(x1) + Number(x2)) / 2;
-  const labelY = (Number(y1) + Number(y2)) / 2 - 8;
+  const startX = Number(x1);
+  const startY = Number(y1);
+  const endX = Number(x2);
+  const endY = Number(y2);
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const length = Math.hypot(dx, dy);
+  const ux = length > 0 ? dx / length : 0;
+  const uy = length > 0 ? dy / length : 0;
+  const inset = Math.min(7, Math.max(0, length / 6));
+  const lineX1 = startX + ux * inset;
+  const lineY1 = startY + uy * inset;
+  const lineX2 = endX - ux * inset;
+  const lineY2 = endY - uy * inset;
+  const vertical = Math.abs(dx) < Math.abs(dy);
+  const labelX = vertical
+    ? startX + (startX < 320 ? -16 : 16)
+    : (startX + endX) / 2;
+  const labelY = vertical
+    ? (startY + endY) / 2 + 4
+    : (startY + endY) / 2 - 8;
+  const textAnchor = vertical ? (startX < 320 ? "end" : "start") : "middle";
 
   return (
     <g
@@ -291,8 +396,8 @@ function Dimension({ x1, y1, x2, y2, label, paramKey, activeKey, onSelect }) {
         }
       }}
     >
-      <line x1={x1} y1={y1} x2={x2} y2={y2} markerStart="url(#arrow)" markerEnd="url(#arrow)" />
-      <text x={labelX} y={labelY}>{label}</text>
+      <line x1={lineX1} y1={lineY1} x2={lineX2} y2={lineY2} markerStart="url(#arrow)" markerEnd="url(#arrow)" />
+      <text x={labelX} y={labelY} style={{ textAnchor }}>{label}</text>
     </g>
   );
 }
