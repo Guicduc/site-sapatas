@@ -43,7 +43,7 @@ function TubeRound({ values, activeKey, onSelect }) {
   const neckHeightValue = Number(values.alturaPescoco || 18);
   const wallValue = Number(values.paredeTubo || 1.5);
   const diameter = clamp(baseDiameterValue * 2.8, 62, 150);
-  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const baseHeight = scaleBaseHeight(baseHeightValue);
   const neckHeight = clamp(neckHeightValue * 2.1, 34, 84);
   const wall = clamp(wallValue * 12, 10, Math.max(12, diameter * 0.22));
   const neckDiameter = Math.max(28, diameter - wall * 2);
@@ -113,11 +113,15 @@ function TubeRect({ values, activeKey, onSelect }) {
   const baseHeightValue = Number(values.alturaBase || 6);
   const neckHeightValue = Number(values.alturaPescoco || 20);
   const wallValue = Number(values.paredeTubo || 1.5);
-  const sizeX = clamp(sizeXValue * 2.2, 82, 168);
-  const sizeY = clamp(sizeYValue * 2.2, 82, 168);
-  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const { width: sizeX, height: sizeY, scale: sectionScale } = scalePlanDimensions(sizeXValue, sizeYValue, {
+    maxWidth: 168,
+    maxHeight: 128,
+    preferredScale: 3.15,
+    minLargest: 72
+  });
+  const baseHeight = scaleBaseHeight(baseHeightValue);
   const neckHeight = clamp(neckHeightValue * 2.05, 34, 84);
-  const wall = clamp(wallValue * 11, 9, Math.max(11, Math.min(sizeX, sizeY) * 0.2));
+  const wall = clamp(wallValue * sectionScale, 4, Math.max(4, Math.min(sizeX, sizeY) * 0.22));
   const ribWidth = Math.min(7, Math.max(4, wall * 0.5));
   const topCx = 302;
   const topBottom = clamp(188 - neckHeight * 0.35, 150, 178);
@@ -127,9 +131,9 @@ function TubeRect({ values, activeKey, onSelect }) {
   const topRight = topCx + sizeX / 2;
   const innerLeft = topLeft + wall;
   const innerTop = topTop + wall;
-  const innerWidth = Math.max(22, sizeX - wall * 2);
-  const innerHeight = Math.max(22, sizeY - wall * 2);
-  const coreInset = 12;
+  const innerWidth = Math.max(sizeX * 0.42, sizeX - wall * 2);
+  const innerHeight = Math.max(sizeY * 0.42, sizeY - wall * 2);
+  const coreInset = Math.min(12, innerWidth / 4, innerHeight / 4);
   const frontCx = 302;
   const sideCx = 510;
   const baseBottomY = 304;
@@ -159,7 +163,7 @@ function TubeRect({ values, activeKey, onSelect }) {
       <line className="technical-centerline" x1={topLeft - 18} x2={topRight + 18} y1={topCy} y2={topCy} />
       <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx="14" />
       <rect className="part muted" x={innerLeft} y={innerTop} width={innerWidth} height={innerHeight} rx="8" />
-      <rect className="void" x={innerLeft + coreInset} y={innerTop + coreInset} width={Math.max(12, innerWidth - coreInset * 2)} height={Math.max(12, innerHeight - coreInset * 2)} rx="5" />
+      <rect className="void" x={innerLeft + coreInset} y={innerTop + coreInset} width={Math.max(4, innerWidth - coreInset * 2)} height={Math.max(4, innerHeight - coreInset * 2)} rx="5" />
       <Dimension x1={topLeft} y1={topTop - 28} x2={topRight} y2={topTop - 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={topLeft - 42} y1={topTop} x2={topLeft - 42} y2={topBottom} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={innerLeft} y1={topBottom + 18} x2={topLeft} y2={topBottom + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
@@ -197,15 +201,19 @@ function TubeOblong({ values, activeKey, onSelect }) {
   const baseHeightValue = Number(values.alturaBase || 6);
   const neckHeightValue = Number(values.alturaPescoco || 18);
   const wallValue = Number(values.paredeTubo || 1.5);
-  const sizeX = clamp(sizeXValue * 2.7, 130, 260);
-  const sizeY = clamp(sizeYValue * 3, 58, 118);
-  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const { width: sizeX, height: sizeY, scale: sectionScale } = scalePlanDimensions(sizeXValue, sizeYValue, {
+    maxWidth: 250,
+    maxHeight: 118,
+    preferredScale: 3.2,
+    minLargest: 70
+  });
+  const baseHeight = scaleBaseHeight(baseHeightValue);
   const neckHeight = clamp(neckHeightValue * 2.05, 34, 84);
-  const wall = clamp(wallValue * 11, 9, Math.max(11, sizeY * 0.24));
+  const wall = clamp(wallValue * sectionScale, 4, Math.max(4, sizeY * 0.24));
   const ribWidth = Math.min(7, Math.max(4, wall * 0.5));
-  const innerX = Math.max(42, sizeX - wall * 2);
-  const innerY = Math.max(24, sizeY - wall * 2);
-  const coreInset = 12;
+  const innerX = Math.max(sizeX * 0.42, sizeX - wall * 2);
+  const innerY = Math.max(sizeY * 0.42, sizeY - wall * 2);
+  const coreInset = Math.min(12, innerX / 4, innerY / 4);
   const topCx = 330;
   const topBottom = clamp(188 - neckHeight * 0.35, 150, 178);
   const topTop = topBottom - sizeY;
@@ -239,9 +247,9 @@ function TubeOblong({ values, activeKey, onSelect }) {
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 18} y2={topBottom + 18} />
       <line className="technical-centerline" x1={topLeft - 18} x2={topRight + 18} y1={topCy} y2={topCy} />
-      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx={sizeY / 2} />
-      <rect className="part muted" x={topCx - innerX / 2} y={topCy - innerY / 2} width={innerX} height={innerY} rx={innerY / 2} />
-      <rect className="void" x={topCx - Math.max(16, innerX - coreInset * 2) / 2} y={topCy - Math.max(12, innerY - coreInset * 2) / 2} width={Math.max(16, innerX - coreInset * 2)} height={Math.max(12, innerY - coreInset * 2)} rx={Math.max(6, (innerY - coreInset * 2) / 2)} />
+      <path className="part" d={capsulePath(topCx, topCy, sizeX, sizeY)} />
+      <path className="part muted" d={capsulePath(topCx, topCy, innerX, innerY)} />
+      <path className="void" d={capsulePath(topCx, topCy, Math.max(4, innerX - coreInset * 2), Math.max(4, innerY - coreInset * 2))} />
       <Dimension x1={topLeft} y1={topTop - 28} x2={topRight} y2={topTop - 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={topLeft - 42} y1={topTop} x2={topLeft - 42} y2={topBottom} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={topCx - innerX / 2} y1={topBottom + 18} x2={topLeft} y2={topBottom + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
@@ -281,7 +289,7 @@ function BaseRound({ values, activeKey, onSelect }) {
   const neckDiameterValue = Number(values.diametroPescoco ?? 8);
   const neckHeightValue = Number(values.alturaPescoco ?? 12);
   const diameter = clamp(baseDiameterValue * 2.5, 58, 130);
-  const height = clamp(baseHeightValue * 6, 16, 60);
+  const height = scaleBaseHeight(baseHeightValue, { scale: 6, max: 60 });
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, diameter - 18));
   const neckHeight = clamp(neckHeightValue * 2.8, 24, 98);
   const topCx = 320;
@@ -348,8 +356,14 @@ function BaseRound({ values, activeKey, onSelect }) {
 }
 
 function BaseOblong({ values, activeKey, onSelect }) {
-  const length = clamp(Number(values.comprimento || 50) * 3, 130, 330);
-  const width = clamp(Number(values.largura || 20) * 4, 60, 170);
+  const lengthValue = Number(values.comprimento || 50);
+  const widthValue = Number(values.largura || 20);
+  const { width: length, height: width } = scalePlanDimensions(lengthValue, widthValue, {
+    maxWidth: 330,
+    maxHeight: 150,
+    preferredScale: 3.6,
+    minLargest: 86
+  });
   const height = clamp(Number(values.altura || 7) * 7, 28, 110);
   const holes = Number(values.distanciaFuros || 0);
   const left = 320 - length / 2;
@@ -386,9 +400,13 @@ function BaseRect({ values, activeKey, onSelect }) {
   const baseHeightValue = Number(values.alturaBase || values.altura || 7);
   const neckDiameterValue = Number(values.diametroPescoco || 8);
   const neckHeightValue = Number(values.alturaPescoco || 12);
-  const sizeX = clamp(sizeXValue * 2.2, 82, 168);
-  const sizeY = clamp(sizeYValue * 2.2, 82, 168);
-  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const { width: sizeX, height: sizeY } = scalePlanDimensions(sizeXValue, sizeYValue, {
+    maxWidth: 168,
+    maxHeight: 128,
+    preferredScale: 3.1,
+    minLargest: 72
+  });
+  const baseHeight = scaleBaseHeight(baseHeightValue);
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, Math.min(sizeX, sizeY) - 16));
   const neckHeight = clamp(neckHeightValue * 2.4, 24, 84);
   const radius = 12;
@@ -474,6 +492,59 @@ function roundedBaseSection(left, right, top, bottom, bottomRadius) {
     H ${left + bottomRadius}
     Q ${left} ${bottom} ${left} ${bottom - bottomRadius}
     Z`;
+}
+
+function capsulePath(cx, cy, width, height) {
+  const safeWidth = Math.max(0.1, Number(width || 0.1));
+  const safeHeight = Math.max(0.1, Number(height || 0.1));
+
+  if (safeWidth >= safeHeight) {
+    const radius = safeHeight / 2;
+    const left = cx - safeWidth / 2;
+    const right = cx + safeWidth / 2;
+    const top = cy - radius;
+    const bottom = cy + radius;
+
+    return `
+      M ${left + radius} ${top}
+      H ${right - radius}
+      A ${radius} ${radius} 0 0 1 ${right - radius} ${bottom}
+      H ${left + radius}
+      A ${radius} ${radius} 0 0 1 ${left + radius} ${top}
+      Z`;
+  }
+
+  const radius = safeWidth / 2;
+  const left = cx - radius;
+  const right = cx + radius;
+  const top = cy - safeHeight / 2;
+  const bottom = cy + safeHeight / 2;
+
+  return `
+    M ${left} ${top + radius}
+    A ${radius} ${radius} 0 0 1 ${right} ${top + radius}
+    V ${bottom - radius}
+    A ${radius} ${radius} 0 0 1 ${left} ${bottom - radius}
+    Z`;
+}
+
+function scaleBaseHeight(value, { scale = 5.2, min = 8, max = 52 } = {}) {
+  return clamp(Number(value || 0) * scale, min, max);
+}
+
+function scalePlanDimensions(widthValue, heightValue, { maxWidth, maxHeight, preferredScale, minLargest = 0 }) {
+  const safeWidth = Math.max(0.1, Number(widthValue || 0.1));
+  const safeHeight = Math.max(0.1, Number(heightValue || 0.1));
+  const largest = Math.max(safeWidth, safeHeight);
+  const maxScale = Math.min(maxWidth / safeWidth, maxHeight / safeHeight);
+  const readableScale = minLargest > 0 ? minLargest / largest : 0;
+  const scale = Math.min(maxScale, Math.max(preferredScale, readableScale));
+
+  return {
+    width: safeWidth * scale,
+    height: safeHeight * scale,
+    scale
+  };
 }
 
 function BaseU({ values, activeKey, onSelect }) {
