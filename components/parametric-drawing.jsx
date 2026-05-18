@@ -13,14 +13,14 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
           <pattern id="drawing-grid" width="32" height="32" patternUnits="userSpaceOnUse">
             <path d="M 32 0 H 0 V 32" />
           </pattern>
-          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3" markerHeight="3" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" />
           </marker>
           <pattern id="section-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <path d="M 0 0 V 8" />
           </pattern>
         </defs>
-        <rect className="drawing-grid-fill" width="640" height="380" />
+        <rect className="drawing-canvas-fill" width="640" height="380" />
         <path className="drawing-axis" d="M 76 304 H 574 M 132 58 V 328" />
         <circle className="drawing-node" cx="132" cy="304" r="4" />
         <circle className="drawing-node" cx="574" cy="304" r="4" />
@@ -38,115 +38,155 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
 }
 
 function TubeRound({ values, activeKey, onSelect }) {
-  const diameter = clamp(Number(values.diametroBase || 22) * 4, 54, 150);
-  const base = clamp(Number(values.diametroBase || 28) * 4, diameter + 20, 190);
-  const insertion = clamp(Number(values.alturaPescoco || 18) * 5, 54, 170);
-  const support = clamp(Number(values.alturaBase || 8) * 6, 28, 96);
-  const centerX = 320;
-  const baseTopY = 260;
-  const baseBottomY = baseTopY + support;
-  const plugTopY = baseTopY - insertion;
-  const plugLeft = centerX - diameter / 2;
-  const plugRight = centerX + diameter / 2;
-  const baseLeft = centerX - base / 2;
-  const baseRight = centerX + base / 2;
-  const chamfer = 10;
-  const shoulder = 14;
+  const baseDiameterValue = Number(values.diametroBase || 28);
+  const baseHeightValue = Number(values.alturaBase || 6);
+  const neckHeightValue = Number(values.alturaPescoco || 18);
+  const wallValue = Number(values.paredeTubo || 1.5);
+  const diameter = clamp(baseDiameterValue * 2.8, 62, 150);
+  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const neckHeight = clamp(neckHeightValue * 2.1, 34, 84);
+  const wall = clamp(wallValue * 12, 10, Math.max(12, diameter * 0.22));
+  const neckDiameter = Math.max(28, diameter - wall * 2);
+  const ribWidth = Math.min(7, Math.max(4, wall * 0.55));
+  const tubeInnerRadius = Math.max(12, diameter / 2 - wall);
+  const innerDetailRadius = Math.max(8, tubeInnerRadius - 12);
+  const topCx = 320;
+  const topCy = clamp(108 - neckHeight * 0.22, 76, 96);
+  const frontCx = 320;
+  const baseBottomY = 304;
+  const baseTopY = baseBottomY - baseHeight;
+  const neckTopY = baseTopY - neckHeight;
+  const baseLeft = frontCx - diameter / 2;
+  const baseRight = frontCx + diameter / 2;
+  const neckLeft = frontCx - neckDiameter / 2;
+  const neckRight = frontCx + neckDiameter / 2;
+  const bottomRadius = Math.min(baseHeight, 14);
+  const ribCount = neckHeightValue <= 20 ? 3 : 4;
+  const ribGap = neckHeight / (ribCount + 1);
+  const basePath = roundedBaseSection(baseLeft, baseRight, baseTopY, baseBottomY, bottomRadius);
 
   return (
     <>
-      <line className="technical-centerline" x1={centerX} x2={centerX} y1={plugTopY - 28} y2={baseBottomY + 22} />
-      <line className="technical-datum" x1={baseLeft - 72} x2={baseRight + 72} y1={baseTopY} y2={baseTopY} />
-      <line className="technical-projection" x1={plugLeft} x2={plugLeft} y1={plugTopY - 18} y2={plugTopY} />
-      <line className="technical-projection" x1={plugRight} x2={plugRight} y1={plugTopY - 18} y2={plugTopY} />
-      <line className="technical-projection" x1={baseLeft} x2={baseLeft} y1={baseBottomY} y2={baseBottomY + 18} />
-      <line className="technical-projection" x1={baseRight} x2={baseRight} y1={baseBottomY} y2={baseBottomY + 18} />
-      <line className="technical-projection" x1={baseRight + 28} x2={baseRight + 52} y1={plugTopY} y2={plugTopY} />
-      <line className="technical-projection" x1={baseRight + 28} x2={baseRight + 52} y1={baseTopY} y2={baseTopY} />
-      <line className="technical-projection" x1={baseRight + 74} x2={baseRight + 98} y1={baseTopY} y2={baseTopY} />
-      <line className="technical-projection" x1={baseRight + 74} x2={baseRight + 98} y1={baseBottomY} y2={baseBottomY} />
+      <ViewTitle x="122" y="120" lines={["Vista", "superior"]} anchor="end" />
+      <ViewTitle x="122" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
 
-      <path
-        className="technical-section base-section"
-        d={`M ${baseLeft + chamfer} ${baseBottomY}
-            H ${baseRight - chamfer}
-            Q ${baseRight} ${baseBottomY} ${baseRight} ${baseBottomY - chamfer}
-            V ${baseTopY + shoulder}
-            Q ${baseRight} ${baseTopY} ${baseRight - shoulder} ${baseTopY}
-            H ${baseLeft + shoulder}
-            Q ${baseLeft} ${baseTopY} ${baseLeft} ${baseTopY + shoulder}
-            V ${baseBottomY - chamfer}
-            Q ${baseLeft} ${baseBottomY} ${baseLeft + chamfer} ${baseBottomY}
-            Z`}
-      />
-      <path
-        className="technical-section plug-section"
-        d={`M ${plugLeft + 8} ${baseTopY}
-            H ${plugRight - 8}
-            Q ${plugRight} ${baseTopY} ${plugRight} ${baseTopY - 8}
-            V ${plugTopY + 10}
-            L ${plugRight - 10} ${plugTopY}
-            H ${plugLeft + 10}
-            L ${plugLeft} ${plugTopY + 10}
-            V ${baseTopY - 8}
-            Q ${plugLeft} ${baseTopY} ${plugLeft + 8} ${baseTopY}
-            Z`}
-      />
-      <path
-        className="section-hatch-fill"
-        d={`M ${plugLeft + 12} ${baseTopY - 6}
-            H ${plugRight - 12}
-            V ${plugTopY + 14}
-            H ${plugLeft + 12}
-            Z`}
-      />
-      <line className="technical-outline-heavy" x1={baseLeft + 16} x2={baseRight - 16} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 18} y2={topCy + diameter / 2 + 18} />
+      <line className="technical-centerline" x1={topCx - diameter / 2 - 18} x2={topCx + diameter / 2 + 18} y1={topCy} y2={topCy} />
+      <circle className="part" cx={topCx} cy={topCy} r={diameter / 2} />
+      <circle className="part muted" cx={topCx} cy={topCy} r={tubeInnerRadius} />
+      <circle className="void" cx={topCx} cy={topCy} r={innerDetailRadius} />
+      <Dimension x1={topCx - diameter / 2} y1={topCy - diameter / 2 - 28} x2={topCx + diameter / 2} y2={topCy - diameter / 2 - 28} label={`${baseDiameterValue} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={topCx + diameter / 2 - wall} y1={topCy + 18} x2={topCx + diameter / 2} y2={topCy + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
 
-      <Dimension x1={plugLeft} y1={plugTopY - 34} x2={plugRight} y2={plugTopY - 34} label={`${values.diametroBase} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseLeft} y1={baseBottomY + 30} x2={baseRight} y2={baseBottomY + 30} label={`${values.diametroBase} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseRight + 52} y1={plugTopY} x2={baseRight + 52} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseRight + 98} y1={baseTopY} x2={baseRight + 98} y2={baseBottomY} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
+      <line className="technical-datum" x1="132" x2="574" y1={baseBottomY} y2={baseBottomY} />
+      <rect className="part" x={neckLeft} y={neckTopY} width={neckDiameter} height={neckHeight} rx="0" />
+      <path className="section-hatch-fill" d={`M ${neckLeft + 5} ${neckTopY + 5} H ${neckRight - 5} V ${baseTopY - 5} H ${neckLeft + 5} Z`} />
+      {Array.from({ length: ribCount }, (_, index) => {
+        const ribY = neckTopY + ribGap * (index + 1);
+        return (
+          <rect
+            className="part muted"
+            key={ribY}
+            x={neckLeft - ribWidth}
+            y={ribY - 3}
+            width={neckDiameter + ribWidth * 2}
+            height="6"
+            rx="3"
+          />
+        );
+      })}
+      <path className="part muted" d={basePath} />
+      <line className="technical-outline-heavy" x1={baseLeft + bottomRadius} x2={baseRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+
+      <Dimension x1={baseLeft} y1={baseBottomY + 28} x2={baseRight} y2={baseBottomY + 28} label={`${baseDiameterValue} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseLeft - 48} y1={neckTopY} x2={baseLeft - 48} y2={baseTopY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={baseLeft - 48} y1={baseTopY} x2={baseLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={neckRight} y1={neckTopY - 22} x2={neckRight + wall} y2={neckTopY - 22} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
 
 function TubeRect({ values, activeKey, onSelect }) {
-  const width = clamp(Number(values.tamanhoBaseX || 30) * 4, 92, 230);
-  const height = clamp(Number(values.tamanhoBaseY || 20) * 4, 58, 150);
-  const insertion = clamp(Number(values.alturaPescoco || 20) * 5, 70, 170);
-  const baseHeight = clamp(Number(values.alturaBase || 8) * 6, 30, 92);
-  const wall = clamp(Number(values.paredeTubo || 1.5) * 14, 12, 42);
-  const centerX = 320;
-  const baseTopY = 258;
-  const baseBottomY = baseTopY + baseHeight;
-  const plugTopY = baseTopY - insertion;
-  const plugLeft = centerX - width / 2;
-  const plugRight = centerX + width / 2;
-  const baseLeft = plugLeft - wall;
-  const baseRight = plugRight + wall;
-  const voidHeight = Math.max(36, height);
-  const voidTop = plugTopY + 22;
-  const voidLeft = centerX - width / 2 + wall;
-  const voidWidth = Math.max(18, width - wall * 2);
+  const sizeXValue = Number(values.tamanhoBaseX || 30);
+  const sizeYValue = Number(values.tamanhoBaseY || 30);
+  const baseHeightValue = Number(values.alturaBase || 6);
+  const neckHeightValue = Number(values.alturaPescoco || 20);
+  const wallValue = Number(values.paredeTubo || 1.5);
+  const sizeX = clamp(sizeXValue * 2.2, 82, 168);
+  const sizeY = clamp(sizeYValue * 2.2, 82, 168);
+  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const neckHeight = clamp(neckHeightValue * 2.05, 34, 84);
+  const wall = clamp(wallValue * 11, 9, Math.max(11, Math.min(sizeX, sizeY) * 0.2));
+  const ribWidth = Math.min(7, Math.max(4, wall * 0.5));
+  const topCx = 302;
+  const topBottom = clamp(188 - neckHeight * 0.35, 150, 178);
+  const topTop = topBottom - sizeY;
+  const topCy = topTop + sizeY / 2;
+  const topLeft = topCx - sizeX / 2;
+  const topRight = topCx + sizeX / 2;
+  const innerLeft = topLeft + wall;
+  const innerTop = topTop + wall;
+  const innerWidth = Math.max(22, sizeX - wall * 2);
+  const innerHeight = Math.max(22, sizeY - wall * 2);
+  const coreInset = 12;
+  const frontCx = 302;
+  const sideCx = 510;
+  const baseBottomY = 304;
+  const baseTopY = baseBottomY - baseHeight;
+  const neckTopY = baseTopY - neckHeight;
+  const frontLeft = frontCx - sizeX / 2;
+  const frontRight = frontCx + sizeX / 2;
+  const sideLeft = sideCx - sizeY / 2;
+  const sideRight = sideCx + sizeY / 2;
+  const frontNeckLeft = frontCx - innerWidth / 2;
+  const frontNeckRight = frontCx + innerWidth / 2;
+  const sideNeckLeft = sideCx - innerHeight / 2;
+  const sideNeckRight = sideCx + innerHeight / 2;
+  const bottomRadius = Math.min(baseHeight, 12);
+  const ribCount = neckHeightValue <= 20 ? 3 : 4;
+  const ribGap = neckHeight / (ribCount + 1);
+  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, bottomRadius);
+  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
 
   return (
     <>
-      <line className="technical-centerline" x1={centerX} x2={centerX} y1={plugTopY - 28} y2={baseBottomY + 22} />
-      <line className="technical-datum" x1={baseLeft - 58} x2={baseRight + 58} y1={baseTopY} y2={baseTopY} />
-      <line className="technical-projection" x1={plugLeft} x2={plugLeft} y1={plugTopY - 20} y2={plugTopY} />
-      <line className="technical-projection" x1={plugRight} x2={plugRight} y1={plugTopY - 20} y2={plugTopY} />
-      <line className="technical-projection" x1={voidLeft} x2={voidLeft} y1={voidTop} y2={voidTop + voidHeight} />
-      <line className="technical-projection" x1={voidLeft + voidWidth} x2={voidLeft + voidWidth} y1={voidTop} y2={voidTop + voidHeight} />
-      <rect className="technical-section base-section" x={baseLeft} y={baseTopY} width={width + wall * 2} height={baseHeight} rx="12" />
-      <rect className="technical-section plug-section" x={plugLeft} y={plugTopY} width={width} height={insertion} rx="8" />
-      <rect className="void" x={voidLeft} y={voidTop} width={voidWidth} height={voidHeight} rx="6" />
-      <path className="section-hatch-fill" d={`M ${plugLeft + 10} ${baseTopY - 8} H ${plugRight - 10} V ${plugTopY + 16} H ${plugLeft + 10} Z`} />
-      <line className="technical-outline-heavy" x1={baseLeft + 14} x2={baseRight - 14} y1={baseBottomY} y2={baseBottomY} />
-      <Dimension x1={plugLeft} y1={plugTopY - 34} x2={plugRight} y2={plugTopY - 34} label={`${values.tamanhoBaseX} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={voidLeft - 34} y1={voidTop} x2={voidLeft - 34} y2={voidTop + voidHeight} label={`${values.tamanhoBaseY} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={plugRight} y1={plugTopY + 24} x2={baseRight} y2={plugTopY + 24} label={`${values.paredeTubo} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseRight + 46} y1={plugTopY} x2={baseRight + 46} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={baseRight + 92} y1={baseTopY} x2={baseRight + 92} y2={baseBottomY} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <ViewTitle x="124" y={topBottom - 11} lines={["Vista", "superior"]} anchor="end" />
+      <ViewTitle x="124" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
+      <ViewTitle x={sideLeft - 18} y={baseBottomY - 24} lines={["Vista", "lateral"]} anchor="end" />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 18} y2={topBottom + 18} />
+      <line className="technical-centerline" x1={topLeft - 18} x2={topRight + 18} y1={topCy} y2={topCy} />
+      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx="14" />
+      <rect className="part muted" x={innerLeft} y={innerTop} width={innerWidth} height={innerHeight} rx="8" />
+      <rect className="void" x={innerLeft + coreInset} y={innerTop + coreInset} width={Math.max(12, innerWidth - coreInset * 2)} height={Math.max(12, innerHeight - coreInset * 2)} rx="5" />
+      <Dimension x1={topLeft} y1={topTop - 28} x2={topRight} y2={topTop - 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={topLeft - 42} y1={topTop} x2={topLeft - 42} y2={topBottom} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={innerLeft} y1={topBottom + 18} x2={topLeft} y2={topBottom + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
+      <line className="technical-datum" x1="132" x2="574" y1={baseBottomY} y2={baseBottomY} />
+      <rect className="part" x={frontNeckLeft} y={neckTopY} width={innerWidth} height={neckHeight} rx="0" />
+      <path className="section-hatch-fill" d={`M ${frontNeckLeft + 5} ${neckTopY + 5} H ${frontNeckRight - 5} V ${baseTopY - 5} H ${frontNeckLeft + 5} Z`} />
+      {Array.from({ length: ribCount }, (_, index) => {
+        const ribY = neckTopY + ribGap * (index + 1);
+        return <rect className="part muted" key={`front-${ribY}`} x={frontNeckLeft - ribWidth} y={ribY - 3} width={innerWidth + ribWidth * 2} height="6" rx="3" />;
+      })}
+      <path className="part muted" d={frontPath} />
+      <line className="technical-outline-heavy" x1={frontLeft + bottomRadius} x2={frontRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={frontLeft} y1={baseBottomY + 28} x2={frontRight} y2={baseBottomY + 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={frontLeft - 48} y1={neckTopY} x2={frontLeft - 48} y2={baseTopY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={frontLeft - 48} y1={baseTopY} x2={frontLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <line className="technical-centerline" x1={sideCx} x2={sideCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
+      <rect className="part" x={sideNeckLeft} y={neckTopY} width={innerHeight} height={neckHeight} rx="0" />
+      <path className="section-hatch-fill" d={`M ${sideNeckLeft + 5} ${neckTopY + 5} H ${sideNeckRight - 5} V ${baseTopY - 5} H ${sideNeckLeft + 5} Z`} />
+      {Array.from({ length: ribCount }, (_, index) => {
+        const ribY = neckTopY + ribGap * (index + 1);
+        return <rect className="part muted" key={`side-${ribY}`} x={sideNeckLeft - ribWidth} y={ribY - 3} width={innerHeight + ribWidth * 2} height="6" rx="3" />;
+      })}
+      <path className="part muted" d={sidePath} />
+      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={sideLeft} y1={baseBottomY + 28} x2={sideRight} y2={baseBottomY + 28} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
@@ -230,7 +270,8 @@ function BaseRound({ values, activeKey, onSelect }) {
                 H ${neckLeft + 5}
                 Z`}
           />
-          <Dimension x1={sideLeft - 40} y1={neckTopY} x2={sideLeft - 40} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+          <Dimension x1={neckLeft} y1={neckTopY - 24} x2={neckRight} y2={neckTopY - 24} label={`${neckDiameterValue} mm`} paramKey="diametroPescoco" activeKey={activeKey} onSelect={onSelect} />
+          <Dimension x1={sideLeft - 48} y1={neckTopY} x2={sideLeft - 48} y2={baseTopY} label={`${values.alturaPescoco} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
         </>
       )}
 
@@ -275,28 +316,100 @@ function BaseOblong({ values, activeKey, onSelect }) {
 }
 
 function BaseRect({ values, activeKey, onSelect }) {
-  const length = clamp(Number(values.tamanhoBaseX || 75) * 2.7, 130, 340);
-  const width = clamp(Number(values.tamanhoBaseY || 25) * 3.5, 68, 180);
-  const height = clamp(Number(values.alturaBase || 6) * 8, 28, 112);
-  const radius = 10;
-  const left = 320 - length / 2;
-  const right = 320 + length / 2;
-  const top = 112;
-  const sideTop = top + width;
-  const bottom = sideTop + height;
+  const hasNeck = values.pescoco === true || values.pescoco === "true";
+  const sizeXValue = Number(values.tamanhoBaseX || values.comprimento || 50);
+  const sizeYValue = Number(values.tamanhoBaseY || values.largura || 50);
+  const baseHeightValue = Number(values.alturaBase || values.altura || 7);
+  const neckDiameterValue = Number(values.diametroPescoco || 8);
+  const neckHeightValue = Number(values.alturaPescoco || 12);
+  const sizeX = clamp(sizeXValue * 2.2, 82, 168);
+  const sizeY = clamp(sizeYValue * 2.2, 82, 168);
+  const baseHeight = clamp(baseHeightValue * 5.2, 20, 52);
+  const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, Math.min(sizeX, sizeY) - 16));
+  const neckHeight = clamp(neckHeightValue * 2.4, 24, 84);
+  const radius = 12;
+  const guideX = 214;
+  const topCx = 316;
+  const frontCx = 316;
+  const sideCx = 524;
+  const baseBottomY = 304;
+  const baseTopY = baseBottomY - baseHeight;
+  const frontLeft = frontCx - sizeX / 2;
+  const frontRight = frontCx + sizeX / 2;
+  const sideLeft = sideCx - sizeY / 2;
+  const sideRight = sideCx + sizeY / 2;
+  const frontNeckLeft = frontCx - neckDiameter / 2;
+  const frontNeckRight = frontCx + neckDiameter / 2;
+  const sideNeckLeft = sideCx - neckDiameter / 2;
+  const sideNeckRight = sideCx + neckDiameter / 2;
+  const neckTopY = baseTopY - neckHeight;
+  const bottomRadius = Math.min(baseHeight, 14);
+  const topBottom = 176;
+  const topTop = topBottom - sizeY;
+  const topCy = topTop + sizeY / 2;
+  const topLeft = topCx - sizeX / 2;
+  const topRight = topCx + sizeX / 2;
+  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, bottomRadius);
+  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
 
   return (
     <>
-      <line className="technical-centerline" x1="320" x2="320" y1={top - 32} y2={bottom + 22} />
-      <rect className="technical-section plug-section" x={left} y={top} width={length} height={width} rx={radius} />
-      <rect className="technical-section base-section" x={left} y={sideTop} width={length} height={height} rx="12" />
-      <path className="section-hatch-fill" d={`M ${left + 14} ${sideTop + 8} H ${right - 14} V ${bottom - 8} H ${left + 14} Z`} />
-      <line className="technical-outline-heavy" x1={left + 12} x2={right - 12} y1={bottom} y2={bottom} />
-      <Dimension x1={left} y1={top - 40} x2={right} y2={top - 40} label={`${values.tamanhoBaseX} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={left - 42} y1={top} x2={left - 42} y2={sideTop} label={`${values.tamanhoBaseY} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={right + 48} y1={sideTop} x2={right + 48} y2={bottom} label={`${values.alturaBase} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+      <ViewTitle x="116" y={topBottom - 11} lines={["Vista", "superior"]} anchor="end" />
+      <ViewTitle x="116" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
+      <ViewTitle x={sideLeft - 18} y={baseBottomY - 11} lines={["Vista", "lateral"]} anchor="end" />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 20} y2={topBottom + 20} />
+      <line className="technical-centerline" x1={topLeft - 20} x2={topRight + 20} y1={topCy} y2={topCy} />
+      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx={radius} />
+      {hasNeck && (
+        <>
+          <circle className="void" cx={topCx} cy={topCy} r={neckDiameter / 2} />
+          <Dimension x1={topCx - neckDiameter / 2} y1={topCy + 15} x2={topCx + neckDiameter / 2} y2={topCy + 15} label={`${neckDiameterValue} mm`} paramKey="diametroPescoco" activeKey={activeKey} onSelect={onSelect} />
+        </>
+      )}
+      <Dimension x1={topLeft} y1={topTop - 30} x2={topRight} y2={topTop - 30} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={guideX} y1={topTop} x2={guideX} y2={topBottom} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={hasNeck ? neckTopY - 18 : baseTopY - 24} y2={baseBottomY + 20} />
+      {hasNeck && (
+        <>
+          <rect className="part" x={frontNeckLeft} y={neckTopY} width={neckDiameter} height={neckHeight} rx="0" />
+          <path className="section-hatch-fill" d={`M ${frontNeckLeft + 5} ${neckTopY + 5} H ${frontNeckRight - 5} V ${baseTopY - 5} H ${frontNeckLeft + 5} Z`} />
+          <Dimension x1={frontNeckLeft} y1={neckTopY - 24} x2={frontNeckRight} y2={neckTopY - 24} label={`${neckDiameterValue} mm`} paramKey="diametroPescoco" activeKey={activeKey} onSelect={onSelect} />
+          <Dimension x1={guideX} y1={neckTopY} x2={guideX} y2={baseTopY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
+        </>
+      )}
+      <path className="part muted" d={frontPath} />
+      <line className="technical-outline-heavy" x1={frontLeft} x2={frontRight} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-outline-heavy" x1={frontLeft + bottomRadius} x2={frontRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={frontLeft} y1={baseBottomY + 28} x2={frontRight} y2={baseBottomY + 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={guideX} y1={baseTopY} x2={guideX} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={sideCx} x2={sideCx} y1={hasNeck ? neckTopY - 18 : baseTopY - 24} y2={baseBottomY + 20} />
+      {hasNeck && (
+        <>
+          <rect className="part" x={sideNeckLeft} y={neckTopY} width={neckDiameter} height={neckHeight} rx="0" />
+          <path className="section-hatch-fill" d={`M ${sideNeckLeft + 5} ${neckTopY + 5} H ${sideNeckRight - 5} V ${baseTopY - 5} H ${sideNeckLeft + 5} Z`} />
+          <Dimension x1={sideNeckLeft} y1={neckTopY - 24} x2={sideNeckRight} y2={neckTopY - 24} label={`${neckDiameterValue} mm`} paramKey="diametroPescoco" activeKey={activeKey} onSelect={onSelect} />
+        </>
+      )}
+      <path className="part muted" d={sidePath} />
+      <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={sideLeft} y1={baseBottomY + 28} x2={sideRight} y2={baseBottomY + 28} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
+}
+
+function roundedBaseSection(left, right, top, bottom, bottomRadius) {
+  return `
+    M ${left} ${top}
+    H ${right}
+    V ${bottom - bottomRadius}
+    Q ${right} ${bottom} ${right - bottomRadius} ${bottom}
+    H ${left + bottomRadius}
+    Q ${left} ${bottom} ${left} ${bottom - bottomRadius}
+    Z`;
 }
 
 function BaseU({ values, activeKey, onSelect }) {
@@ -347,9 +460,9 @@ function ScaleLimitMarks({ x1, x2, y, vertical = false }) {
   );
 }
 
-function ViewTitle({ x, y, lines }) {
+function ViewTitle({ x, y, lines, anchor = "middle" }) {
   return (
-    <text className="drawing-view-title" x={x} y={y}>
+    <text className="drawing-view-title" x={x} y={y} style={{ textAnchor: anchor }}>
       {lines.map((line, index) => (
         <tspan key={line} x={x} dy={index === 0 ? 0 : 13}>
           {line}

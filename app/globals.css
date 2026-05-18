@@ -676,7 +676,11 @@ section {
   min-height: clamp(430px, 62vh, 620px);
   border: 1px solid #cfd8d4;
   border-radius: 0;
-  background: #fbfcfa;
+  background:
+    linear-gradient(rgba(159, 172, 167, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(159, 172, 167, 0.16) 1px, transparent 1px),
+    #fbfcfa;
+  background-size: 32px 32px;
 }
 
 .drawing-view-title {
@@ -687,8 +691,8 @@ section {
   text-transform: uppercase;
 }
 
-.drawing-grid-fill {
-  fill: url("#drawing-grid");
+.drawing-canvas-fill {
+  fill: transparent;
 }
 
 #drawing-grid path {
@@ -889,6 +893,75 @@ section {
 
 .parameter-field {
   padding: 0 0 4px;
+}
+
+.parameter-field--toggle {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 10px;
+}
+
+.parameter-field--toggle .parameter-field__copy {
+  gap: 3px;
+}
+
+.parameter-field--toggle .parameter-field__copy p {
+  font-size: 0.82rem;
+}
+
+.parameter-toggle {
+  position: relative;
+  display: inline-grid;
+  width: 46px;
+  height: 26px;
+}
+
+.parameter-toggle input {
+  position: absolute;
+  inset: 0;
+  width: 46px;
+  min-height: 26px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.parameter-toggle span {
+  width: 46px;
+  height: 26px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  transition: border-color 160ms ease, background 160ms ease;
+  pointer-events: none;
+}
+
+.parameter-toggle span::after {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  content: "";
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.parameter-toggle input:checked + span {
+  border-color: var(--primary);
+  background: rgba(0, 122, 112, 0.14);
+}
+
+.parameter-toggle input:checked + span::after {
+  background: var(--primary);
+  transform: translateX(20px);
+}
+
+.parameter-toggle input:focus-visible + span {
+  outline: 2px solid rgba(0, 122, 112, 0.28);
+  outline-offset: 3px;
 }
 
 .parameter-slider {
