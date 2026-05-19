@@ -50,6 +50,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
   const sku = useMemo(() => buildConfigurationSku(format, values), [format, values]);
+  const headingDescription = getConfiguratorDescription(category);
 
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
@@ -98,9 +99,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     <section className="configurator-shell">
       <div className="configurator-heading">
         <div>
-          <p className="eyebrow">{category.name}</p>
-          <h1>Configure a forma e medidas</h1>
-          <p className="lead">{category.description}</p>
+          <h1>{category.name}</h1>
+          <p className="lead">{headingDescription}</p>
         </div>
         <Link className="button button-secondary" href="/">
           Voltar ao catálogo
@@ -193,6 +193,18 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
       </div>
     </section>
   );
+}
+
+function getConfiguratorDescription(category) {
+  const descriptions = {
+    "ponteira-interna-tubo": "Escolha o perfil do tubo e ajuste as medidas internas reais.",
+    "sapata-base-lisa": "Escolha o formato da base e ajuste as medidas de contato.",
+    "ponteira-interna-tubos": "Escolha o perfil do tubo e ajuste as medidas internas reais.",
+    "sapata-lisa": "Escolha o formato da sapata e ajuste as medidas da base.",
+    "sapata-externa": "Escolha o perfil e ajuste as medidas externas do tubo."
+  };
+
+  return descriptions[category.slug] || "Escolha o formato e ajuste as medidas do produto.";
 }
 
 function ColorSelector({ colors, value, onChange }) {

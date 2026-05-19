@@ -27,10 +27,9 @@ export function ProductCatalog({ categories }) {
     <section className="shop-shell">
       <div className="shop-hero">
         <div className="shop-hero__copy">
-          <h1>Sapatas plasticas customizaveis para sua necessidade</h1>
+          <h1>Sapatas plasticas customizaveis para o seu projeto</h1>
           <p className="lead">
-            Configure o produto de acordo com seu projeto. No MVP, todas as familias usam cor
-            preta, sem acabamento adicional e sem quantidade minima.
+            Sapatas feitas sob medida para encaixar no seu projeto, proteger melhor e dar um acabamento mais bonito.
           </p>
         </div>
         <div className="shop-hero__media">
