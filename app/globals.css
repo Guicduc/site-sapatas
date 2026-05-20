@@ -746,8 +746,8 @@ section {
 .drawing-panel svg {
   display: block;
   width: 100%;
-  height: auto;
-  min-height: clamp(430px, 62vh, 620px);
+  min-height: clamp(500px, 68vh, 700px);
+  aspect-ratio: 720 / 500;
   border: 1px solid #cfd8d4;
   border-radius: 0;
   background:
@@ -852,14 +852,6 @@ section {
 .technical-outline-heavy {
   stroke: #0f1a1d;
   stroke-width: 3;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-}
-
-.scale-limit-mark {
-  fill: none;
-  stroke: var(--warning);
-  stroke-width: 2.4;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
@@ -1042,70 +1034,64 @@ section {
 }
 
 .parameter-slider {
-  position: relative;
-  height: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 12px;
   margin-top: 0;
 }
 
 .parameter-range {
-  position: absolute;
-  inset: 4px 0 auto;
+  position: relative;
+  display: block;
   width: 100%;
   height: 18px;
   min-height: 18px;
-  padding: 0;
-  border: 0;
+  padding: 7px 0;
   border-radius: 0;
   background: transparent;
   cursor: pointer;
-  appearance: none;
+  touch-action: none;
+  user-select: none;
 }
 
-.parameter-range::-webkit-slider-runnable-track {
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--primary) 0 var(--value-position),
-    var(--line-strong) var(--value-position) 100%
-  );
-}
-
-.parameter-range::-moz-range-track {
-  height: 2px;
+.parameter-range__track {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-radius: 999px;
   background: var(--line-strong);
 }
 
-.parameter-range::-moz-range-progress {
-  height: 2px;
+.parameter-range__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--value-position);
+  border-radius: 999px;
   background: var(--primary);
 }
 
-.parameter-range::-webkit-slider-thumb {
-  width: 40px;
-  height: 24px;
-  margin-top: -11px;
-  border: 0;
-  border-radius: var(--radius);
-  background: transparent;
-  appearance: none;
-}
-
-.parameter-range::-moz-range-thumb {
-  width: 40px;
-  height: 24px;
-  border: 0;
-  border-radius: var(--radius);
-  background: transparent;
-}
-
-.parameter-value {
+.parameter-range__thumb {
   position: absolute;
   top: 50%;
   left: var(--value-position);
-  z-index: 1;
-  width: 40px;
-  min-height: 24px;
-  padding: 1px 3px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--primary-dark);
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 0 0 0 3px var(--bg);
+  transform: translate(-50%, -50%);
+}
+
+.parameter-range:focus-visible .parameter-range__thumb {
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px rgba(0, 122, 112, 0.16);
+}
+
+.parameter-value {
+  width: 64px;
+  min-height: 34px;
+  padding: 4px 7px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--bg);
@@ -1113,10 +1099,7 @@ section {
   font-size: 0.95rem;
   font-weight: 700;
   text-align: center;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 4px var(--bg);
-  cursor: default;
-  pointer-events: none;
+  cursor: text;
 }
 
 .parameter-value::-webkit-outer-spin-button,
@@ -1134,17 +1117,9 @@ section {
   outline: 0;
 }
 
-.parameter-field.is-active .parameter-value,
-.parameter-value.is-editing,
-.parameter-value.is-editing:focus {
+.parameter-field.is-active .parameter-value {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px rgba(0, 122, 112, 0.16);
-}
-
-.parameter-value.is-editing,
-.parameter-value.is-editing:focus {
-  cursor: text;
-  pointer-events: auto;
+  box-shadow: 0 0 0 3px rgba(0, 122, 112, 0.16);
 }
 
 .field,
@@ -1287,22 +1262,6 @@ textarea {
 textarea {
   min-height: 112px;
   resize: vertical;
-}
-
-.parameter-range {
-  min-height: 18px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.parameter-value {
-  width: 40px;
-  min-height: 24px;
-  padding: 1px 3px;
-  border-radius: var(--radius);
-  background: var(--bg);
 }
 
 small {

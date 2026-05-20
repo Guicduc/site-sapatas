@@ -1,7 +1,11 @@
 "use client";
 
-const viewBox = "0 0 640 380";
-const viewLabelX = 84;
+const canvasWidth = 720;
+const canvasHeight = 500;
+const viewBox = `0 0 ${canvasWidth} ${canvasHeight}`;
+const viewLabelX = 62;
+const topViewY = 170;
+const baseBottomY = 440;
 
 export function ParametricDrawing({ format, values, activeKey, onSelectParameter }) {
   const type = format.drawingType;
@@ -20,40 +24,44 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
             <path d="M 0 0 V 8" />
           </pattern>
         </defs>
-        <rect className="drawing-canvas-fill" width="640" height="380" />
-        <path className="drawing-axis" d="M 76 304 H 574 M 132 58 V 328" />
-        <circle className="drawing-node" cx="132" cy="304" r="4" />
-        <circle className="drawing-node" cx="574" cy="304" r="4" />
-        <circle className="drawing-node" cx="132" cy="58" r="4" />
-        {type === "tube-round" && <TubeRound values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "tube-rect" && <TubeRect values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "tube-oblong" && <TubeOblong values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-round" && <BaseRound values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-oblong" && <BaseOblong values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-rect" && <BaseRect values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        <rect className="drawing-canvas-fill" width={canvasWidth} height={canvasHeight} />
+        <path className="drawing-axis" d="M 82 440 H 652 M 132 44 V 472" />
+        <circle className="drawing-node" cx="132" cy="440" r="4" />
+        <circle className="drawing-node" cx="652" cy="440" r="4" />
+        <circle className="drawing-node" cx="132" cy="44" r="4" />
+        {type === "tube-round" && <TubeRound format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {type === "tube-rect" && <TubeRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {type === "tube-oblong" && <TubeOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {type === "base-round" && <BaseRound format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {type === "base-oblong" && <BaseOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {type === "base-rect" && <BaseRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-u" && <BaseU values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
       </svg>
     </div>
   );
 }
 
-function TubeRound({ values, activeKey, onSelect }) {
+function TubeRound({ format, values, activeKey, onSelect }) {
   const baseDiameterValue = Number(values.diametroBase || 28);
   const baseHeightValue = Number(values.alturaBase || 6);
   const neckHeightValue = Number(values.alturaPescoco || 18);
   const wallValue = Number(values.paredeTubo || 1.5);
-  const diameter = clamp(baseDiameterValue * 2.8, 62, 150);
+  const diameter = scaleRangeDimension(baseDiameterValue, {
+    maxValue: parameterMax(format, "diametroBase", 150),
+    maxSize: 230,
+    minSize: 24,
+    readableCurve: 40
+  });
   const baseHeight = scaleBaseHeight(baseHeightValue);
-  const neckHeight = clamp(neckHeightValue * 2.1, 34, 84);
-  const wall = clamp(wallValue * 12, 10, Math.max(12, diameter * 0.22));
-  const neckDiameter = Math.max(28, diameter - wall * 2);
+  const neckHeight = clamp(neckHeightValue * 2.35, 34, 90);
+  const wall = clamp(wallValue * 10, 4, Math.max(4, diameter * 0.22));
+  const neckDiameter = Math.max(10, diameter - wall * 2);
   const ribWidth = Math.min(7, Math.max(4, wall * 0.55));
-  const tubeInnerRadius = Math.max(12, diameter / 2 - wall);
-  const innerDetailRadius = Math.max(8, tubeInnerRadius - 12);
-  const topCx = 320;
-  const topCy = clamp(108 - neckHeight * 0.22, 76, 96);
-  const frontCx = 320;
-  const baseBottomY = 304;
+  const tubeInnerRadius = Math.max(5, diameter / 2 - wall);
+  const innerDetailRadius = Math.max(3, tubeInnerRadius - 12);
+  const topCx = 360;
+  const topCy = topViewY;
+  const frontCx = 360;
   const baseTopY = baseBottomY - baseHeight;
   const neckTopY = baseTopY - neckHeight;
   const baseLeft = frontCx - diameter / 2;
@@ -64,11 +72,13 @@ function TubeRound({ values, activeKey, onSelect }) {
   const ribCount = neckHeightValue <= 20 ? 3 : 4;
   const ribGap = neckHeight / (ribCount + 1);
   const basePath = roundedBaseSection(baseLeft, baseRight, baseTopY, baseBottomY, bottomRadius);
+  const topTitleY = topCy - 8;
+  const frontTitleY = baseBottomY + 20;
 
   return (
     <>
-      <ViewTitle x="122" y="120" lines={["Vista", "superior"]} anchor="end" />
-      <ViewTitle x="122" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 18} y2={topCy + diameter / 2 + 18} />
       <line className="technical-centerline" x1={topCx - diameter / 2 - 18} x2={topCx + diameter / 2 + 18} y1={topCy} y2={topCy} />
@@ -79,7 +89,7 @@ function TubeRound({ values, activeKey, onSelect }) {
       <Dimension x1={topCx + diameter / 2 - wall} y1={topCy + 18} x2={topCx + diameter / 2} y2={topCy + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
 
       <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
-      <line className="technical-datum" x1="132" x2="574" y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-datum" x1="132" x2="652" y1={baseBottomY} y2={baseBottomY} />
       <rect className="part" x={neckLeft} y={neckTopY} width={neckDiameter} height={neckHeight} rx="0" />
       <path className="section-hatch-fill" d={`M ${neckLeft + 5} ${neckTopY + 5} H ${neckRight - 5} V ${baseTopY - 5} H ${neckLeft + 5} Z`} />
       {Array.from({ length: ribCount }, (_, index) => {
@@ -107,24 +117,27 @@ function TubeRound({ values, activeKey, onSelect }) {
   );
 }
 
-function TubeRect({ values, activeKey, onSelect }) {
+function TubeRect({ format, values, activeKey, onSelect }) {
   const sizeXValue = Number(values.tamanhoBaseX || 30);
   const sizeYValue = Number(values.tamanhoBaseY || 30);
   const baseHeightValue = Number(values.alturaBase || 6);
   const neckHeightValue = Number(values.alturaPescoco || 20);
   const wallValue = Number(values.paredeTubo || 1.5);
   const { width: sizeX, height: sizeY, scale: sectionScale } = scalePlanDimensions(sizeXValue, sizeYValue, {
-    maxWidth: 168,
-    maxHeight: 128,
+    maxWidth: 230,
+    maxHeight: 230,
+    maxWidthValue: parameterMax(format, "tamanhoBaseX", 150),
+    maxHeightValue: parameterMax(format, "tamanhoBaseY", 150),
     preferredScale: 3.15,
-    minLargest: 72
+    minReadableSize: 24,
+    readableCurve: 40
   });
   const baseHeight = scaleBaseHeight(baseHeightValue);
-  const neckHeight = clamp(neckHeightValue * 2.05, 34, 84);
+  const neckHeight = clamp(neckHeightValue * 2.35, 34, 90);
   const wall = clamp(wallValue * sectionScale, 4, Math.max(4, Math.min(sizeX, sizeY) * 0.22));
   const ribWidth = Math.min(7, Math.max(4, wall * 0.5));
-  const topCx = 302;
-  const topBottom = clamp(188 - neckHeight * 0.35, 150, 178);
+  const topCx = 300;
+  const topBottom = topViewY + sizeY / 2;
   const topTop = topBottom - sizeY;
   const topCy = topTop + sizeY / 2;
   const topLeft = topCx - sizeX / 2;
@@ -134,9 +147,13 @@ function TubeRect({ values, activeKey, onSelect }) {
   const innerWidth = Math.max(sizeX * 0.42, sizeX - wall * 2);
   const innerHeight = Math.max(sizeY * 0.42, sizeY - wall * 2);
   const coreInset = Math.min(12, innerWidth / 4, innerHeight / 4);
-  const frontCx = 302;
-  const sideCx = 510;
-  const baseBottomY = 304;
+  const coreWidth = Math.max(4, innerWidth - coreInset * 2);
+  const coreHeight = Math.max(4, innerHeight - coreInset * 2);
+  const outerRadius = cornerRadius(sizeX, sizeY, { max: 10, ratio: 0.15 });
+  const innerRadius = cornerRadius(innerWidth, innerHeight, { max: 7, ratio: 0.15 });
+  const coreRadius = cornerRadius(coreWidth, coreHeight, { max: 4, ratio: 0.14 });
+  const frontCx = 300;
+  const sideCx = 585;
   const baseTopY = baseBottomY - baseHeight;
   const neckTopY = baseTopY - neckHeight;
   const frontLeft = frontCx - sizeX / 2;
@@ -147,29 +164,33 @@ function TubeRect({ values, activeKey, onSelect }) {
   const frontNeckRight = frontCx + innerWidth / 2;
   const sideNeckLeft = sideCx - innerHeight / 2;
   const sideNeckRight = sideCx + innerHeight / 2;
-  const bottomRadius = Math.min(baseHeight, 12);
+  const frontBottomRadius = Math.min(baseHeight, sizeX / 2, 12);
+  const sideBottomRadius = Math.min(baseHeight, sizeY / 2, 12);
   const ribCount = neckHeightValue <= 20 ? 3 : 4;
   const ribGap = neckHeight / (ribCount + 1);
-  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, bottomRadius);
-  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
+  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, frontBottomRadius);
+  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, sideBottomRadius);
+  const topTitleY = topCy - 34;
+  const frontTitleY = baseBottomY + 20;
+  const sideTitleY = baseBottomY + 42;
 
   return (
     <>
-      <ViewTitle x="124" y={topBottom - 11} lines={["Vista", "superior"]} anchor="end" />
-      <ViewTitle x="124" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
-      <ViewTitle x={sideLeft - 18} y={baseBottomY - 24} lines={["Vista", "lateral"]} anchor="end" />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
+      <ViewTitle x={sideCx} y={sideTitleY} lines={["Vista", "lateral"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 18} y2={topBottom + 18} />
       <line className="technical-centerline" x1={topLeft - 18} x2={topRight + 18} y1={topCy} y2={topCy} />
-      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx="14" />
-      <rect className="part muted" x={innerLeft} y={innerTop} width={innerWidth} height={innerHeight} rx="8" />
-      <rect className="void" x={innerLeft + coreInset} y={innerTop + coreInset} width={Math.max(4, innerWidth - coreInset * 2)} height={Math.max(4, innerHeight - coreInset * 2)} rx="5" />
+      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx={outerRadius} />
+      <rect className="part muted" x={innerLeft} y={innerTop} width={innerWidth} height={innerHeight} rx={innerRadius} />
+      <rect className="void" x={innerLeft + coreInset} y={innerTop + coreInset} width={coreWidth} height={coreHeight} rx={coreRadius} />
       <Dimension x1={topLeft} y1={topTop - 28} x2={topRight} y2={topTop - 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={topLeft - 42} y1={topTop} x2={topLeft - 42} y2={topBottom} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={innerLeft} y1={topBottom + 18} x2={topLeft} y2={topBottom + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
 
       <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
-      <line className="technical-datum" x1="132" x2="574" y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-datum" x1="132" x2="652" y1={baseBottomY} y2={baseBottomY} />
       <rect className="part" x={frontNeckLeft} y={neckTopY} width={innerWidth} height={neckHeight} rx="0" />
       <path className="section-hatch-fill" d={`M ${frontNeckLeft + 5} ${neckTopY + 5} H ${frontNeckRight - 5} V ${baseTopY - 5} H ${frontNeckLeft + 5} Z`} />
       {Array.from({ length: ribCount }, (_, index) => {
@@ -177,7 +198,7 @@ function TubeRect({ values, activeKey, onSelect }) {
         return <rect className="part muted" key={`front-${ribY}`} x={frontNeckLeft - ribWidth} y={ribY - 3} width={innerWidth + ribWidth * 2} height="6" rx="3" />;
       })}
       <path className="part muted" d={frontPath} />
-      <line className="technical-outline-heavy" x1={frontLeft + bottomRadius} x2={frontRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={frontLeft + frontBottomRadius} x2={frontRight - frontBottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={frontLeft} y1={baseBottomY + 28} x2={frontRight} y2={baseBottomY + 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={frontLeft - 48} y1={neckTopY} x2={frontLeft - 48} y2={baseTopY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={frontLeft - 48} y1={baseTopY} x2={frontLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
@@ -189,40 +210,42 @@ function TubeRect({ values, activeKey, onSelect }) {
         return <rect className="part muted" key={`side-${ribY}`} x={sideNeckLeft - ribWidth} y={ribY - 3} width={innerHeight + ribWidth * 2} height="6" rx="3" />;
       })}
       <path className="part muted" d={sidePath} />
-      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={sideLeft + sideBottomRadius} x2={sideRight - sideBottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={sideLeft} y1={baseBottomY + 28} x2={sideRight} y2={baseBottomY + 28} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }
 
-function TubeOblong({ values, activeKey, onSelect }) {
+function TubeOblong({ format, values, activeKey, onSelect }) {
   const sizeXValue = Number(values.tamanhoBaseX || 36);
   const sizeYValue = Number(values.tamanhoBaseY || 18);
   const baseHeightValue = Number(values.alturaBase || 6);
   const neckHeightValue = Number(values.alturaPescoco || 18);
   const wallValue = Number(values.paredeTubo || 1.5);
   const { width: sizeX, height: sizeY, scale: sectionScale } = scalePlanDimensions(sizeXValue, sizeYValue, {
-    maxWidth: 250,
-    maxHeight: 118,
+    maxWidth: 230,
+    maxHeight: 230,
+    maxWidthValue: parameterMax(format, "tamanhoBaseX", 150),
+    maxHeightValue: parameterMax(format, "tamanhoBaseY", 150),
     preferredScale: 3.2,
-    minLargest: 70
+    minReadableSize: 24,
+    readableCurve: 40
   });
   const baseHeight = scaleBaseHeight(baseHeightValue);
-  const neckHeight = clamp(neckHeightValue * 2.05, 34, 84);
+  const neckHeight = clamp(neckHeightValue * 2.35, 34, 90);
   const wall = clamp(wallValue * sectionScale, 4, Math.max(4, sizeY * 0.24));
   const ribWidth = Math.min(7, Math.max(4, wall * 0.5));
   const innerX = Math.max(sizeX * 0.42, sizeX - wall * 2);
   const innerY = Math.max(sizeY * 0.42, sizeY - wall * 2);
   const coreInset = Math.min(12, innerX / 4, innerY / 4);
-  const topCx = 330;
-  const topBottom = clamp(188 - neckHeight * 0.35, 150, 178);
+  const topCx = 320;
+  const topBottom = topViewY + sizeY / 2;
   const topTop = topBottom - sizeY;
   const topCy = topTop + sizeY / 2;
   const topLeft = topCx - sizeX / 2;
   const topRight = topCx + sizeX / 2;
-  const frontCx = 330;
-  const sideCx = 520;
-  const baseBottomY = 304;
+  const frontCx = 320;
+  const sideCx = 595;
   const baseTopY = baseBottomY - baseHeight;
   const neckTopY = baseTopY - neckHeight;
   const frontLeft = frontCx - sizeX / 2;
@@ -238,12 +261,15 @@ function TubeOblong({ values, activeKey, onSelect }) {
   const ribGap = neckHeight / (ribCount + 1);
   const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, bottomRadius);
   const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
+  const topTitleY = topCy - 34;
+  const frontTitleY = baseBottomY + 20;
+  const sideTitleY = baseBottomY + 42;
 
   return (
     <>
-      <ViewTitle x="124" y={topBottom - 11} lines={["Vista", "superior"]} anchor="end" />
-      <ViewTitle x="124" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
-      <ViewTitle x={sideLeft - 18} y={baseBottomY - 24} lines={["Vista", "lateral"]} anchor="end" />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
+      <ViewTitle x={sideCx} y={sideTitleY} lines={["Vista", "lateral"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 18} y2={topBottom + 18} />
       <line className="technical-centerline" x1={topLeft - 18} x2={topRight + 18} y1={topCy} y2={topCy} />
@@ -255,7 +281,7 @@ function TubeOblong({ values, activeKey, onSelect }) {
       <Dimension x1={topCx - innerX / 2} y1={topBottom + 18} x2={topLeft} y2={topBottom + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
 
       <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 18} y2={baseBottomY + 20} />
-      <line className="technical-datum" x1="132" x2="574" y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-datum" x1="132" x2="652" y1={baseBottomY} y2={baseBottomY} />
       <rect className="part" x={frontNeckLeft} y={neckTopY} width={innerX} height={neckHeight} rx="0" />
       <path className="section-hatch-fill" d={`M ${frontNeckLeft + 5} ${neckTopY + 5} H ${frontNeckRight - 5} V ${baseTopY - 5} H ${frontNeckLeft + 5} Z`} />
       {Array.from({ length: ribCount }, (_, index) => {
@@ -282,20 +308,25 @@ function TubeOblong({ values, activeKey, onSelect }) {
   );
 }
 
-function BaseRound({ values, activeKey, onSelect }) {
+function BaseRound({ format, values, activeKey, onSelect }) {
   const hasNeck = values.pescoco === true || values.pescoco === "true";
   const baseDiameterValue = Number(values.diametroBase ?? values.diametro ?? 28);
   const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 6);
   const neckDiameterValue = Number(values.diametroPescoco ?? 8);
   const neckHeightValue = Number(values.alturaPescoco ?? 12);
-  const diameter = clamp(baseDiameterValue * 2.5, 58, 130);
+  const diameterKey = values.diametroBase !== undefined ? "diametroBase" : "diametro";
+  const diameter = scaleRangeDimension(baseDiameterValue, {
+    maxValue: parameterMax(format, diameterKey, 150),
+    maxSize: 230,
+    minSize: 24,
+    readableCurve: 40
+  });
   const height = scaleBaseHeight(baseHeightValue, { scale: 6, max: 60 });
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, diameter - 18));
-  const neckHeight = clamp(neckHeightValue * 2.8, 24, 98);
-  const topCx = 320;
-  const topCy = 104;
+  const neckHeight = clamp(neckHeightValue * 2.8, 24, 96);
+  const topCx = 360;
+  const topCy = topViewY;
   const frontCx = topCx;
-  const baseBottomY = 304;
   const baseTopY = baseBottomY - height;
   const sideLeft = frontCx - diameter / 2;
   const sideRight = frontCx + diameter / 2;
@@ -303,7 +334,6 @@ function BaseRound({ values, activeKey, onSelect }) {
   const neckRight = frontCx + neckDiameter / 2;
   const neckTopY = baseTopY - neckHeight;
   const bottomRadius = Math.min(height, diameter / 2);
-  const diameterScaleLimited = baseDiameterValue * 2.5 !== diameter;
   const basePath = `
     M ${sideLeft} ${baseTopY}
     H ${sideRight}
@@ -312,16 +342,17 @@ function BaseRound({ values, activeKey, onSelect }) {
     H ${sideLeft + bottomRadius}
     Q ${sideLeft} ${baseBottomY} ${sideLeft} ${baseBottomY - bottomRadius}
     Z`;
+  const topTitleY = topCy - 8;
+  const frontTitleY = baseBottomY + 20;
 
   return (
     <>
-      <ViewTitle x={viewLabelX} y={topCy - 8} lines={["Vista", "superior"]} />
-      <ViewTitle x={viewLabelX} y={baseBottomY - height / 2 - 8} lines={["Vista", "frontal"]} />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 20} y2={topCy + diameter / 2 + 20} />
       <line className="technical-centerline" x1={topCx - diameter / 2 - 20} x2={topCx + diameter / 2 + 20} y1={topCy} y2={topCy} />
       <circle className="part" cx={topCx} cy={topCy} r={diameter / 2} />
-      {diameterScaleLimited && <ScaleLimitMarks x1={topCx - diameter / 2} x2={topCx + diameter / 2} y={topCy} />}
       {hasNeck && (
         <>
           <circle className="void" cx={topCx} cy={topCy} r={neckDiameter / 2} />
@@ -355,14 +386,17 @@ function BaseRound({ values, activeKey, onSelect }) {
   );
 }
 
-function BaseOblong({ values, activeKey, onSelect }) {
+function BaseOblong({ format, values, activeKey, onSelect }) {
   const lengthValue = Number(values.comprimento || 50);
   const widthValue = Number(values.largura || 20);
   const { width: length, height: width } = scalePlanDimensions(lengthValue, widthValue, {
     maxWidth: 330,
     maxHeight: 150,
+    maxWidthValue: parameterMax(format, "comprimento", 110),
+    maxHeightValue: parameterMax(format, "largura", 42),
     preferredScale: 3.6,
-    minLargest: 86
+    minWidth: 24,
+    minHeight: 24
   });
   const height = clamp(Number(values.altura || 7) * 7, 28, 110);
   const holes = Number(values.distanciaFuros || 0);
@@ -393,28 +427,32 @@ function BaseOblong({ values, activeKey, onSelect }) {
   );
 }
 
-function BaseRect({ values, activeKey, onSelect }) {
+function BaseRect({ format, values, activeKey, onSelect }) {
   const hasNeck = values.pescoco === true || values.pescoco === "true";
   const sizeXValue = Number(values.tamanhoBaseX || values.comprimento || 50);
   const sizeYValue = Number(values.tamanhoBaseY || values.largura || 50);
   const baseHeightValue = Number(values.alturaBase || values.altura || 7);
   const neckDiameterValue = Number(values.diametroPescoco || 8);
   const neckHeightValue = Number(values.alturaPescoco || 12);
+  const sizeXKey = values.tamanhoBaseX !== undefined ? "tamanhoBaseX" : "comprimento";
+  const sizeYKey = values.tamanhoBaseY !== undefined ? "tamanhoBaseY" : "largura";
   const { width: sizeX, height: sizeY } = scalePlanDimensions(sizeXValue, sizeYValue, {
-    maxWidth: 168,
-    maxHeight: 128,
+    maxWidth: 230,
+    maxHeight: 230,
+    maxWidthValue: parameterMax(format, sizeXKey, 150),
+    maxHeightValue: parameterMax(format, sizeYKey, 150),
     preferredScale: 3.1,
-    minLargest: 72
+    minReadableSize: 24,
+    readableCurve: 40
   });
   const baseHeight = scaleBaseHeight(baseHeightValue);
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, Math.min(sizeX, sizeY) - 16));
-  const neckHeight = clamp(neckHeightValue * 2.4, 24, 84);
-  const radius = 12;
-  const guideX = 214;
-  const topCx = 316;
-  const frontCx = 316;
-  const sideCx = 524;
-  const baseBottomY = 304;
+  const neckHeight = clamp(neckHeightValue * 2.4, 24, 90);
+  const radius = cornerRadius(sizeX, sizeY, { max: 10, ratio: 0.15 });
+  const guideX = 145;
+  const topCx = 300;
+  const frontCx = 300;
+  const sideCx = 585;
   const baseTopY = baseBottomY - baseHeight;
   const frontLeft = frontCx - sizeX / 2;
   const frontRight = frontCx + sizeX / 2;
@@ -425,20 +463,24 @@ function BaseRect({ values, activeKey, onSelect }) {
   const sideNeckLeft = sideCx - neckDiameter / 2;
   const sideNeckRight = sideCx + neckDiameter / 2;
   const neckTopY = baseTopY - neckHeight;
-  const bottomRadius = Math.min(baseHeight, 14);
-  const topBottom = 176;
+  const frontBottomRadius = Math.min(baseHeight, sizeX / 2, 14);
+  const sideBottomRadius = Math.min(baseHeight, sizeY / 2, 14);
+  const topBottom = topViewY + sizeY / 2;
   const topTop = topBottom - sizeY;
   const topCy = topTop + sizeY / 2;
   const topLeft = topCx - sizeX / 2;
   const topRight = topCx + sizeX / 2;
-  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, bottomRadius);
-  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
+  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, frontBottomRadius);
+  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, sideBottomRadius);
+  const topTitleY = topCy - 34;
+  const frontTitleY = baseBottomY + 20;
+  const sideTitleY = baseBottomY + 42;
 
   return (
     <>
-      <ViewTitle x="116" y={topBottom - 11} lines={["Vista", "superior"]} anchor="end" />
-      <ViewTitle x="116" y={baseBottomY - 11} lines={["Vista", "frontal"]} anchor="end" />
-      <ViewTitle x={sideLeft - 18} y={baseBottomY - 11} lines={["Vista", "lateral"]} anchor="end" />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
+      <ViewTitle x={sideCx} y={sideTitleY} lines={["Vista", "lateral"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 20} y2={topBottom + 20} />
       <line className="technical-centerline" x1={topLeft - 20} x2={topRight + 20} y1={topCy} y2={topCy} />
@@ -463,7 +505,7 @@ function BaseRect({ values, activeKey, onSelect }) {
       )}
       <path className="part muted" d={frontPath} />
       <line className="technical-outline-heavy" x1={frontLeft} x2={frontRight} y1={baseTopY} y2={baseTopY} />
-      <line className="technical-outline-heavy" x1={frontLeft + bottomRadius} x2={frontRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={frontLeft + frontBottomRadius} x2={frontRight - frontBottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={frontLeft} y1={baseBottomY + 28} x2={frontRight} y2={baseBottomY + 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={guideX} y1={baseTopY} x2={guideX} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
 
@@ -477,7 +519,7 @@ function BaseRect({ values, activeKey, onSelect }) {
       )}
       <path className="part muted" d={sidePath} />
       <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
-      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={sideLeft + sideBottomRadius} x2={sideRight - sideBottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={sideLeft} y1={baseBottomY + 28} x2={sideRight} y2={baseBottomY + 28} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
@@ -532,19 +574,97 @@ function scaleBaseHeight(value, { scale = 5.2, min = 8, max = 52 } = {}) {
   return clamp(Number(value || 0) * scale, min, max);
 }
 
-function scalePlanDimensions(widthValue, heightValue, { maxWidth, maxHeight, preferredScale, minLargest = 0 }) {
+function scaleRangeDimension(value, { maxValue, maxSize, minSize = 0, readableCurve = 0 }) {
+  const safeValue = Math.max(0.1, Number(value || 0.1));
+  const safeMaxValue = Math.max(safeValue, Number(maxValue || safeValue));
+
+  if (readableCurve > 0) {
+    return scaleReadableAxis(safeValue, {
+      maxValue: safeMaxValue,
+      maxSize,
+      minSize,
+      curve: readableCurve
+    });
+  }
+
+  const scale = maxSize / safeMaxValue;
+
+  return clamp(safeValue * scale, Math.min(minSize, maxSize), maxSize);
+}
+
+function scalePlanDimensions(
+  widthValue,
+  heightValue,
+  {
+    maxWidth,
+    maxHeight,
+    maxWidthValue,
+    maxHeightValue,
+    preferredScale,
+    minWidth = 0,
+    minHeight = 0,
+    minReadableSize = 0,
+    readableCurve = 0
+  }
+) {
   const safeWidth = Math.max(0.1, Number(widthValue || 0.1));
   const safeHeight = Math.max(0.1, Number(heightValue || 0.1));
-  const largest = Math.max(safeWidth, safeHeight);
-  const maxScale = Math.min(maxWidth / safeWidth, maxHeight / safeHeight);
-  const readableScale = minLargest > 0 ? minLargest / largest : 0;
-  const scale = Math.min(maxScale, Math.max(preferredScale, readableScale));
+  const safeMaxWidthValue = Math.max(safeWidth, Number(maxWidthValue || safeWidth));
+  const safeMaxHeightValue = Math.max(safeHeight, Number(maxHeightValue || safeHeight));
+
+  if (readableCurve > 0) {
+    const width = scaleReadableAxis(safeWidth, {
+      maxValue: safeMaxWidthValue,
+      maxSize: maxWidth,
+      minSize: Math.max(minWidth, minReadableSize),
+      curve: readableCurve
+    });
+    const height = scaleReadableAxis(safeHeight, {
+      maxValue: safeMaxHeightValue,
+      maxSize: maxHeight,
+      minSize: Math.max(minHeight, minReadableSize),
+      curve: readableCurve
+    });
+
+    return {
+      width,
+      height,
+      scale: Math.min(width / safeWidth, height / safeHeight)
+    };
+  }
+
+  const rangeScale = Math.min(
+    preferredScale,
+    maxWidth / safeMaxWidthValue,
+    maxHeight / safeMaxHeightValue
+  );
 
   return {
-    width: safeWidth * scale,
-    height: safeHeight * scale,
-    scale
+    width: clamp(safeWidth * rangeScale, Math.min(minWidth, maxWidth), maxWidth),
+    height: clamp(safeHeight * rangeScale, Math.min(minHeight, maxHeight), maxHeight),
+    scale: rangeScale
   };
+}
+
+function scaleReadableAxis(value, { maxValue, maxSize, minSize, curve }) {
+  const safeValue = Math.max(0.1, Number(value || 0.1));
+  const safeMaxValue = Math.max(safeValue, Number(maxValue || safeValue));
+  const denominator = 1 - Math.exp(-safeMaxValue / curve);
+  const scaledValue = denominator > 0
+    ? maxSize * ((1 - Math.exp(-safeValue / curve)) / denominator)
+    : safeValue;
+
+  return clamp(scaledValue, Math.min(minSize, maxSize), maxSize);
+}
+
+function cornerRadius(width, height, { max, ratio }) {
+  const shortestSide = Math.min(Number(width || 0), Number(height || 0));
+
+  return Math.min(max, shortestSide / 2, shortestSide * ratio);
+}
+
+function parameterMax(format, key, fallback) {
+  return format?.parameters?.find((parameter) => parameter.key === key)?.max ?? fallback;
 }
 
 function BaseU({ values, activeKey, onSelect }) {
@@ -572,26 +692,6 @@ function BaseU({ values, activeKey, onSelect }) {
       <Dimension x1={left} y1={bottom + 28} x2={right} y2={bottom + 28} label={`${values.comprimento} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={right + 88} y1={top} x2={right + 88} y2={top + height} label={`${values.alturaAparente} mm`} paramKey="alturaAparente" activeKey={activeKey} onSelect={onSelect} />
     </>
-  );
-}
-
-function ScaleLimitMarks({ x1, x2, y, vertical = false }) {
-  const center = (Number(x1) + Number(x2)) / 2;
-
-  if (vertical) {
-    return (
-      <g className="scale-limit-mark" aria-hidden="true">
-        <path d={`M ${center - 12} ${y - 24} l 8 -8 M ${center + 4} ${y - 24} l 8 -8`} />
-        <path d={`M ${center - 12} ${y + 24} l 8 8 M ${center + 4} ${y + 24} l 8 8`} />
-      </g>
-    );
-  }
-
-  return (
-    <g className="scale-limit-mark" aria-hidden="true">
-      <path d={`M ${x1 - 14} ${y - 12} l -8 8 M ${x1 - 4} ${y - 12} l -8 8`} />
-      <path d={`M ${x2 + 14} ${y - 12} l 8 8 M ${x2 + 4} ${y - 12} l 8 8`} />
-    </g>
   );
 }
 

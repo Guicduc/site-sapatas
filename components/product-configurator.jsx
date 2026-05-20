@@ -270,7 +270,51 @@ function FormatSelector({ category, selectedSlug, onChange }) {
 }
 
 function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onChange, onFocus }) {
-  const [editingKey, setEditingKey] = useState("");
+  function handleRangePointer(event, parameter) {
+    if (event.type === "pointermove" && event.buttons !== 1) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (event.type === "pointerdown") {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    }
+
+    const nextValue = getPointerValue(event, parameter);
+    onFocus(parameter.key);
+
+    if (String(values[parameter.key] ?? "") !== nextValue) {
+      onChange(parameter.key, nextValue);
+    }
+  }
+
+  function handleRangeKeyDown(event, parameter) {
+    const currentValue = Number(values[parameter.key] ?? parameter.defaultValue ?? parameter.min);
+    const step = Number(parameter.step || 1);
+    const largeStep = step * 10;
+    const keyHandlers = {
+      ArrowLeft: currentValue - step,
+      ArrowDown: currentValue - step,
+      ArrowRight: currentValue + step,
+      ArrowUp: currentValue + step,
+      PageDown: currentValue - largeStep,
+      PageUp: currentValue + largeStep,
+      Home: parameter.min,
+      End: parameter.max
+    };
+
+    if (!(event.key in keyHandlers)) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextValue = formatParameterValue(keyHandlers[event.key], parameter);
+
+    if (String(values[parameter.key] ?? "") !== nextValue) {
+      onChange(parameter.key, nextValue);
+    }
+  }
 
   return (
     <div className="parameter-panel">
@@ -314,24 +358,29 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
             style={{
               "--value-position": `${getValuePosition(values[parameter.key], parameter)}%`
             }}
-            onDoubleClick={() => {
-              setEditingKey(parameter.key);
-              window.requestAnimationFrame(() => fieldsRef.current[parameter.key]?.select());
-            }}
           >
-            <input
+            <div
               className="parameter-range"
-              type="range"
-              min={parameter.min}
-              max={parameter.max}
-              step={parameter.step}
-              value={values[parameter.key] ?? parameter.min}
-              disabled={parameter.dependsOn && !values[parameter.dependsOn]}
-              onChange={(event) => onChange(parameter.key, event.target.value)}
+              role="slider"
+              tabIndex={parameter.dependsOn && !values[parameter.dependsOn] ? -1 : 0}
+              aria-label={parameter.label}
+              aria-valuemin={parameter.min}
+              aria-valuemax={parameter.max}
+              aria-valuenow={Number(values[parameter.key] ?? parameter.min)}
+              aria-valuetext={`${values[parameter.key] ?? parameter.min} ${parameter.unit}`}
+              aria-disabled={parameter.dependsOn && !values[parameter.dependsOn] ? "true" : undefined}
               onFocus={() => onFocus(parameter.key)}
-            />
+              onKeyDown={(event) => handleRangeKeyDown(event, parameter)}
+              onPointerDown={(event) => handleRangePointer(event, parameter)}
+              onPointerMove={(event) => handleRangePointer(event, parameter)}
+            >
+              <span className="parameter-range__track" aria-hidden="true">
+                <span className="parameter-range__fill" />
+                <span className="parameter-range__thumb" />
+              </span>
+            </div>
             <input
-              className={`parameter-value${editingKey === parameter.key ? " is-editing" : ""}`}
+              className="parameter-value"
               ref={(element) => {
                 fieldsRef.current[parameter.key] = element;
               }}
@@ -341,10 +390,11 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               step={parameter.step}
               value={values[parameter.key] ?? ""}
               disabled={parameter.dependsOn && !values[parameter.dependsOn]}
-              readOnly={editingKey !== parameter.key}
               onChange={(event) => onChange(parameter.key, event.target.value)}
-              onFocus={() => onFocus(parameter.key)}
-              onBlur={() => setEditingKey("")}
+              onFocus={(event) => {
+                onFocus(parameter.key);
+                event.target.select();
+              }}
               aria-label={parameter.label}
             />
           </div>
@@ -370,6 +420,35 @@ function getValuePosition(value, parameter) {
   }
 
   return Math.min(100, Math.max(0, ((numericValue - parameter.min) / range) * 100));
+}
+
+function getPointerValue(event, parameter) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const ratio = rect.width > 0
+    ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+    : 0;
+  const rawValue = parameter.min + ratio * (parameter.max - parameter.min);
+
+  return formatParameterValue(rawValue, parameter);
+}
+
+function formatParameterValue(value, parameter) {
+  const step = Number(parameter.step || 1);
+  const decimals = getStepDecimals(step);
+  const steppedValue = Math.round((Number(value) - parameter.min) / step) * step + parameter.min;
+  const clampedValue = Math.min(parameter.max, Math.max(parameter.min, steppedValue));
+
+  return decimals > 0 ? clampedValue.toFixed(decimals) : String(Math.round(clampedValue));
+}
+
+function getStepDecimals(step) {
+  const text = String(step);
+
+  if (!text.includes(".")) {
+    return 0;
+  }
+
+  return text.split(".")[1].length;
 }
 
 function ConfigurationSummary({
