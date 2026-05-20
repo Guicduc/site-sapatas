@@ -25,7 +25,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [values, setValues] = useState(() => getInitialValues(format));
   const [activeKey, setActiveKey] = useState(format.parameters[0]?.key || "");
   const [color, setColor] = useState(category.colors[0]);
-  const [finish, setFinish] = useState(category.finishes[0] || "nao se aplica");
+  const [finish, setFinish] = useState(category.finishes[0] || "não se aplica");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const fieldsRef = useRef({});
@@ -36,7 +36,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setValues(getInitialValues(nextFormat));
     setActiveKey(nextFormat.parameters[0]?.key || "");
     setColor(category.colors[0]);
-    setFinish(category.finishes[0] || "nao se aplica");
+    setFinish(category.finishes[0] || "não se aplica");
     setAdded(false);
   }, [category, formatSlug]);
 

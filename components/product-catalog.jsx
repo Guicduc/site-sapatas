@@ -27,7 +27,7 @@ export function ProductCatalog({ categories }) {
     <section className="shop-shell">
       <div className="shop-hero">
         <div className="shop-hero__copy">
-          <h1>Sapatas plasticas customizaveis para o seu projeto</h1>
+          <h1>Sapatas plásticas customizáveis para o seu projeto</h1>
           <p className="lead">
             Sapatas feitas sob medida para encaixar no seu projeto, proteger melhor e dar um acabamento mais bonito.
           </p>

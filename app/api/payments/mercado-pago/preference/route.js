@@ -11,7 +11,7 @@ export async function POST(request) {
 
     if (!order) {
       return NextResponse.json(
-        { error: "order_not_found", message: "Pedido nao encontrado." },
+        { error: "order_not_found", message: "Pedido não encontrado." },
         { status: 404 }
       );
     }
@@ -20,7 +20,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           error: "order_not_payable",
-          message: "Este pedido precisa de revisao tecnica antes de gerar cobranca."
+          message: "Este pedido precisa de revisão técnica antes de gerar cobrança."
         },
         { status: 409 }
       );
@@ -30,7 +30,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           error: "order_without_amount",
-          message: "Este pedido nao possui valor cobravel."
+          message: "Este pedido não possui valor cobrável."
         },
         { status: 409 }
       );
@@ -65,7 +65,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: error.code || "mercado_pago_preference_failed",
-        message: error.message || "Nao foi possivel gerar o pagamento.",
+        message: error.message || "Não foi possível gerar o pagamento.",
         details: error.details || null
       },
       { status }

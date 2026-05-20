@@ -39,7 +39,7 @@ export default async function AdminOrdersPage({ searchParams }) {
       <div className="configurator-heading">
         <div>
           <p className="eyebrow">Admin | {getStoreMode()}</p>
-          <h1>Pedidos, pagamentos e revisoes tecnicas.</h1>
+          <h1>Pedidos, pagamentos e revisões técnicas.</h1>
         </div>
         <Link className="button button-secondary" href="/">
           Voltar ao site
@@ -99,7 +99,7 @@ export default async function AdminOrdersPage({ searchParams }) {
 
               {order.technicalReviews?.length > 0 && (
                 <details>
-                  <summary>Revisao tecnica</summary>
+                  <summary>Revisão técnica</summary>
                   <pre className="brief-preview">{order.technicalReviews[0].notes}</pre>
                 </details>
               )}
@@ -191,7 +191,7 @@ async function calculateOrcaPricing(formData) {
     await updateOrderPricingState(orderId, {
       error: {
         code: error.code || "orca_pricing_failed",
-        message: error.message || "Nao foi possivel calcular com Orca.",
+        message: error.message || "Não foi possível calcular com Orca.",
         happenedAt: new Date().toISOString()
       }
     });

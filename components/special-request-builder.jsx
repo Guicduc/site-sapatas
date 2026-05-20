@@ -12,9 +12,9 @@ export function SpecialRequestBuilder() {
 
   const message = [
     "Oi, quero solicitar um projeto especial para sapatas.",
-    `Nome: ${name || "Nao informado"}`,
-    `WhatsApp ou email: ${contact || "Nao informado"}`,
-    `Projeto: ${dimensions || "Nao informado"}`
+    `Nome: ${name || "Não informado"}`,
+    `WhatsApp ou email: ${contact || "Não informado"}`,
+    `Projeto: ${dimensions || "Não informado"}`
   ].join("\n");
 
   return (
@@ -50,8 +50,8 @@ export function SpecialRequestBuilder() {
         <p className="eyebrow">WhatsApp</p>
         <h2>Enviar para o comercial</h2>
         <p>
-          O objetivo aqui e reduzir ida e volta improdutiva e capturar o pedido especial com
-          densidade suficiente para avaliacao tecnica.
+          O objetivo aqui ? reduzir ida e volta improdutiva e capturar o pedido especial com
+          densidade suficiente para avaliação técnica.
         </p>
         <a
           className="button button-primary button-block whatsapp-button"

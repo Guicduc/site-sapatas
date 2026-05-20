@@ -38,7 +38,7 @@ export function OrderConfirmation({ initialOrderId = "" }) {
         const payload = await response.json();
 
         if (!response.ok) {
-          throw new Error(payload.message || "Pedido nao encontrado.");
+          throw new Error(payload.message || "Pedido não encontrado.");
         }
 
         return payload.order;
@@ -50,7 +50,7 @@ export function OrderConfirmation({ initialOrderId = "" }) {
       })
       .catch((caughtError) => {
         if (!cancelled) {
-          setError(caughtError.message || "Nao foi possivel carregar o pedido.");
+          setError(caughtError.message || "Não foi possível carregar o pedido.");
         }
       })
       .finally(() => {
@@ -79,7 +79,7 @@ export function OrderConfirmation({ initialOrderId = "" }) {
         <p className="eyebrow">Pedido</p>
         <h1>{error || "Nenhum pedido recente encontrado."}</h1>
         <Link className="button button-primary" href="/">
-          Abrir catalogo
+          Abrir catálogo
         </Link>
       </section>
     );
@@ -91,8 +91,8 @@ export function OrderConfirmation({ initialOrderId = "" }) {
         <p className="eyebrow">Pedido recebido</p>
         <h1>{order.orderNumber}</h1>
         <p>
-          O pedido agora esta salvo no sistema. O status abaixo reflete a validacao tecnica e o
-          retorno de pagamento recebido ate o momento.
+          O pedido agora está salvo no sistema. O status abaixo reflete a validação tecnica e o
+          retorno de pagamento recebido até o momento.
         </p>
         <div className="summary-stats">
           <article>
@@ -124,8 +124,8 @@ export function OrderConfirmation({ initialOrderId = "" }) {
 
       {order.technicalReviews?.length > 0 && (
         <article className="surface-card">
-          <p className="eyebrow">Revisao tecnica</p>
-          <h2>Este pedido precisa de avaliacao antes de producao.</h2>
+          <p className="eyebrow">Revisão técnica</p>
+          <h2>Este pedido precisa de avaliação antes de produção.</h2>
           <pre className="brief-preview">{order.technicalReviews[0].notes}</pre>
         </article>
       )}
@@ -176,7 +176,7 @@ function formatKey(key) {
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (letter) => letter.toUpperCase())
     .replace("Interno", "interno")
-    .replace("Insercao", "insercao")
+    .replace("Inserção", "inserção")
     .replace("Apoio", "apoio")
     .replace("Aparente", "aparente");
 }
