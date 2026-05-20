@@ -14,7 +14,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: "order_create_failed",
-        message: error.message || "Nao foi possivel criar o pedido."
+        message: error.message || "Não foi possível criar o pedido."
       },
       { status: 400 }
     );

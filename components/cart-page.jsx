@@ -15,7 +15,7 @@ export function CartPage() {
       <div className="configurator-heading">
         <div>
           <p className="eyebrow">Carrinho</p>
-          <h1>Revise as configuracoes antes de fechar o pedido.</h1>
+          <h1>Revise as configurações antes de fechar o pedido.</h1>
         </div>
         <Link className="button button-secondary" href="/">
           Adicionar outro item
@@ -26,11 +26,11 @@ export function CartPage() {
         <article className="empty-cart">
           <div>
             <p className="eyebrow">Carrinho vazio</p>
-            <h2>O carrinho esta vazio.</h2>
-            <p>Configure uma ponteira ou sapata para gerar o resumo tecnico do pedido.</p>
+            <h2>O carrinho está vazio.</h2>
+            <p>Configure uma ponteira ou sapata para gerar o resumo técnico do pedido.</p>
           </div>
           <Link className="button button-primary" href="/">
-            Abrir catalogo
+            Abrir catálogo
           </Link>
         </article>
       ) : (
@@ -86,7 +86,7 @@ export function CartPage() {
           <aside className="summary-panel cart-summary">
             <p className="eyebrow">Total estimado</p>
             <h2>{formatCurrency(total)}</h2>
-            <p>Pedidos dentro da matriz seguem para pagamento. Fora dela, entram em revisao tecnica.</p>
+            <p>Pedidos dentro da matriz seguem para pagamento. Fora dela, entram em revisão técnica.</p>
             <CheckoutForm />
           </aside>
         </div>
@@ -130,7 +130,7 @@ function CheckoutForm() {
       const orderPayload = await orderResponse.json();
 
       if (!orderResponse.ok) {
-        throw new Error(orderPayload.message || "Nao foi possivel criar o pedido.");
+        throw new Error(orderPayload.message || "Não foi possível criar o pedido.");
       }
 
       const order = orderPayload.order;
@@ -155,14 +155,14 @@ function CheckoutForm() {
       if (!paymentResponse.ok) {
         throw new Error(
           paymentPayload.message ||
-            "Pedido criado, mas o pagamento Mercado Pago ainda nao foi gerado."
+            "Pedido criado, mas o pagamento Mercado Pago ainda não foi gerado."
         );
       }
 
       clearCart();
       window.location.assign(paymentPayload.checkoutUrl);
     } catch (caughtError) {
-      setError(caughtError.message || "Nao foi possivel finalizar o pedido.");
+      setError(caughtError.message || "Não foi possível finalizar o pedido.");
     } finally {
       setSubmitting(false);
     }
@@ -207,7 +207,7 @@ function formatKey(key) {
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (letter) => letter.toUpperCase())
     .replace("Interno", "interno")
-    .replace("Insercao", "insercao")
+    .replace("Inserção", "inserção")
     .replace("Apoio", "apoio")
     .replace("Aparente", "aparente");
 }
