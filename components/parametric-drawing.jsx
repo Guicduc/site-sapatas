@@ -49,7 +49,8 @@ function TubeRound({ format, values, activeKey, onSelect }) {
   const diameter = scaleRangeDimension(baseDiameterValue, {
     maxValue: parameterMax(format, "diametroBase", 150),
     maxSize: 230,
-    minSize: 20
+    minSize: 24,
+    readableCurve: 40
   });
   const baseHeight = scaleBaseHeight(baseHeightValue);
   const neckHeight = clamp(neckHeightValue * 2.35, 34, 90);
@@ -71,11 +72,13 @@ function TubeRound({ format, values, activeKey, onSelect }) {
   const ribCount = neckHeightValue <= 20 ? 3 : 4;
   const ribGap = neckHeight / (ribCount + 1);
   const basePath = roundedBaseSection(baseLeft, baseRight, baseTopY, baseBottomY, bottomRadius);
+  const topTitleY = topCy - 8;
+  const frontTitleY = baseBottomY + 20;
 
   return (
     <>
-      <ViewTitle x={viewLabelX} y={topCy - 8} lines={["Vista", "superior"]} />
-      <ViewTitle x={viewLabelX} y={baseBottomY - 23} lines={["Vista", "frontal"]} />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 18} y2={topCy + diameter / 2 + 18} />
       <line className="technical-centerline" x1={topCx - diameter / 2 - 18} x2={topCx + diameter / 2 + 18} y1={topCy} y2={topCy} />
@@ -315,7 +318,8 @@ function BaseRound({ format, values, activeKey, onSelect }) {
   const diameter = scaleRangeDimension(baseDiameterValue, {
     maxValue: parameterMax(format, diameterKey, 150),
     maxSize: 230,
-    minSize: 20
+    minSize: 24,
+    readableCurve: 40
   });
   const height = scaleBaseHeight(baseHeightValue, { scale: 6, max: 60 });
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, diameter - 18));
@@ -338,11 +342,13 @@ function BaseRound({ format, values, activeKey, onSelect }) {
     H ${sideLeft + bottomRadius}
     Q ${sideLeft} ${baseBottomY} ${sideLeft} ${baseBottomY - bottomRadius}
     Z`;
+  const topTitleY = topCy - 8;
+  const frontTitleY = baseBottomY + 20;
 
   return (
     <>
-      <ViewTitle x={viewLabelX} y={topCy - 8} lines={["Vista", "superior"]} />
-      <ViewTitle x={viewLabelX} y={baseBottomY - height / 2 - 8} lines={["Vista", "frontal"]} />
+      <ViewTitle x={viewLabelX} y={topTitleY} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={frontTitleY} lines={["Vista", "frontal"]} />
 
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 20} y2={topCy + diameter / 2 + 20} />
       <line className="technical-centerline" x1={topCx - diameter / 2 - 20} x2={topCx + diameter / 2 + 20} y1={topCy} y2={topCy} />
@@ -568,9 +574,19 @@ function scaleBaseHeight(value, { scale = 5.2, min = 8, max = 52 } = {}) {
   return clamp(Number(value || 0) * scale, min, max);
 }
 
-function scaleRangeDimension(value, { maxValue, maxSize, minSize = 0 }) {
+function scaleRangeDimension(value, { maxValue, maxSize, minSize = 0, readableCurve = 0 }) {
   const safeValue = Math.max(0.1, Number(value || 0.1));
   const safeMaxValue = Math.max(safeValue, Number(maxValue || safeValue));
+
+  if (readableCurve > 0) {
+    return scaleReadableAxis(safeValue, {
+      maxValue: safeMaxValue,
+      maxSize,
+      minSize,
+      curve: readableCurve
+    });
+  }
+
   const scale = maxSize / safeMaxValue;
 
   return clamp(safeValue * scale, Math.min(minSize, maxSize), maxSize);
