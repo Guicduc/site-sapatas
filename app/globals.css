@@ -1721,6 +1721,177 @@ dt {
   border-bottom: 0;
 }
 
+.faq-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+  align-items: stretch;
+  gap: clamp(18px, 3vw, 48px);
+  padding: clamp(24px, 4vw, 48px) 0;
+  border-block: 1px solid var(--line);
+}
+
+.faq-hero > div:first-child {
+  display: grid;
+  align-content: center;
+  gap: 14px;
+  max-width: 860px;
+}
+
+.faq-hero h1 {
+  font-size: clamp(2.25rem, 4vw, 4.5rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.faq-hero__aside {
+  display: grid;
+  align-content: end;
+  gap: 10px;
+  padding: clamp(18px, 2.4vw, 28px);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, oklch(0.96 0.012 170 / 0.82), transparent 62%),
+    var(--bg);
+}
+
+.faq-hero__aside span {
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.faq-hero__aside strong {
+  font-size: clamp(1.25rem, 1.6vw, 1.65rem);
+  line-height: 1.12;
+}
+
+.faq-hero__aside p,
+.faq-routing p,
+.faq-section details p,
+.faq-sidebar li,
+.cta-banner p {
+  color: var(--ink-soft);
+}
+
+.faq-routing {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border-block: 1px solid var(--line);
+}
+
+.faq-routing article {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 150px;
+  padding: clamp(16px, 2vw, 24px);
+}
+
+.faq-routing article + article {
+  border-left: 1px solid var(--line);
+}
+
+.faq-routing span {
+  color: var(--primary);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.faq-routing strong {
+  font-size: 1.25rem;
+}
+
+.faq-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.32fr) minmax(0, 0.68fr);
+  gap: 0;
+  align-items: start;
+  border-block: 1px solid var(--line);
+}
+
+.faq-sidebar {
+  position: sticky;
+  top: 78px;
+  display: grid;
+  gap: 16px;
+  padding: clamp(18px, 2.6vw, 32px) clamp(18px, 2.2vw, 28px) clamp(18px, 2.6vw, 32px) 0;
+  border-right: 1px solid var(--line);
+}
+
+.faq-sidebar h2 {
+  font-size: clamp(1.45rem, 2vw, 2.05rem);
+}
+
+.faq-content {
+  display: grid;
+}
+
+.faq-section {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.3fr) minmax(0, 0.7fr);
+  gap: clamp(16px, 2.4vw, 32px);
+  padding: clamp(18px, 2.6vw, 34px) 0 clamp(18px, 2.6vw, 34px) clamp(18px, 2.6vw, 34px);
+}
+
+.faq-section + .faq-section {
+  border-top: 1px solid var(--line);
+}
+
+.faq-section__heading {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.faq-section__heading h2 {
+  font-size: clamp(1.5rem, 2.1vw, 2.25rem);
+}
+
+.faq-section .faq-stack {
+  display: grid;
+  gap: 0;
+}
+
+.faq-section details {
+  padding: 0;
+}
+
+.faq-section details + details {
+  border-top: 1px solid var(--line);
+}
+
+.faq-section summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 58px;
+  padding: 14px 0;
+  list-style: none;
+}
+
+.faq-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-section summary::after {
+  content: "+";
+  color: var(--primary);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.faq-section details[open] summary::after {
+  content: "-";
+}
+
+.faq-section details p {
+  max-width: 72ch;
+  padding: 0 0 18px;
+}
+
 .special-request-hero {
   gap: 10px;
   padding: clamp(24px, 4vw, 48px);
@@ -2098,6 +2269,9 @@ summary {
 @media (max-width: 980px) {
   .shop-hero,
   .configurator-heading,
+  .faq-hero,
+  .faq-layout,
+  .faq-section,
   .category-grid,
   .configurator-grid,
   .cart-grid,
@@ -2218,6 +2392,17 @@ summary {
     max-width: none;
   }
 
+  .faq-sidebar {
+    position: static;
+    padding: 18px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .faq-section {
+    padding-left: 0;
+  }
+
   .shop-hero__image {
     min-height: 280px;
   }
@@ -2290,6 +2475,7 @@ summary {
   .filter-bar,
   .summary-stats,
   .result-stats,
+  .faq-routing,
   .grid-two,
   .hero-stats,
   .admin-order-header,
@@ -2301,6 +2487,7 @@ summary {
   }
 
   .shop-hero,
+  .faq-hero__aside,
   .category-card,
   .preview-panel,
   .drawing-panel,
@@ -2337,6 +2524,7 @@ summary {
   }
 
   .shop-hero .lead,
+  .faq-hero .lead,
   .configurator-heading .lead,
   .category-card p,
   .surface-card p,
@@ -2351,6 +2539,16 @@ summary {
 
   .shop-hero .lead {
     max-width: 29ch;
+  }
+
+  .faq-routing article {
+    min-height: 0;
+    padding: 16px 0;
+  }
+
+  .faq-routing article + article {
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 
   .configurator-heading {

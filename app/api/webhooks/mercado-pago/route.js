@@ -73,7 +73,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         error: error.code || "webhook_processing_failed",
-        message: error.message || "Nao foi possivel processar o webhook."
+        message: error.message || "Não foi possível processar o webhook."
       },
       { status: error.code === "missing_mercado_pago_token" ? 503 : 502 }
     );

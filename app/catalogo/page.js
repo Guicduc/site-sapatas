@@ -2,7 +2,7 @@ import { ProductCatalog } from "@/components/product-catalog";
 import { productCategories } from "@/lib/configurator-data";
 
 export const metadata = {
-  title: "Catalogo configuravel",
+  title: "Catálogo configurável",
   description:
     "Escolha uma categoria de sapata, selecione o formato e configure medidas funcionais para pedido direto."
 };

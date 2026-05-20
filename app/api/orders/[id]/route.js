@@ -8,7 +8,7 @@ export async function GET(_request, { params }) {
 
   if (!order) {
     return NextResponse.json(
-      { error: "order_not_found", message: "Pedido nao encontrado." },
+      { error: "order_not_found", message: "Pedido não encontrado." },
       { status: 404 }
     );
   }
