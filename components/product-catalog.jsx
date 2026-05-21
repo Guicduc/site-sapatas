@@ -6,21 +6,74 @@ import { colorMap } from "@/lib/brand-colors";
 
 const moodTerms = [
   {
-    text: "Peças 100% customizáveis a partir de sua necessidade"
+    icon: "fit",
+    label: "Sob medida",
+    emphasis: "Customização total",
+    text: "pela medida do seu projeto"
   },
   {
-    text: "Material resistente para área interna e externa"
+    icon: "shield",
+    label: "Uso real",
+    emphasis: "Material resistente",
+    text: "para uso interno e externo"
   },
   {
-    text: "Sem pedido mínimo, produção sob demanda"
+    icon: "batch",
+    label: "Sem travas",
+    emphasis: "Sem pedido mínimo",
+    text: "com produção sob demanda"
   },
   {
-    text: "Material 100% reciclável"
+    icon: "cycle",
+    label: "Ciclo inteligente",
+    emphasis: "Material reciclável",
+    text: "com descarte mais consciente"
   },
   {
-    text: "Se sentir falta de alguma forma, entre em contato para discutir seu projeto"
+    icon: "spark",
+    label: "Projeto especial",
+    question: "Forma fora do catálogo?",
+    cta: "entre em contato",
+    href: "/projeto-especial"
   }
 ];
+
+const moodIcons = {
+  fit: (
+    <>
+      <path d="M7 7h7v7H7z" />
+      <path d="M14 10h5v9h-9v-5" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 3l7 3v5c0 4.2-2.7 7.3-7 9-4.3-1.7-7-4.8-7-9V6l7-3z" />
+      <path d="M9 12l2 2 4-5" />
+    </>
+  ),
+  batch: (
+    <>
+      <path d="M6 7h12" />
+      <path d="M6 12h12" />
+      <path d="M6 17h7" />
+      <path d="M17 16l2 2 3-4" />
+    </>
+  ),
+  cycle: (
+    <>
+      <path d="M8 8a6 6 0 0 1 9.8 2" />
+      <path d="M18 6v4h-4" />
+      <path d="M16 16a6 6 0 0 1-9.8-2" />
+      <path d="M6 18v-4h4" />
+    </>
+  ),
+  spark: (
+    <>
+      <path d="M12 3l1.7 5.1L19 10l-5.3 1.9L12 17l-1.7-5.1L5 10l5.3-1.9L12 3z" />
+      <path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8L18 15z" />
+    </>
+  )
+};
 
 export function ProductCatalog({ categories }) {
   return (
@@ -43,9 +96,29 @@ export function ProductCatalog({ categories }) {
 
       <div className="brand-mood" aria-label="Pilares da identidade Traço Base">
         {moodTerms.map((term, index) => (
-          <article key={term.text}>
-            <strong>{String(index + 1).padStart(2, "0")}</strong>
-            <p>{term.text}</p>
+          <article key={term.label}>
+            <span className="brand-mood__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                {moodIcons[term.icon]}
+              </svg>
+            </span>
+            <div>
+              <span className="brand-mood__label">
+                {String(index + 1).padStart(2, "0")} / {term.label}
+              </span>
+              {term.question ? (
+                <p>
+                  <strong>{term.question}</strong>{" "}
+                  <Link className="brand-mood__cta" href={term.href}>
+                    {term.cta}
+                  </Link>
+                </p>
+              ) : (
+                <p>
+                  <strong>{term.emphasis}</strong> {term.text}
+                </p>
+              )}
+            </div>
           </article>
         ))}
       </div>
