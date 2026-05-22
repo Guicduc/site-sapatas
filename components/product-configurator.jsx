@@ -178,7 +178,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
           </div>
 
           <ConfigurationSummary
-            format={format}
+            format={{ ...format, name: getSummaryProductName(category, format) }}
             sku={sku}
             issues={issues}
             unitPrice={unitPrice}
@@ -195,16 +195,16 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   );
 }
 
-function getConfiguratorDescription(category) {
-  const descriptions = {
-    "ponteira-interna-tubo": "Escolha o perfil do tubo e ajuste as medidas internas reais.",
-    "sapata-base-lisa": "Escolha o formato da base e ajuste as medidas de contato.",
-    "ponteira-interna-tubos": "Escolha o perfil do tubo e ajuste as medidas internas reais.",
-    "sapata-lisa": "Escolha o formato da sapata e ajuste as medidas da base.",
-    "sapata-externa": "Escolha o perfil e ajuste as medidas externas do tubo."
-  };
+function getConfiguratorDescription() {
+  return "Configure as medidas conforme a necessidade do seu projeto.";
+}
 
-  return descriptions[category.slug] || "Escolha o formato e ajuste as medidas do produto.";
+function getSummaryProductName(category, format) {
+  if (category.slug === "ponteira-interna-tubo") {
+    return `Sapata interna ${format.name.toLowerCase()}`;
+  }
+
+  return format.name;
 }
 
 function ColorSelector({ colors, value, onChange }) {
@@ -261,11 +261,66 @@ function FormatSelector({ category, selectedSlug, onChange }) {
           aria-pressed={format.slug === selectedSlug}
           onClick={() => onChange(format.slug)}
         >
-          <strong>{format.name}</strong>
-          <span>{format.fixation}</span>
+          <span className="format-selector__copy">
+            <strong>{format.name}</strong>
+            <span>{format.fixation}</span>
+          </span>
+          <FormatIcon type={format.drawingType} />
         </button>
       ))}
     </div>
+  );
+}
+
+function FormatIcon({ type }) {
+  return (
+    <svg className="format-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+      {type === "tube-round" && (
+        <>
+          <circle cx="24" cy="24" r="16" />
+          <circle cx="24" cy="24" r="9" />
+          <path d="M24 5 V43 M5 24 H43" />
+        </>
+      )}
+      {type === "tube-rect" && (
+        <>
+          <rect x="10" y="10" width="28" height="28" rx="6" />
+          <rect x="17" y="17" width="14" height="14" rx="3" />
+          <path d="M24 5 V43 M5 24 H43" />
+        </>
+      )}
+      {type === "tube-oblong" && (
+        <>
+          <rect x="7" y="14" width="34" height="20" rx="10" />
+          <rect x="15" y="19" width="18" height="10" rx="5" />
+          <path d="M24 6 V42 M5 24 H43" />
+        </>
+      )}
+      {type === "base-round" && (
+        <>
+          <circle cx="24" cy="24" r="15" />
+          <path d="M24 7 V41 M7 24 H41" />
+        </>
+      )}
+      {type === "base-rect" && (
+        <>
+          <rect x="9" y="13" width="30" height="22" rx="5" />
+          <path d="M24 7 V41 M6 24 H42" />
+        </>
+      )}
+      {type === "base-oblong" && (
+        <>
+          <rect x="7" y="15" width="34" height="18" rx="9" />
+          <path d="M24 7 V41 M5 24 H43" />
+        </>
+      )}
+      {type === "base-u" && (
+        <>
+          <path d="M10 12 H38 V36 H29 V22 H19 V36 H10 Z" />
+          <path d="M24 7 V41 M6 36 H42" />
+        </>
+      )}
+    </svg>
   );
 }
 
