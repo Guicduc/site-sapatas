@@ -2,8 +2,16 @@ import { CartProvider } from "@/components/cart-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { brand, siteUrl } from "@/lib/site-data";
+import { Barlow_Condensed } from "next/font/google";
 
 import "./globals.css";
+
+const brandDisplay = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-brand-display",
+  display: "swap"
+});
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
@@ -47,7 +55,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      <body>
+      <body className={brandDisplay.variable}>
         <CartProvider>
           <div className="page-background" aria-hidden="true" />
           <div className="site-shell">
