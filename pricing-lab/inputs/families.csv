@@ -1,4 +1,0 @@
-family_slug,family_name,grasshopper_definition,default_material,default_profile_id,status,notes
-ponteira-interna-tubo-redondo,Ponteira interna para tubo redondo,cad/families/tube_round_pressfit.gh,TPU,tpu-default,active,Primeira familia automatizada no contrato CAD atual
-ponteira-interna-tubo-retangular,Ponteira interna para tubo retangular,cad/families/tube_rect_pressfit.gh,TPU,tpu-default,planned,Adicionar quando a definicao GH estiver pronta
-sapata-base-lisa-redonda,Sapata para base lisa redonda,cad/families/base_round.gh,TPU,tpu-default,planned,Usar como segunda familia de calibracao

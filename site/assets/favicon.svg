@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Traço Base">
-  <rect width="64" height="64" rx="14" fill="#1e2a23"/>
-  <path d="M14 44h36v6H14z" fill="#d8925b"/>
-  <path d="M20 18h24v20H20z" fill="#f2eee6"/>
-  <path d="M26 24h12v8H26z" fill="#1e2a23"/>
-</svg>

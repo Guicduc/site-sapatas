@@ -1,5 +1,0 @@
-family_slug,sample_id,diametro_interno_mm,diametro_base_mm,profundidade_insercao_mm,altura_apoio_mm,quantity,stl_file,notes
-ponteira-interna-tubo-redondo,RD-PI-DI18-DB24-P14-A6,18,24,14,6,1,ponteira-interna-tubo-redondo__RD-PI-DI18-DB24-P14-A6.stl,Amostra pequena
-ponteira-interna-tubo-redondo,RD-PI-DI22-DB28-P18-A8,22,28,18,8,1,ponteira-interna-tubo-redondo__RD-PI-DI22-DB28-P18-A8.stl,Amostra media padrao
-ponteira-interna-tubo-redondo,RD-PI-DI26-DB34-P22-A10,26,34,22,10,1,ponteira-interna-tubo-redondo__RD-PI-DI26-DB34-P22-A10.stl,Amostra grande
-ponteira-interna-tubo-redondo,RD-PI-DI30-DB40-P26-A12,30,40,26,12,1,ponteira-interna-tubo-redondo__RD-PI-DI30-DB40-P26-A12.stl,Limite superior inicial
