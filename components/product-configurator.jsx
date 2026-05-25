@@ -14,6 +14,7 @@ import {
   calculatePriceBreakdown,
   getFormat,
   getInitialValues,
+  getParameterMax,
   validateConfiguration
 } from "@/lib/configurator-data";
 
@@ -337,7 +338,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       event.currentTarget.setPointerCapture?.(event.pointerId);
     }
 
-    const nextValue = getPointerValue(event, parameter);
+    const nextValue = getPointerValue(event, parameter, getParameterMax(format, values, parameter));
     onFocus(parameter.key);
 
     if (String(values[parameter.key] ?? "") !== nextValue) {
@@ -346,6 +347,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
   }
 
   function handleRangeKeyDown(event, parameter) {
+    const parameterMax = getParameterMax(format, values, parameter);
     const currentValue = Number(values[parameter.key] ?? parameter.defaultValue ?? parameter.min);
     const step = Number(parameter.step || 1);
     const largeStep = step * 10;
@@ -357,7 +359,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       PageDown: currentValue - largeStep,
       PageUp: currentValue + largeStep,
       Home: parameter.min,
-      End: parameter.max
+      End: parameterMax
     };
 
     if (!(event.key in keyHandlers)) {
@@ -365,7 +367,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
     }
 
     event.preventDefault();
-    const nextValue = formatParameterValue(keyHandlers[event.key], parameter);
+    const nextValue = formatParameterValue(keyHandlers[event.key], parameter, parameterMax);
 
     if (String(values[parameter.key] ?? "") !== nextValue) {
       onChange(parameter.key, nextValue);
@@ -384,6 +386,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
         }
 
         const isBoolean = parameter.type === "boolean";
+        const parameterMax = getParameterMax(format, values, parameter);
 
         return (
         <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
@@ -392,7 +395,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               <span className="parameter-label">{parameter.label}</span>
               {parameter.type === "number" && (
                 <small>
-                  Min {parameter.min} / max {parameter.max} {parameter.unit}
+                  Min {parameter.min} / max {parameterMax} {parameter.unit}
                 </small>
               )}
             </span>
@@ -412,7 +415,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
           <div
             className="parameter-slider"
             style={{
-              "--value-position": `${getValuePosition(values[parameter.key], parameter)}%`
+              "--value-position": `${getValuePosition(values[parameter.key], parameter, parameterMax)}%`
             }}
           >
             <div
@@ -421,7 +424,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               tabIndex={parameter.dependsOn && !values[parameter.dependsOn] ? -1 : 0}
               aria-label={parameter.label}
               aria-valuemin={parameter.min}
-              aria-valuemax={parameter.max}
+              aria-valuemax={parameterMax}
               aria-valuenow={Number(values[parameter.key] ?? parameter.min)}
               aria-valuetext={`${values[parameter.key] ?? parameter.min} ${parameter.unit}`}
               aria-disabled={parameter.dependsOn && !values[parameter.dependsOn] ? "true" : undefined}
@@ -442,7 +445,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               }}
               type="number"
               min={parameter.min}
-              max={parameter.max}
+              max={parameterMax}
               step={parameter.step}
               value={values[parameter.key] ?? ""}
               disabled={parameter.dependsOn && !values[parameter.dependsOn]}
@@ -467,9 +470,9 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
   );
 }
 
-function getValuePosition(value, parameter) {
+function getValuePosition(value, parameter, parameterMax = parameter.max) {
   const numericValue = Number(value ?? parameter.min);
-  const range = parameter.max - parameter.min;
+  const range = parameterMax - parameter.min;
 
   if (!Number.isFinite(numericValue) || range <= 0) {
     return 0;
@@ -478,21 +481,21 @@ function getValuePosition(value, parameter) {
   return Math.min(100, Math.max(0, ((numericValue - parameter.min) / range) * 100));
 }
 
-function getPointerValue(event, parameter) {
+function getPointerValue(event, parameter, parameterMax = parameter.max) {
   const rect = event.currentTarget.getBoundingClientRect();
   const ratio = rect.width > 0
     ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
     : 0;
-  const rawValue = parameter.min + ratio * (parameter.max - parameter.min);
+  const rawValue = parameter.min + ratio * (parameterMax - parameter.min);
 
-  return formatParameterValue(rawValue, parameter);
+  return formatParameterValue(rawValue, parameter, parameterMax);
 }
 
-function formatParameterValue(value, parameter) {
+function formatParameterValue(value, parameter, parameterMax = parameter.max) {
   const step = Number(parameter.step || 1);
   const decimals = getStepDecimals(step);
   const steppedValue = Math.round((Number(value) - parameter.min) / step) * step + parameter.min;
-  const clampedValue = Math.min(parameter.max, Math.max(parameter.min, steppedValue));
+  const clampedValue = Math.min(parameterMax, Math.max(parameter.min, steppedValue));
 
   return decimals > 0 ? clampedValue.toFixed(decimals) : String(Math.round(clampedValue));
 }
