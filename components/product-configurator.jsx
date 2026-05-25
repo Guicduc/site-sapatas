@@ -187,6 +187,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
             totalPrice={totalPrice}
             priceBreakdown={priceBreakdown}
             leadTime={leadTime}
+            showProductionInfo={category.slug !== "sapata-base-lisa"}
             validForCart={validForCart}
             added={added}
             onAddToCart={handleAddToCart}
@@ -518,6 +519,7 @@ function ConfigurationSummary({
   totalPrice,
   priceBreakdown,
   leadTime,
+  showProductionInfo,
   validForCart,
   added,
   onAddToCart
@@ -538,16 +540,18 @@ function ConfigurationSummary({
           <strong>Total</strong>
           <span>{formatCurrency(totalPrice)}</span>
         </article>
-        {priceBreakdown.pricingMode === "sliced" && (
+        {showProductionInfo && priceBreakdown.pricingMode === "sliced" && (
           <article>
             <strong>Tempo Orca</strong>
             <span>{priceBreakdown.printMinutes} min/un</span>
           </article>
         )}
-        <article>
-          <strong>Prazo</strong>
+        {showProductionInfo && (
+          <article>
+            <strong>Prazo</strong>
           <span>{leadTime} dias úteis</span>
-        </article>
+          </article>
+        )}
       </div>
       <button className="button button-primary button-block" type="button" disabled={!validForCart} onClick={onAddToCart}>
         Adicionar ao carrinho
