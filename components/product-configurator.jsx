@@ -88,6 +88,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
       quantity,
       unitPriceBrl: unitPrice,
       priceBrl: totalPrice,
+      priceBreakdown,
       leadTimeDays: leadTime,
       status: "valid"
     });

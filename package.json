@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
+    "slice:dataset": "node Produtos/scripts/orca-slice-dataset.mjs"
   },
   "dependencies": {
     "next": "16.2.3",

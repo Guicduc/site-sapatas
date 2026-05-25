@@ -104,7 +104,7 @@ Ha dois modos:
 - `estimated`: estimativa geometrica em `calculatePriceBreakdown`.
 - `sliced`: referencia de fatiamento Orca quando existe amostra em `lib/sliced-pricing-data.js`.
 
-`lib/pricing-engine.js` concentra calculo de custo com dados de fatiamento real: material, tempo de impressao, maquina, energia, operador, embalagem, taxa de canal e markup.
+`lib/pricing-engine.js` concentra calculo de custo com dados de fatiamento real: material, tempo de impressao, maquina, energia, taxa de canal e markup. Operacao e embalagem nao entram no custo do produto.
 
 ## Produtos, Grasshopper e 3MF
 

@@ -1,232 +1,320 @@
-# Fluxo de exportacao 3MF a partir do Grasshopper
+# Fluxo de exportacao 3MF via Grasshopper
 
-Este documento descreve o fluxo que foi usado para abrir definicoes Grasshopper (`.gh`), extrair as geometrias geradas, exportar arquivos `.3mf` e montar a primeira tabela de dados para analise de custo.
+Este documento descreve o fluxo recomendado para usar definicoes Grasshopper (`.gh`) como origem dos modelos 3MF da Traco Base e gerar dados tecnicos que alimentem a precificacao real dos produtos.
 
-## Arquivos usados
+O objetivo e manter os scripts Grasshopper versionados em `Produtos/Scripts-GH/`, exportar um arquivo `.3mf` por variante e gerar uma tabela com volume, area, dimensoes e, depois do fatiamento, material e tempo de impressao.
 
-Definicoes Grasshopper de origem:
+## Estrutura neste projeto
 
-- `C:\Users\Administrador\Desktop\sapata interno tubo.gh`
-- `C:\Users\Administrador\Desktop\Sapata Interno tubo quadrado _oblongo.gh`
-- `C:\Users\Administrador\Desktop\sapatas.gh`
-
-Script principal:
-
-- `C:\Users\Administrador\.codex\worktrees\23b5\Rhino\scripts\gh_export_dataset.py`
-
-Saidas geradas:
-
-- Pasta de exportacao: `C:\Users\Administrador\.codex\worktrees\23b5\Rhino\dataset_exports`
-- Arquivos `.3mf`: um arquivo por solido detectado
-- CSV de dados: `C:\Users\Administrador\.codex\worktrees\23b5\Rhino\dataset_exports\sapatas_dataset.csv`
-- Log: `C:\Users\Administrador\.codex\worktrees\23b5\Rhino\dataset_exports\gh_export_dataset.log`
-
-## Correcao aplicada antes da exportacao
-
-O Grasshopper abria com erros de carregamento de objetos `MillC_*`, relacionados ao plugin Millipede.
-
-Arquivos desativados:
-
-- `C:\Users\Administrador\AppData\Roaming\Grasshopper\Libraries\millipede.gha`
-- `C:\Users\Administrador\AppData\Roaming\Grasshopper\Libraries\MillipedeShared.dll`
-
-Eles foram movidos para:
+Raiz do repositorio:
 
 ```text
-C:\Users\Administrador\AppData\Roaming\Grasshopper\Libraries\_Disabled_Millipede_2026-05-22
+C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas
 ```
 
-Essa alteracao e reversivel: basta mover os arquivos de volta para `Libraries`.
+Definicoes Grasshopper versionadas:
 
-## Como o Rhino/Grasshopper foi acionado
+```text
+Produtos\Scripts-GH\Sapata_Interna_Tubo-Oblongo.gh
+Produtos\Scripts-GH\Sapata_Interna_Tubo-Quadrado.gh
+Produtos\Scripts-GH\Sapata_Lisa_Quadrada-com haste.gh
+Produtos\Scripts-GH\Sapata_Lisa_Quadrada-com parafuso.gh
+Produtos\Scripts-GH\Sapata_Lisa_Quadrada.gh
+Produtos\Scripts-GH\Sapata_Lisa_Redonda-com Haste.gh
+Produtos\Scripts-GH\Sapata_Lisa_Redonda-com parafuso.gh
+Produtos\Scripts-GH\Sapata_Lisa_Redonda.gh
+```
 
-O Rhino 7 foi automatizado via COM a partir do PowerShell, porque a execucao direta por `/runscript` nao disparou corretamente nesta instalacao.
+Saidas recomendadas para os modelos gerados:
 
-Fluxo de execucao usado:
+```text
+Produtos\3MF\
+Produtos\datasets\sapatas_3mf_dataset.csv
+Produtos\logs\grasshopper_3mf_export.log
+Produtos\slicer-output\
+```
+
+Essas pastas podem ser criadas quando o exportador for executado. Arquivos `.3mf` podem ser pesados; antes de versionar, confirme se eles devem entrar no Git ou se devem ser armazenados como artefatos externos.
+
+## Dependencias locais
+
+- Rhino 7 ou superior instalado no Windows.
+- Grasshopper disponivel na instalacao do Rhino.
+- Definicoes `.gh` sem dependencias externas quebradas.
+- Python executado dentro do Rhino, com acesso a RhinoCommon e ao assembly do Grasshopper.
+
+Quando um plugin antigo impedir a abertura das definicoes, desative apenas o plugin problematico no ambiente local e registre isso no log da execucao. Nao trate esse tipo de ajuste como requisito do projeto.
+
+## Acionamento do Rhino
+
+O fluxo validado usa automacao COM do Rhino via PowerShell. O script Python deve ficar em uma pasta operacional local ou em uma futura pasta versionada de automacoes do projeto.
+
+Exemplo de chamada:
 
 ```powershell
+$repo = "C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas"
+$script = Join-Path $repo "Produtos\scripts\gh_export_dataset.py"
+
 $rhino = New-Object -ComObject Rhino.Application
 $rhino.Visible = $true
 Start-Sleep -Seconds 3
-$rhino.RunScript('-_RunPythonScript ("C:\Users\Administrador\.codex\worktrees\23b5\Rhino\scripts\gh_export_dataset.py")', 0)
+$rhino.RunScript("-_RunPythonScript (`"$script`")", 0)
 ```
 
-Dentro do Rhino, o script Python usa RhinoCommon e carrega o assembly do Grasshopper:
+Dentro do Python do Rhino, carregue o Grasshopper assim:
 
 ```python
+import clr
+
 clr.AddReferenceToFileAndPath(
     r"C:\Program Files\Rhino 7\Plug-ins\Grasshopper\Grasshopper.dll"
 )
 import Grasshopper
 ```
 
-## Fluxo geral do script
+## Configuracao esperada do exportador
 
-1. Define a lista de arquivos `.gh` em `GH_FILES`.
-2. Define a pasta de saida em `OUT_DIR`.
-3. Carrega o Grasshopper via `load_grasshopper()`.
-4. Para cada arquivo `.gh`:
-   - limpa objetos existentes no documento Rhino;
-   - abre o documento Grasshopper com `GH_DocumentIO`;
-   - resolve a definicao com `ghdoc.NewSolution(True)`;
-   - percorre as saidas dos componentes;
-   - extrai geometrias RhinoCommon validas;
-   - filtra apenas solidos exportaveis;
-   - adiciona os solidos ao documento Rhino;
-   - exporta cada solido individualmente para `.3mf`;
-   - calcula volume, area e bounding box;
-   - grava uma linha no CSV.
+Use caminhos relativos a raiz do repositorio sempre que possivel:
 
-## Funcoes principais usadas
+```python
+REPO_ROOT = os.environ.get(
+    "TRACO_BASE_REPO",
+    r"C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas"
+)
+GH_DIR = os.path.join(REPO_ROOT, "Produtos", "Scripts-GH")
+OUT_DIR = os.path.join(REPO_ROOT, "Produtos", "3MF")
+DATASET_PATH = os.path.join(REPO_ROOT, "Produtos", "datasets", "sapatas_3mf_dataset.csv")
+LOG_PATH = os.path.join(REPO_ROOT, "Produtos", "logs", "grasshopper_3mf_export.log")
+```
+
+A lista de arquivos `.gh` deve ser montada a partir de `Produtos/Scripts-GH/`, nao de paths soltos na area de trabalho.
+
+## Fluxo do script
+
+1. Criar as pastas de saida (`Produtos/3MF`, `Produtos/datasets`, `Produtos/logs`).
+2. Carregar o assembly do Grasshopper.
+3. Para cada arquivo `.gh` em `Produtos/Scripts-GH/`:
+   - limpar objetos existentes no documento Rhino;
+   - abrir o documento com `GH_DocumentIO`;
+   - resolver a definicao com `ghdoc.NewSolution(True)`;
+   - percorrer as saidas dos componentes;
+   - extrair geometrias RhinoCommon validas;
+   - filtrar apenas solidos exportaveis;
+   - remover duplicatas;
+   - adicionar os solidos ao documento Rhino;
+   - exportar cada solido individualmente para `.3mf`;
+   - calcular metricas geometricas;
+   - gravar uma linha no CSV.
+
+## Funcoes importantes
 
 ### `load_grasshopper()`
 
-Carrega o assembly do Grasshopper dentro da sessao Rhino Python.
+Carrega o assembly do Grasshopper dentro da sessao Python do Rhino e disponibiliza o namespace `Grasshopper`.
 
-Responsabilidade:
+### `bake_document(gh_path)`
 
-- disponibilizar o namespace `Grasshopper`;
-- permitir abrir arquivos `.gh` programaticamente.
+Abre e resolve uma definicao `.gh`.
 
-### `bake_document(gh, gh_path)`
+Responsabilidades:
 
-Abre e resolve uma definicao Grasshopper.
-
-Responsabilidade:
-
-- abrir o arquivo `.gh` com `GH_DocumentIO`;
-- chamar `ghdoc.NewSolution(True)` para calcular a definicao;
-- percorrer os objetos do documento Grasshopper;
-- procurar dados nas saidas dos componentes (`Params.Output`);
-- converter esses dados para geometria RhinoCommon;
-- adicionar os solidos encontrados ao documento Rhino;
-- retornar os `Guid`s dos objetos adicionados.
-
-Observacao: o script tambem tenta usar `BakeGeometry()` quando o componente oferece esse metodo, mas a parte mais importante foi a leitura direta de `VolatileData`, porque muitos componentes nativos nao fazem bake direto pelo metodo padrao.
+- abrir o arquivo com `Grasshopper.Kernel.GH_DocumentIO`;
+- chamar `NewSolution(True)`;
+- percorrer objetos do documento Grasshopper;
+- ler geometrias a partir de `Params.Output` e `VolatileData`;
+- usar `BakeGeometry()` apenas como fallback quando disponivel;
+- retornar os objetos Rhino adicionados ao documento.
 
 ### `geometry_from_goo(goo)`
 
-Converte dados Grasshopper para geometria RhinoCommon.
+Converte dados Grasshopper para `Rhino.Geometry.GeometryBase`.
 
-Responsabilidade:
+Ordem recomendada:
 
-- tentar ler `goo.Value`;
-- se necessario, tentar `goo.ScriptVariable()`;
-- retornar uma copia da geometria quando ela for `Rhino.Geometry.GeometryBase`.
+1. tentar `goo.Value`;
+2. tentar `goo.ScriptVariable()`;
+3. copiar a geometria antes de adicionar ao documento Rhino.
 
 ### `is_exportable_solid(geom)`
 
-Filtra apenas geometrias que fazem sentido para exportacao 3D.
-
-Tipos aceitos:
+Filtra geometrias que podem virar modelo 3D imprimivel:
 
 - `Brep` solido;
 - `Mesh` fechado;
-- `Extrusion` que vira `Brep` solido.
+- `Extrusion` convertida para `Brep` solido.
 
-O filtro tambem verifica se `VolumeMassProperties.Compute()` consegue calcular volume.
+O filtro deve confirmar que `VolumeMassProperties.Compute()` retorna volume valido.
 
 ### `geometry_key(geom)`
 
-Cria uma chave simples para evitar duplicatas.
-
-A chave usa:
-
-- volume arredondado;
-- minimo e maximo da bounding box nos eixos X, Y e Z.
-
-Isso evita exportar o mesmo solido repetidas vezes quando ele aparece em mais de uma saida Grasshopper.
-
-### `add_geometry(geom, attrs)`
-
-Adiciona a geometria ao documento Rhino ativo.
-
-Comportamento:
-
-- `Brep` entra com `sc.doc.Objects.AddBrep`;
-- `Mesh` entra com `sc.doc.Objects.AddMesh`;
-- `Extrusion` e convertida para `Brep`.
-
-O script fixa `sc.doc = Rhino.RhinoDoc.ActiveDoc` porque alguns componentes Grasshopper podem alterar o contexto do documento durante a solucao.
-
-### `select_only(ids)`
-
-Seleciona apenas os objetos que devem ser exportados.
-
-Passos:
-
-- fixa o documento Rhino ativo;
-- roda `_SelNone`;
-- seleciona os objetos pelos `Guid`s;
-- redesenha a viewport.
+Gera uma chave para evitar duplicatas. Use volume arredondado e bounding box nos eixos X, Y e Z.
 
 ### `export_3mf(path, ids)`
 
-Exporta o objeto selecionado para `.3mf`.
-
-Comando usado:
+Seleciona apenas os objetos recebidos e executa:
 
 ```python
-command = '-_Export "{}" _Enter'.format(path)
-Rhino.RhinoApp.RunScript(command, False)
+Rhino.RhinoApp.RunScript('-_Export "{}" _Enter'.format(path), False)
 ```
 
-Antes da exportacao, chama `select_only(ids)`, garantindo que cada `.3mf` contenha apenas o solido daquela linha.
+Cada arquivo `.3mf` deve conter somente a geometria correspondente a uma linha do dataset.
 
 ### `object_metrics(rhino_object)`
 
-Calcula os dados usados no CSV.
+Campos minimos para o CSV:
 
-Campos extraidos:
-
-- `object_id`
+- `source_gh`
+- `model_id`
 - `object_type`
-- `area_model_units2`
 - `volume_model_units3`
+- `area_model_units2`
 - `bbox_x`
 - `bbox_y`
 - `bbox_z`
+- `export_path`
 
-As metricas usam:
+Campos desejados quando os parametros forem expostos no Grasshopper:
 
-- `Rhino.Geometry.AreaMassProperties.Compute(geom)`
-- `Rhino.Geometry.VolumeMassProperties.Compute(geom)`
-- `geom.GetBoundingBox(True)`
+- `product_family`
+- `variant_slug`
+- `diametro`
+- `tamanho_base_x`
+- `tamanho_base_y`
+- `altura_base`
+- `altura_pescoco`
+- `diametro_pescoco`
+- `parede_tubo`
+- `fixacao`
 
-### `main()`
+## Padrao recomendado para as definicoes Grasshopper
 
-Orquestra o processo completo.
+Para a base de custo ser confiavel, cada definicao deve expor explicitamente qual geometria e a peca final.
 
-Responsabilidade:
+Padrao recomendado:
 
-- preparar a pasta de saida;
-- abrir o log;
-- carregar Grasshopper;
-- processar cada arquivo `.gh`;
-- exportar os `.3mf`;
-- montar as linhas do dataset;
-- salvar `sapatas_dataset.csv`;
-- fechar o Rhino no final.
+- nomear o parametro final como `EXPORT_3MF`;
+- agrupar os componentes finais em um grupo chamado `EXPORT`;
+- evitar que geometrias intermediarias fiquem conectadas a outputs publicos;
+- nomear sliders/inputs com os mesmos nomes usados em `lib/configurator-data.js` sempre que possivel.
 
-## Resultado da primeira rodada
+Nomes de parametros relevantes no app:
 
-Foram exportados 97 modelos:
+- `diametro`
+- `diametroBase`
+- `tamanhoBaseX`
+- `tamanhoBaseY`
+- `alturaBase`
+- `alturaPescoco`
+- `diametroPescoco`
+- `paredeTubo`
+- `pescoco`
 
-| Arquivo Grasshopper | Modelos exportados |
-|---|---:|
-| `sapata interno tubo.gh` | 56 |
-| `Sapata Interno tubo quadrado _oblongo.gh` | 30 |
-| `sapatas.gh` | 11 |
+## Relacao com o app
+
+O configurador do site le parametros em:
+
+```text
+lib\configurator-data.js
+```
+
+A precificacao estimada e calculada no mesmo arquivo. Quando houver dados reais de fatiamento, eles devem alimentar:
+
+```text
+lib\sliced-pricing-data.js
+lib\pricing-engine.js
+```
+
+Fluxo esperado para precificacao real:
+
+1. Exportar `.3mf` a partir do Grasshopper.
+2. Fatiar os modelos no Orca Slicer.
+3. Extrair material e tempo de impressao do G-code ou relatorio do slicer.
+4. Atualizar `lib/sliced-pricing-data.js` com as amostras aprovadas.
+5. Conferir `calculatePriceBreakdown()` no configurador.
+
+## Fatiamento em lote com Orca Slicer
+
+O projeto inclui um script operacional para fatiar todos os modelos `.3mf` de `Produtos/3MF/` e gerar um CSV com os dados coletados do G-code:
+
+```text
+Produtos\scripts\orca-slice-dataset.mjs
+```
+
+Comando:
+
+```powershell
+npm run slice:dataset
+```
+
+Variaveis principais:
+
+```text
+ORCA_SLICER_PATH=C:\Program Files\OrcaSlicer\orca-slicer.exe
+ORCA_MODEL_DIR=Produtos/3MF
+ORCA_SLICER_OUTPUT_DIR=Produtos/slicer-output
+ORCA_DATASET_PATH=Produtos/datasets/orca_tpu_p2s_220c_dataset.csv
+ORCA_SLICER_PROFILE_ID=bambu-p2s-0.4-tpu-220c
+ORCA_PRINTER_ID=bambu-p2s
+ORCA_MATERIAL_ID=tpu
+ORCA_NOZZLE_TEMP_C=220
+ORCA_BED_TEMP_C=35
+```
+
+Perfil considerado para este fluxo:
+
+- impressora: Bambu Lab P2S;
+- material: TPU;
+- bico: 0.4 mm, salvo ajuste explicito no perfil do Orca;
+- temperatura do bico: usar o valor do perfil real do Orca; 220 C e apenas fallback quando nao houver perfil pronto;
+- mesa: 35 C como ponto inicial, ajustavel conforme adesao real;
+- identificador do perfil: `bambu-p2s-0.4-tpu`.
+
+Quando houver arquivos de perfil exportados do Orca, informe-os por:
+
+```text
+ORCA_SLICER_LOAD_SETTINGS=C:\caminho\maquina-p2s.json;C:\caminho\perfil-processo.json
+ORCA_SLICER_LOAD_FILAMENTS=C:\caminho\filamento-tpu-220c.json
+```
+
+Tambem e possivel passar flags adicionais suportadas pelo Orca:
+
+```text
+ORCA_SLICER_EXTRA_ARGS=--alguma-flag valor
+```
+
+CSV gerado pelo script:
+
+```text
+Produtos\datasets\orca_tpu_p2s_220c_dataset.csv
+```
+
+Campos principais:
+
+- `sample_id`
+- `model_file`
+- `gcode_file`
+- `material_grams`
+- `print_minutes`
+- `filament_mm`
+- `orca_version`
+- `profile_id`
+- `printer_id`
+- `material_id`
+- `nozzle_temp_c`
+- `bed_temp_c`
+- `sliced_at`
+- `parser`
+
+Antes de usar os dados no site, revise amostras com `material_grams` ou `print_minutes` zerados. Isso indica que o Orca gerou um G-code em formato nao reconhecido pelo parser ou que o fatiamento falhou sem erro explicito.
 
 ## Limitacoes atuais
 
-O script atual extrai solidos automaticamente das saidas dos componentes. Isso funcionou para gerar a primeira base, mas ainda nao identifica semanticamente qual solido e "a peca final" quando uma definicao contem geometrias intermediarias.
+O fluxo automatico consegue extrair solidos das saidas dos componentes, mas nao entende sozinho qual geometria representa a peca final quando a definicao contem volumes auxiliares.
 
-Para uma base de custo mais confiavel, o proximo passo e marcar explicitamente o output final de cada definicao Grasshopper, por exemplo:
+Antes de usar os dados como base comercial, valide:
 
-- nomear um parametro final como `EXPORT_3MF`;
-- usar um grupo padrao chamado `EXPORT`;
-- ou adicionar um componente/painel que indique quais geometrias entram no dataset.
-
-Tambem falta capturar os parametros de entrada usados em cada modelo, como largura, altura, parede, diametro, raio, quantidade de aletas e interferencia. Esses campos sao necessarios para previsao de custo por medida.
-
+- se o `.3mf` exportado contem apenas a peca final;
+- se a unidade do modelo esta em milimetros;
+- se a orientacao e a escala estao corretas;
+- se os parametros usados no Grasshopper correspondem aos parametros do configurador;
+- se o fatiamento usa o perfil real de TPU e impressora.

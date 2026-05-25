@@ -100,7 +100,8 @@ function buildUpdatedQuantityItem(item, quantity) {
     ...item,
     quantity,
     unitPriceBrl: priceBreakdown.unitPriceBrl,
-    priceBrl: priceBreakdown.totalPriceBrl
+    priceBrl: priceBreakdown.totalPriceBrl,
+    priceBreakdown
   };
 }
 
