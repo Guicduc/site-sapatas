@@ -52,13 +52,10 @@ O fluxo validado usa automacao COM do Rhino via PowerShell. O script Python deve
 Exemplo de chamada:
 
 ```powershell
-$repo = "C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas"
-$script = Join-Path $repo "Produtos\scripts\gh_export_dataset.py"
-
-$rhino = New-Object -ComObject Rhino.Application
-$rhino.Visible = $true
-Start-Sleep -Seconds 3
-$rhino.RunScript("-_RunPythonScript (`"$script`")", 0)
+$env:TRACO_BASE_REPO = "C:\Users\Administrador\.codex\worktrees\c35e\site-sapatas"
+$env:GH_TARGET_VALID_PER_FILE = "120"
+$env:GH_VARIATIONS_PER_FILE = "160"
+npm run export:gh
 ```
 
 Dentro do Python do Rhino, carregue o Grasshopper assim:
@@ -318,3 +315,33 @@ Antes de usar os dados como base comercial, valide:
 - se a orientacao e a escala estao corretas;
 - se os parametros usados no Grasshopper correspondem aos parametros do configurador;
 - se o fatiamento usa o perfil real de TPU e impressora.
+
+## Geracao do arquivo usado pelo site
+
+Depois da exportacao Grasshopper e do fatiamento Orca, gere novamente a base versionada:
+
+```powershell
+npm run build:sliced-data
+```
+
+Esse comando cruza:
+
+```text
+Produtos/datasets/grasshopper_3mf_variations.csv
+Produtos/datasets/orca_tpu_p2s_220c_dataset.csv
+```
+
+E atualiza:
+
+```text
+lib/sliced-pricing-data.js
+```
+
+O arquivo gerado inclui:
+
+- `sliderValues`, com nomes normalizados para os inputs do site quando possivel;
+- `materialGrams` e `printMinutes`, usados diretamente pela precificacao;
+- `bbox`, apenas como metadado de busca/proximidade;
+- `siteCategorySlug`, `siteFormatSlug` e `hasNeck`, inferidos pela familia exportada.
+
+Observacao operacional: se o Orca CLI retornar `process not compatible with printer`, revise o par de perfis machine/processo carregado em `ORCA_SLICER_LOAD_SETTINGS`. O script de fatiamento registra a falha por amostra e rejeita linhas sem `gcode_file`, `material_grams` ou `print_minutes`.
