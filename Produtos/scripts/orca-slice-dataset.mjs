@@ -19,8 +19,8 @@ const config = {
     process.env.ORCA_DATASET_PATH ||
       path.join(repoRoot, "Produtos", "datasets", "orca_tpu_p2s_220c_dataset.csv")
   ),
-  loadSettings: process.env.ORCA_SLICER_LOAD_SETTINGS || "",
-  loadFilaments: process.env.ORCA_SLICER_LOAD_FILAMENTS || "",
+  loadSettings: process.env.ORCA_SLICER_LOAD_SETTINGS || process.env.ORCA_PRINTER_PROFILE || "",
+  loadFilaments: process.env.ORCA_SLICER_LOAD_FILAMENTS || process.env.ORCA_FILAMENT_PROFILE || "",
   extraArgs: splitArgs(process.env.ORCA_SLICER_EXTRA_ARGS || ""),
   profileId: process.env.ORCA_SLICER_PROFILE_ID || "bambu-p2s-0.4-tpu-220c",
   printerId: process.env.ORCA_PRINTER_ID || "bambu-p2s",
@@ -43,10 +43,26 @@ async function main() {
   }
 
   const rows = await mapConcurrent(modelFiles, config.concurrency, sliceModel);
+  const validRows = rows.filter((row) => {
+    return row.gcode_file && Number(row.material_grams) > 0 && Number(row.print_minutes) > 0;
+  });
+  const rejectedRows = rows.filter((row) => !validRows.includes(row));
 
-  await fs.writeFile(config.datasetPath, toCsv(rows));
+  if (rejectedRows.length > 0) {
+    console.warn(`Amostras rejeitadas por metricas invalidas: ${rejectedRows.length}`);
+    for (const row of rejectedRows.slice(0, 20)) {
+      console.warn(`- ${row.sample_id}: material=${row.material_grams}, tempo=${row.print_minutes}, gcode=${row.gcode_file || "N/A"}`);
+    }
+  }
+
+  if (validRows.length === 0) {
+    throw new Error("Nenhuma amostra valida foi gerada pelo Orca; dataset nao foi atualizado.");
+  }
+
+  await fs.writeFile(config.datasetPath, toCsv(validRows));
   console.log(`Dataset gerado: ${config.datasetPath}`);
   console.log(`Modelos fatiados: ${rows.length}`);
+  console.log(`Amostras validas: ${validRows.length}`);
 }
 
 async function sliceModel(modelPath, index, total) {
@@ -57,14 +73,29 @@ async function sliceModel(modelPath, index, total) {
   const args = buildOrcaArgs({ modelPath, outputDir: sampleOutputDir });
   const startedAt = new Date().toISOString();
   console.log(`[${index + 1}/${total}] Fatiando ${path.basename(modelPath)}`);
-  const { stdout = "", stderr = "" } = await execFileAsync(config.orcaPath, args, {
-    windowsHide: true,
-    timeout: config.timeoutMs,
-    maxBuffer: 1024 * 1024 * 16
-  });
+  let stdout = "";
+  let stderr = "";
+  let errorMessage = "";
+
+  try {
+    const result = await execFileAsync(config.orcaPath, args, {
+      windowsHide: true,
+      timeout: config.timeoutMs,
+      maxBuffer: 1024 * 1024 * 16
+    });
+    stdout = result.stdout || "";
+    stderr = result.stderr || "";
+  } catch (error) {
+    stdout = error.stdout || "";
+    stderr = error.stderr || "";
+    errorMessage = [error.message, stderr, stdout].filter(Boolean).join("\n").slice(0, 4000);
+    console.warn(`Falha ao fatiar ${sampleId}: ${errorMessage.split("\n")[0]}`);
+  }
+
   const gcodePath = await findNewestGcode(sampleOutputDir);
   const gcodeText = gcodePath ? await fs.readFile(gcodePath, "utf8") : "";
   const parsed = parseOrcaMetrics(`${stdout}\n${stderr}\n${gcodeText}`);
+  const parseStatus = gcodePath && parsed.materialGrams > 0 && parsed.printMinutes > 0 ? "valid" : "invalid";
 
   return {
     sample_id: sampleId,
@@ -80,7 +111,9 @@ async function sliceModel(modelPath, index, total) {
     nozzle_temp_c: config.nozzleTempC,
     bed_temp_c: config.bedTempC,
     sliced_at: startedAt,
-    parser: parsed.parser
+    parser: parsed.parser,
+    parse_status: parseStatus,
+    error: errorMessage
   };
 }
 

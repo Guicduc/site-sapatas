@@ -70,3 +70,36 @@ create index if not exists orders_status_idx on orders(status);
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists payments_order_id_idx on payments(order_id);
 create index if not exists payments_provider_payment_idx on payments(provider_payment_id);
+
+create table if not exists competitor_product_prices (
+  id text primary key,
+  supplier text not null,
+  competitor_type text not null,
+  competitor_model text not null,
+  quote_date date,
+  unit_price_brl numeric(12,2),
+  ipi_percent numeric(5,2),
+  final_price_brl numeric(12,2),
+  image_ref text,
+  competitor_notes text,
+  own_comparable_family_slug text,
+  own_comparable_family_name text,
+  comparison_status text not null check (
+    comparison_status in ('comparavel', 'comparavel_parcial', 'sem_comparativo')
+  ),
+  comparison_criteria text,
+  confidence text not null default 'media' check (confidence in ('baixa', 'media', 'alta')),
+  source text not null default 'imagem_orcamento_concorrente',
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists competitor_product_prices_supplier_idx
+  on competitor_product_prices(supplier);
+
+create index if not exists competitor_product_prices_comparison_status_idx
+  on competitor_product_prices(comparison_status);
+
+create index if not exists competitor_product_prices_own_family_idx
+  on competitor_product_prices(own_comparable_family_slug);

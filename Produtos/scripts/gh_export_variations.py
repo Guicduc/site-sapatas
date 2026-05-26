@@ -23,7 +23,7 @@ DATASET_DIR = os.path.join(REPO_ROOT, "Produtos", "datasets")
 LOG_DIR = os.path.join(REPO_ROOT, "Produtos", "logs")
 DATASET_PATH = os.path.join(DATASET_DIR, "grasshopper_3mf_variations.csv")
 LOG_PATH = os.path.join(LOG_DIR, "grasshopper_3mf_variations.log")
-VARIATIONS_PER_FILE = int(os.environ.get("GH_VARIATIONS_PER_FILE", "25"))
+VARIATIONS_PER_FILE = int(os.environ.get("GH_VARIATIONS_PER_FILE", "120"))
 TARGET_VALID_PER_FILE = int(os.environ.get("GH_TARGET_VALID_PER_FILE", str(VARIATIONS_PER_FILE)))
 SAMPLE_OFFSET = int(os.environ.get("GH_SAMPLE_OFFSET", "0"))
 ONLY_FILTER = os.environ.get("GH_ONLY", "").lower()
@@ -110,6 +110,16 @@ def slider_decimals(slider):
         return 0
 
 
+def slider_current(slider):
+    try:
+        return float(slider.Slider.Value)
+    except:
+        try:
+            return float(slider.CurrentValue)
+        except:
+            return (slider_min(slider) + slider_max(slider)) / 2.0
+
+
 def set_slider(slider, value):
     decimals = slider_decimals(slider)
     rounded = round(float(value), decimals)
@@ -122,26 +132,118 @@ def set_slider(slider, value):
             log("Nao foi possivel definir slider {} = {}".format(slider.NickName, rounded))
 
 
+def slider_name(slider, index):
+    return slider.NickName or slider.Name or "slider_{}".format(index + 1)
+
+
+def format_slider_value(value, decimals):
+    if decimals <= 0:
+        return int(round(float(value)))
+    return round(float(value), decimals)
+
+
+def slider_value_at_ratio(slider, ratio):
+    minimum = slider_min(slider)
+    maximum = slider_max(slider)
+    decimals = slider_decimals(slider)
+    if maximum <= minimum:
+        return format_slider_value(minimum, decimals)
+    value = minimum + (maximum - minimum) * ratio
+    return format_slider_value(value, decimals)
+
+
 def variation_value(index, slider_index, total, minimum, maximum, decimals):
     if maximum <= minimum:
-        return minimum
+        return format_slider_value(minimum, decimals)
     # Deterministic spread; each slider gets a different phase to avoid diagonal-only samples.
     phase = ((index * (slider_index + 3) * 7) + (slider_index * 11)) % total
     ratio = (phase + 0.5) / float(max(1, total))
     value = minimum + (maximum - minimum) * ratio
-    return round(value, decimals)
+    return format_slider_value(value, decimals)
 
 
-def apply_variation(sliders, index, total):
+def build_anchor_variations(sliders):
+    anchors = []
+    if not sliders:
+        return anchors
+
+    profiles = [
+        ("min", 0.0),
+        ("small", 0.25),
+        ("mid", 0.5),
+        ("large", 0.75),
+        ("max", 1.0),
+    ]
+
+    for label, ratio in profiles:
+        values = {}
+        for slider_index, slider in enumerate(sliders):
+            values[slider_name(slider, slider_index)] = slider_value_at_ratio(slider, ratio)
+        anchors.append((label, values))
+
+    default_values = {}
+    for slider_index, slider in enumerate(sliders):
+        decimals = slider_decimals(slider)
+        current = min(slider_max(slider), max(slider_min(slider), slider_current(slider)))
+        default_values[slider_name(slider, slider_index)] = format_slider_value(current, decimals)
+    anchors.append(("default", default_values))
+
+    for active_index, active_slider in enumerate(sliders):
+        for label, ratio in [("axis-min", 0.0), ("axis-max", 1.0)]:
+            values = {}
+            for slider_index, slider in enumerate(sliders):
+                value_ratio = ratio if slider is active_slider else 0.5
+                values[slider_name(slider, slider_index)] = slider_value_at_ratio(slider, value_ratio)
+            anchors.append(("{}-{}".format(label, active_index + 1), values))
+
+    # Pairwise low/high interactions catch common nonlinear cases without exploding the sample count.
+    for left_index in range(len(sliders)):
+        for right_index in range(left_index + 1, len(sliders)):
+            for label, ratio in [("pair-low", 0.25), ("pair-high", 0.75)]:
+                values = {}
+                for slider_index, slider in enumerate(sliders):
+                    value_ratio = ratio if slider_index in [left_index, right_index] else 0.5
+                    values[slider_name(slider, slider_index)] = slider_value_at_ratio(slider, value_ratio)
+                anchors.append(("{}-{}-{}".format(label, left_index + 1, right_index + 1), values))
+
+    deduped = []
+    seen = set()
+    for label, values in anchors:
+        key = tuple(sorted(values.items()))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append((label, values))
+    return deduped
+
+
+def build_lhs_variation(sliders, index, total):
     values = {}
     for slider_index, slider in enumerate(sliders):
-        name = slider.NickName or slider.Name or "slider_{}".format(slider_index + 1)
+        name = slider_name(slider, slider_index)
         minimum = slider_min(slider)
         maximum = slider_max(slider)
         decimals = slider_decimals(slider)
-        next_value = variation_value(index, slider_index, total, minimum, maximum, decimals)
-        set_slider(slider, next_value)
-        values[name] = next_value
+        values[name] = variation_value(index, slider_index, total, minimum, maximum, decimals)
+    return values
+
+
+def build_variation_plan(sliders, total):
+    plan = []
+    for label, values in build_anchor_variations(sliders):
+        plan.append((label, values))
+
+    lhs_index = 0
+    while len(plan) < total:
+        plan.append(("spread-{}".format(lhs_index + 1), build_lhs_variation(sliders, lhs_index, total)))
+        lhs_index += 1
+    return plan[:total]
+
+
+def apply_variation(sliders, values):
+    for slider_index, slider in enumerate(sliders):
+        name = slider_name(slider, slider_index)
+        set_slider(slider, values.get(name, slider_current(slider)))
     return values
 
 
@@ -286,9 +388,12 @@ def process_file(Grasshopper, gh_path):
     if len(sliders) == 0:
         log("Sem sliders numericos; gerando apenas a solucao padrao.")
 
-    for index in range(VARIATIONS_PER_FILE):
+    variation_plan = build_variation_plan(sliders, VARIATIONS_PER_FILE) if sliders else [("default", {})]
+
+    for index, item in enumerate(variation_plan):
+        variation_label, planned_values = item
         clear_doc()
-        slider_values = apply_variation(sliders, index, VARIATIONS_PER_FILE) if sliders else {}
+        slider_values = apply_variation(sliders, planned_values) if sliders else {}
         solve(ghdoc)
         geometries = collect_geometries(ghdoc)
         if not geometries:
@@ -310,6 +415,7 @@ def process_file(Grasshopper, gh_path):
             "source_gh": os.path.relpath(gh_path, REPO_ROOT).replace("\\", "/"),
             "sample_id": sample_id,
             "variation_index": index + 1,
+            "variation_label": variation_label,
             "slider_values": repr(slider_values),
             "export_path": os.path.relpath(output_path, REPO_ROOT).replace("\\", "/"),
             "stl_path": os.path.relpath(stl_path, REPO_ROOT).replace("\\", "/"),
@@ -327,6 +433,7 @@ def write_dataset(rows):
         "source_gh",
         "sample_id",
         "variation_index",
+        "variation_label",
         "slider_values",
         "export_path",
         "stl_path",

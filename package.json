@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
-    "slice:dataset": "node Produtos/scripts/orca-slice-dataset.mjs"
+    "slice:dataset": "node Produtos/scripts/orca-slice-dataset.mjs",
+    "build:sliced-data": "node Produtos/scripts/build-sliced-pricing-data.mjs"
   },
   "dependencies": {
     "next": "16.2.3",
