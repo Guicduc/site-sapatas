@@ -4,6 +4,48 @@ Data: 2026-05-26
 
 Objetivo: comparar precos de concorrentes extraidos das imagens com o custo/preco gerado pelo configurador parametrico, para orientar a logica real de precificacao.
 
+## Atualizacao implementada
+
+A politica atual passou a usar tres camadas:
+
+1. custo real direto: material com perda + energia por tempo de impressao;
+2. margem regressiva por familia, menor em itens internos de tubo e maior em sapatas lisas pequenas;
+3. referencia de mercado quando houver concorrente comparavel na base `base-concorrentes-sapatas.csv`.
+
+A referencia de mercado nao substitui o custo real. Ela atua como faixa comercial:
+
+- em ponteiras internas commodity, o preco fica perto do mercado quando o custo permite, mas nunca abaixo do piso sustentavel de custo + margem minima;
+- em sapatas lisas configuraveis, o preco usa piso parcial de mercado para evitar peca pequena vendida barato demais;
+- quando o concorrente injetado e muito barato e o nosso custo real fica acima, a regra assume `sustainable_price_above_market` em vez de forcar prejuizo;
+- os pontos de mercado usados como piso foram suavizados quando a planilha tinha anomalia local, para preservar crescimento progressivo por medida.
+
+Simulacao com a regra implementada:
+
+| Caso | Concorrente | Custo real usado | Preco novo | Relacao vs concorrente | Ajuste aplicado |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Ponteira redonda 7/8" | R$ 2,19 | R$ 0,60 | R$ 1,64 | 0,75x | piso parcial de mercado |
+| Ponteira redonda 3/4" | R$ 1,68 | R$ 0,48 | R$ 1,26 | 0,75x | piso parcial de mercado |
+| Ponteira quadrada 16x16 | R$ 0,84 | R$ 0,08 | R$ 0,28 | 0,33x | piso suavizado para progressao |
+| Ponteira quadrada 18x18 | R$ 0,37 | R$ 0,14 | R$ 0,33 | 0,89x | custo + margem regressiva |
+| Ponteira quadrada 25.4x25.4 | R$ 0,63 | R$ 0,22 | R$ 0,52 | 0,83x | custo + margem regressiva |
+| Ponteira quadrada 50x50 | R$ 4,68 | R$ 0,23* | R$ 3,51 | 0,75x | piso parcial de mercado |
+| Sapata redonda com haste diametro 10.31 | R$ 2,23 | R$ 0,10 | R$ 1,90 | 0,85x | piso minimo comercial |
+| Sapata redonda com haste diametro 12.7 | R$ 3,38 | R$ 0,13 | R$ 2,87 | 0,85x | piso parcial de mercado |
+| Sapata quadrada lisa 2" | R$ 3,87 | R$ 0,04* | R$ 3,29 | 0,85x | piso parcial de mercado |
+
+`*` Estes custos ainda dependem da qualidade do slice/export da familia. A regra comercial evita preco artificialmente baixo quando o dataset fatiado vier subestimado, mas o dado de slicer ainda deve ser melhorado para custo final.
+
+### Inconsistencia conhecida da base fatiada
+
+A base atual ainda tem um sinal estranho em algumas familias: uma ponteira redonda de 2" aparece com custo direto de R$ 2,02, enquanto a ponteira quadrada 50x50 aparece com custo direto de apenas R$ 0,23. Como as dimensoes sao proximas, essa diferenca provavelmente vem do export/slice da familia quadrada, nao da logica comercial.
+
+Por isso a politica foi desenhada para separar duas coisas:
+
+- `custo direto`: continua vindo de `materialGrams + printMinutes` quando ha dado fatiado;
+- `preco comercial`: considera referencia de mercado para impedir que uma amostra fatiada subestimada derrube o preco final.
+
+Enquanto o slice da familia quadrada 50x50 nao for revalidado, o preco dela deve ser lido como preco comercial ancorado no concorrente, e nao como prova de que o custo real seja R$ 0,23.
+
 ## Premissas usadas
 
 - Base concorrente: `docs/catalog/base-concorrentes-sapatas.csv`.
