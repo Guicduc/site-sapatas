@@ -41,12 +41,16 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setAdded(false);
   }, [category, formatSlug]);
 
-  const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
-  const validForCart = issues.length === 0;
   const priceBreakdown = useMemo(
     () => calculatePriceBreakdown(format, values, quantity),
     [format, values, quantity]
   );
+  const issues = useMemo(() => {
+    const configurationIssues = validateConfiguration(format, values);
+
+    return configurationIssues;
+  }, [format, values]);
+  const validForCart = issues.length === 0 && priceBreakdown.pricingAvailable !== false;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
@@ -524,6 +528,8 @@ function ConfigurationSummary({
   added,
   onAddToCart
 }) {
+  const hasPrice = priceBreakdown.pricingAvailable !== false;
+
   return (
     <div className="summary-panel">
       <div className="summary-heading">
@@ -534,11 +540,11 @@ function ConfigurationSummary({
       <div className="summary-stats">
         <article>
           <strong>Preço unitário</strong>
-          <span>{formatCurrency(unitPrice)}</span>
+          <span>{hasPrice ? formatCurrency(unitPrice) : "Sem preco Orca"}</span>
         </article>
         <article className="summary-total">
           <strong>Total</strong>
-          <span>{formatCurrency(totalPrice)}</span>
+          <span>{hasPrice ? formatCurrency(totalPrice) : "Sem preco Orca"}</span>
         </article>
         {showProductionInfo && priceBreakdown.pricingMode === "sliced" && (
           <article>
@@ -564,3 +570,4 @@ function ConfigurationSummary({
     </div>
   );
 }
+

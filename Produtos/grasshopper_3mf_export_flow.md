@@ -1,8 +1,8 @@
 # Fluxo de exportacao 3MF via Grasshopper
 
-Este documento descreve o fluxo recomendado para usar definicoes Grasshopper (`.gh`) como origem dos modelos 3MF da Traco Base e gerar dados tecnicos que alimentem a precificacao real dos produtos.
+Este documento descreve o fluxo recomendado para usar definicoes Grasshopper (`.gh`) como origem dos modelos 3MF da Traco Base e gerar os arquivos que alimentam a precificacao real dos produtos.
 
-O objetivo e manter os scripts Grasshopper versionados em `Produtos/Scripts-GH/`, exportar um arquivo `.3mf` por variante e gerar uma tabela com volume, area, dimensoes e, depois do fatiamento, material e tempo de impressao.
+O objetivo e manter os scripts Grasshopper versionados em `Produtos/Scripts-GH/`, exportar um arquivo `.3mf` por variante e gerar dados de fatiamento Orca com material e tempo de impressao.
 
 ## Estrutura neste projeto
 
@@ -100,7 +100,7 @@ A lista de arquivos `.gh` deve ser montada a partir de `Produtos/Scripts-GH/`, n
    - remover duplicatas;
    - adicionar os solidos ao documento Rhino;
    - exportar cada solido individualmente para `.3mf`;
-   - calcular metricas geometricas;
+   - registrar dimensoes de busca e parametros da variante;
    - gravar uma linha no CSV.
 
 ## Funcoes importantes
@@ -140,11 +140,11 @@ Filtra geometrias que podem virar modelo 3D imprimivel:
 - `Mesh` fechado;
 - `Extrusion` convertida para `Brep` solido.
 
-O filtro deve confirmar que `VolumeMassProperties.Compute()` retorna volume valido.
+O filtro deve confirmar que a geometria esta fechada e exportavel.
 
 ### `geometry_key(geom)`
 
-Gera uma chave para evitar duplicatas. Use volume arredondado e bounding box nos eixos X, Y e Z.
+Gera uma chave para evitar duplicatas. Use identificadores do arquivo, parametros da variante e bounding box nos eixos X, Y e Z.
 
 ### `export_3mf(path, ids)`
 
@@ -163,8 +163,6 @@ Campos minimos para o CSV:
 - `source_gh`
 - `model_id`
 - `object_type`
-- `volume_model_units3`
-- `area_model_units2`
 - `bbox_x`
 - `bbox_y`
 - `bbox_z`
@@ -214,7 +212,7 @@ O configurador do site le parametros em:
 lib\configurator-data.js
 ```
 
-A precificacao estimada e calculada no mesmo arquivo. Quando houver dados reais de fatiamento, eles devem alimentar:
+A precificacao automatica depende das referencias de fatiamento Orca. Esses dados alimentam:
 
 ```text
 lib\sliced-pricing-data.js
@@ -306,7 +304,7 @@ Antes de usar os dados no site, revise amostras com `material_grams` ou `print_m
 
 ## Limitacoes atuais
 
-O fluxo automatico consegue extrair solidos das saidas dos componentes, mas nao entende sozinho qual geometria representa a peca final quando a definicao contem volumes auxiliares.
+O fluxo automatico consegue extrair solidos das saidas dos componentes, mas nao entende sozinho qual geometria representa a peca final quando a definicao contem geometrias auxiliares.
 
 Antes de usar os dados como base comercial, valide:
 
@@ -343,5 +341,7 @@ O arquivo gerado inclui:
 - `materialGrams` e `printMinutes`, usados diretamente pela precificacao;
 - `bbox`, apenas como metadado de busca/proximidade;
 - `siteCategorySlug`, `siteFormatSlug` e `hasNeck`, inferidos pela familia exportada.
+
+Quando a configuracao do site nao tiver amostra exata, o preco deve ser interpolado a partir das referencias Orca mais proximas da mesma familia/formato.
 
 Observacao operacional: se o Orca CLI retornar `process not compatible with printer`, revise o par de perfis machine/processo carregado em `ORCA_SLICER_LOAD_SETTINGS`. O script de fatiamento registra a falha por amostra e rejeita linhas sem `gcode_file`, `material_grams` ou `print_minutes`.
