@@ -540,12 +540,6 @@ function ConfigurationSummary({
           <strong>Total</strong>
           <span>{formatCurrency(totalPrice)}</span>
         </article>
-        {showProductionInfo && priceBreakdown.pricingMode === "sliced" && (
-          <article>
-            <strong>Tempo Orca</strong>
-            <span>{priceBreakdown.printMinutes} min/un</span>
-          </article>
-        )}
         {showProductionInfo && (
           <article>
             <strong>Prazo</strong>
