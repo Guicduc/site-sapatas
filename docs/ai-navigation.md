@@ -99,12 +99,11 @@ O Mercado Pago fica isolado em `lib/mercado-pago.js`.
 
 ## Precificacao
 
-Ha dois modos:
+A precificacao publica usa somente referencias de fatiamento Orca registradas em `lib/sliced-pricing-data.js`.
 
-- `estimated`: estimativa geometrica em `calculatePriceBreakdown`.
-- `sliced`: referencia de fatiamento Orca quando existe amostra em `lib/sliced-pricing-data.js`.
+`calculatePriceBreakdown` procura amostras Orca da mesma familia/formato e calcula custo com `materialGrams` e `printMinutes`. Quando nao existe amostra exata para a medida, o motor interpola as referencias Orca mais proximas.
 
-`lib/pricing-engine.js` concentra calculo de custo com dados de fatiamento real: material, tempo de impressao, maquina, energia, taxa de canal e markup. Operacao e embalagem nao entram no custo do produto.
+`lib/pricing-engine.js` concentra calculo de custo com dados de fatiamento real: material, tempo de impressao, energia, taxa de canal e politica comercial. Operacao e embalagem nao entram no custo do produto.
 
 ## Produtos, Grasshopper e 3MF
 
