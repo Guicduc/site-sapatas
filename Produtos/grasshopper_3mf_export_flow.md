@@ -1,320 +1,202 @@
-# Fluxo de exportacao 3MF via Grasshopper
+# Fluxo Canonico De Slice
 
-Este documento descreve o fluxo recomendado para usar definicoes Grasshopper (`.gh`) como origem dos modelos 3MF da Traco Base e gerar dados tecnicos que alimentem a precificacao real dos produtos.
-
-O objetivo e manter os scripts Grasshopper versionados em `Produtos/Scripts-GH/`, exportar um arquivo `.3mf` por variante e gerar uma tabela com volume, area, dimensoes e, depois do fatiamento, material e tempo de impressao.
-
-## Estrutura neste projeto
-
-Raiz do repositorio:
+Este fluxo recomeca a base de dados de precificacao a partir de uma unica tabela:
 
 ```text
-C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas
+Produtos\datasets\slicer_pricing_dataset.csv
 ```
 
-Definicoes Grasshopper versionadas:
+Essa tabela deve conter, na mesma linha:
 
-```text
-Produtos\Scripts-GH\Sapata_Interna_Tubo-Oblongo.gh
-Produtos\Scripts-GH\Sapata_Interna_Tubo-Quadrado.gh
-Produtos\Scripts-GH\Sapata_Lisa_Quadrada-com haste.gh
-Produtos\Scripts-GH\Sapata_Lisa_Quadrada-com parafuso.gh
-Produtos\Scripts-GH\Sapata_Lisa_Quadrada.gh
-Produtos\Scripts-GH\Sapata_Lisa_Redonda-com Haste.gh
-Produtos\Scripts-GH\Sapata_Lisa_Redonda-com parafuso.gh
-Produtos\Scripts-GH\Sapata_Lisa_Redonda.gh
-```
+- origem Grasshopper e identificadores do produto;
+- parametros reais do configurador, como `tamanhoBaseX`, `tamanhoBaseY`, `alturaBase`, `alturaPescoco`, `paredeTubo` e `diametroPescoco`;
+- arquivos exportados (`model_file`, `stl_file`, `gcode_file`);
+- resultado do Orca (`material_grams`, `print_minutes`);
+- custo de producao calculado a partir de material e tempo (`production_cost_brl` e detalhamento).
 
-Saidas recomendadas para os modelos gerados:
+O CSV bruto antigo do Orca nao deve ser usado como base de preco, porque ele nao tem os parametros das pecas.
 
-```text
-Produtos\3MF\
-Produtos\datasets\sapatas_3mf_dataset.csv
-Produtos\logs\grasshopper_3mf_export.log
-Produtos\slicer-output\
-```
+## Comandos
 
-Essas pastas podem ser criadas quando o exportador for executado. Arquivos `.3mf` podem ser pesados; antes de versionar, confirme se eles devem entrar no Git ou se devem ser armazenados como artefatos externos.
-
-## Dependencias locais
-
-- Rhino 7 ou superior instalado no Windows.
-- Grasshopper disponivel na instalacao do Rhino.
-- Definicoes `.gh` sem dependencias externas quebradas.
-- Python executado dentro do Rhino, com acesso a RhinoCommon e ao assembly do Grasshopper.
-
-Quando um plugin antigo impedir a abertura das definicoes, desative apenas o plugin problematico no ambiente local e registre isso no log da execucao. Nao trate esse tipo de ajuste como requisito do projeto.
-
-## Acionamento do Rhino
-
-O fluxo validado usa automacao COM do Rhino via PowerShell. O script Python deve ficar em uma pasta operacional local ou em uma futura pasta versionada de automacoes do projeto.
-
-Exemplo de chamada:
+Gerar modelos e linhas do dataset a partir do Grasshopper:
 
 ```powershell
-$repo = "C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas"
-$script = Join-Path $repo "Produtos\scripts\gh_export_dataset.py"
-
-$rhino = New-Object -ComObject Rhino.Application
-$rhino.Visible = $true
-Start-Sleep -Seconds 3
-$rhino.RunScript("-_RunPythonScript (`"$script`")", 0)
+npm run export:gh
 ```
 
-Dentro do Python do Rhino, carregue o Grasshopper assim:
-
-```python
-import clr
-
-clr.AddReferenceToFileAndPath(
-    r"C:\Program Files\Rhino 7\Plug-ins\Grasshopper\Grasshopper.dll"
-)
-import Grasshopper
-```
-
-## Configuracao esperada do exportador
-
-Use caminhos relativos a raiz do repositorio sempre que possivel:
-
-```python
-REPO_ROOT = os.environ.get(
-    "TRACO_BASE_REPO",
-    r"C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas"
-)
-GH_DIR = os.path.join(REPO_ROOT, "Produtos", "Scripts-GH")
-OUT_DIR = os.path.join(REPO_ROOT, "Produtos", "3MF")
-DATASET_PATH = os.path.join(REPO_ROOT, "Produtos", "datasets", "sapatas_3mf_dataset.csv")
-LOG_PATH = os.path.join(REPO_ROOT, "Produtos", "logs", "grasshopper_3mf_export.log")
-```
-
-A lista de arquivos `.gh` deve ser montada a partir de `Produtos/Scripts-GH/`, nao de paths soltos na area de trabalho.
-
-## Fluxo do script
-
-1. Criar as pastas de saida (`Produtos/3MF`, `Produtos/datasets`, `Produtos/logs`).
-2. Carregar o assembly do Grasshopper.
-3. Para cada arquivo `.gh` em `Produtos/Scripts-GH/`:
-   - limpar objetos existentes no documento Rhino;
-   - abrir o documento com `GH_DocumentIO`;
-   - resolver a definicao com `ghdoc.NewSolution(True)`;
-   - percorrer as saidas dos componentes;
-   - extrair geometrias RhinoCommon validas;
-   - filtrar apenas solidos exportaveis;
-   - remover duplicatas;
-   - adicionar os solidos ao documento Rhino;
-   - exportar cada solido individualmente para `.3mf`;
-   - calcular metricas geometricas;
-   - gravar uma linha no CSV.
-
-## Funcoes importantes
-
-### `load_grasshopper()`
-
-Carrega o assembly do Grasshopper dentro da sessao Python do Rhino e disponibiliza o namespace `Grasshopper`.
-
-### `bake_document(gh_path)`
-
-Abre e resolve uma definicao `.gh`.
-
-Responsabilidades:
-
-- abrir o arquivo com `Grasshopper.Kernel.GH_DocumentIO`;
-- chamar `NewSolution(True)`;
-- percorrer objetos do documento Grasshopper;
-- ler geometrias a partir de `Params.Output` e `VolatileData`;
-- usar `BakeGeometry()` apenas como fallback quando disponivel;
-- retornar os objetos Rhino adicionados ao documento.
-
-### `geometry_from_goo(goo)`
-
-Converte dados Grasshopper para `Rhino.Geometry.GeometryBase`.
-
-Ordem recomendada:
-
-1. tentar `goo.Value`;
-2. tentar `goo.ScriptVariable()`;
-3. copiar a geometria antes de adicionar ao documento Rhino.
-
-### `is_exportable_solid(geom)`
-
-Filtra geometrias que podem virar modelo 3D imprimivel:
-
-- `Brep` solido;
-- `Mesh` fechado;
-- `Extrusion` convertida para `Brep` solido.
-
-O filtro deve confirmar que `VolumeMassProperties.Compute()` retorna volume valido.
-
-### `geometry_key(geom)`
-
-Gera uma chave para evitar duplicatas. Use volume arredondado e bounding box nos eixos X, Y e Z.
-
-### `export_3mf(path, ids)`
-
-Seleciona apenas os objetos recebidos e executa:
-
-```python
-Rhino.RhinoApp.RunScript('-_Export "{}" _Enter'.format(path), False)
-```
-
-Cada arquivo `.3mf` deve conter somente a geometria correspondente a uma linha do dataset.
-
-### `object_metrics(rhino_object)`
-
-Campos minimos para o CSV:
-
-- `source_gh`
-- `model_id`
-- `object_type`
-- `volume_model_units3`
-- `area_model_units2`
-- `bbox_x`
-- `bbox_y`
-- `bbox_z`
-- `export_path`
-
-Campos desejados quando os parametros forem expostos no Grasshopper:
-
-- `product_family`
-- `variant_slug`
-- `diametro`
-- `tamanho_base_x`
-- `tamanho_base_y`
-- `altura_base`
-- `altura_pescoco`
-- `diametro_pescoco`
-- `parede_tubo`
-- `fixacao`
-
-## Padrao recomendado para as definicoes Grasshopper
-
-Para a base de custo ser confiavel, cada definicao deve expor explicitamente qual geometria e a peca final.
-
-Padrao recomendado:
-
-- nomear o parametro final como `EXPORT_3MF`;
-- agrupar os componentes finais em um grupo chamado `EXPORT`;
-- evitar que geometrias intermediarias fiquem conectadas a outputs publicos;
-- nomear sliders/inputs com os mesmos nomes usados em `lib/configurator-data.js` sempre que possivel.
-
-Nomes de parametros relevantes no app:
-
-- `diametro`
-- `diametroBase`
-- `tamanhoBaseX`
-- `tamanhoBaseY`
-- `alturaBase`
-- `alturaPescoco`
-- `diametroPescoco`
-- `paredeTubo`
-- `pescoco`
-
-## Relacao com o app
-
-O configurador do site le parametros em:
-
-```text
-lib\configurator-data.js
-```
-
-A precificacao estimada e calculada no mesmo arquivo. Quando houver dados reais de fatiamento, eles devem alimentar:
-
-```text
-lib\sliced-pricing-data.js
-lib\pricing-engine.js
-```
-
-Fluxo esperado para precificacao real:
-
-1. Exportar `.3mf` a partir do Grasshopper.
-2. Fatiar os modelos no Orca Slicer.
-3. Extrair material e tempo de impressao do G-code ou relatorio do slicer.
-4. Atualizar `lib/sliced-pricing-data.js` com as amostras aprovadas.
-5. Conferir `calculatePriceBreakdown()` no configurador.
-
-## Fatiamento em lote com Orca Slicer
-
-O projeto inclui um script operacional para fatiar todos os modelos `.3mf` de `Produtos/3MF/` e gerar um CSV com os dados coletados do G-code:
-
-```text
-Produtos\scripts\orca-slice-dataset.mjs
-```
-
-Comando:
+Fatiar os modelos apontados no proprio dataset e preencher a mesma tabela:
 
 ```powershell
 npm run slice:dataset
 ```
 
+Calcular custo de producao na mesma tabela:
+
+```powershell
+npm run cost:build
+```
+
+Gerar o modulo estatico usado pelo configurador publico:
+
+```powershell
+npm run pricing:build-data
+```
+
+Validar estrutura basica do dataset:
+
+```powershell
+npm run slice:check
+```
+
+## Saidas
+
+O exportador Grasshopper grava:
+
+```text
+Produtos\3MF\*.3mf
+Produtos\STL\*.stl
+Produtos\datasets\slicer_pricing_dataset.csv
+Produtos\logs\slicer_pricing_dataset.log
+```
+
+O fatiamento Orca grava G-code em:
+
+```text
+Produtos\slicer-output\
+```
+
+E atualiza no mesmo CSV:
+
+```text
+gcode_file
+material_grams
+print_minutes
+filament_mm
+orca_version
+profile_id
+printer_id
+material_id
+slice_status
+slice_error
+```
+
+O calculo de custo grava, tambem no mesmo CSV:
+
+```text
+material_with_waste_grams
+print_hours
+material_cost_brl
+energy_kwh
+energy_cost_brl
+maintenance_cost_brl
+printer_wear_cost_brl
+machine_cost_brl
+production_cost_brl
+cost_assumption_tpu_brl_kg
+cost_assumption_energy_brl_kwh
+cost_assumption_power_w
+```
+
+## Parametros De Produto
+
+Os nomes de parametro devem bater com `lib/configurator-data.js`.
+
+Parametros canonicos atuais:
+
+```text
+diametro
+diametroBase
+tamanhoBaseX
+tamanhoBaseY
+alturaBase
+alturaPescoco
+diametroPescoco
+paredeTubo
+pescoco
+```
+
+Exemplo para base quadrada:
+
+```text
+source_gh,sample_id,category_slug,format_slug,tamanhoBaseX,tamanhoBaseY,alturaBase,alturaPescoco,paredeTubo,model_file,stl_file,material_grams,print_minutes
+Produtos/Scripts-GH/Sapata_Interna_Tubo-Quadrado.gh,Sapata_Interna_Tubo-Quadrado__v01,ponteira-interna-tubo,quadrado,30,30,6,20,1.5,Produtos/3MF/Sapata_Interna_Tubo-Quadrado__v01.3mf,Produtos/STL/Sapata_Interna_Tubo-Quadrado__v01.stl,,
+```
+
+## Grasshopper
+
+O script operacional fica em:
+
+```text
+Produtos\scripts\gh_export_variations.py
+```
+
+Ele abre os `.gh` em `Produtos\Scripts-GH\`, aplica amostras dentro dos limites publicos do configurador e grava as linhas do CSV canonico. A configuracao dos produtos fica dentro do proprio script para evitar arquivos auxiliares soltos.
+
+Padrao recomendado para os arquivos `.gh`:
+
+- expor a geometria final em uma saida chamada `EXPORT_3MF`;
+- nomear sliders com os mesmos nomes do configurador sempre que possivel;
+- quando os sliders estiverem genericos, manter a ordem esperada no script;
+- evitar outputs publicos com geometrias intermediarias.
+
+## Orca
+
+O script operacional fica em:
+
+```text
+Produtos\scripts\orca-slice-dataset.mjs
+```
+
+Ele nao varre mais diretorios para criar uma tabela separada. Ele le `Produtos\datasets\slicer_pricing_dataset.csv`, usa `stl_file` ou `model_file` de cada linha e preenche o resultado do slicer na propria linha.
+
 Variaveis principais:
 
 ```text
-ORCA_SLICER_PATH=C:\Program Files\OrcaSlicer\orca-slicer.exe
-ORCA_MODEL_DIR=Produtos/3MF
-ORCA_SLICER_OUTPUT_DIR=Produtos/slicer-output
-ORCA_DATASET_PATH=Produtos/datasets/orca_tpu_p2s_220c_dataset.csv
-ORCA_SLICER_PROFILE_ID=bambu-p2s-0.4-tpu-220c
+ORCA_SLICER_PATH=Produtos/tools/OrcaSlicer_Windows_V2.3.1_portable/orca-slicer.exe
+ORCA_SLICER_OUTPUT_DIR=Produtos/slicer-output-current
+ORCA_DATASET_PATH=Produtos/datasets/slicer_pricing_dataset.csv
+ORCA_SLICER_PROFILE_ID=p2s-0.4-tpu-220c-layer-0.2-infill-8-walls-2-shells-3
 ORCA_PRINTER_ID=bambu-p2s
 ORCA_MATERIAL_ID=tpu
 ORCA_NOZZLE_TEMP_C=220
 ORCA_BED_TEMP_C=35
 ```
 
-Perfil considerado para este fluxo:
+O script usa esses perfis e o Orca portatil do repositorio por padrao. Evite trocar para o Orca instalado em
+`C:\Program Files\OrcaSlicer\orca-slicer.exe` sem refazer um teste isolado, porque essa instalacao falhou ao carregar
+os perfis do lote.
 
-- impressora: Bambu Lab P2S;
-- material: TPU;
-- bico: 0.4 mm, salvo ajuste explicito no perfil do Orca;
-- temperatura do bico: usar o valor do perfil real do Orca; 220 C e apenas fallback quando nao houver perfil pronto;
-- mesa: 35 C como ponto inicial, ajustavel conforme adesao real;
-- identificador do perfil: `bambu-p2s-0.4-tpu`.
+Para fatiar apenas linhas ainda nao preenchidas:
 
-Quando houver arquivos de perfil exportados do Orca, informe-os por:
-
-```text
-ORCA_SLICER_LOAD_SETTINGS=C:\caminho\maquina-p2s.json;C:\caminho\perfil-processo.json
-ORCA_SLICER_LOAD_FILAMENTS=C:\caminho\filamento-tpu-220c.json
+```powershell
+$env:ORCA_SLICE_ONLY_MISSING="true"
+npm run slice:dataset
 ```
 
-Tambem e possivel passar flags adicionais suportadas pelo Orca:
+## Relacao Com O Site
+
+Enquanto a base canonica nao estiver populada e conectada ao motor publico, o configurador nao deve voltar a estimar preco por volume geometrico. Compra direta continua liberada para medidas dentro dos limites do produto; falta de cobertura de slice e problema de dados/QA, nao bloqueio de carrinho.
+
+O custo comercial definitivo deve usar somente:
 
 ```text
-ORCA_SLICER_EXTRA_ARGS=--alguma-flag valor
+material_grams
+print_minutes
 ```
 
-CSV gerado pelo script:
+vindos do Orca e preservados junto dos parametros reais do produto no CSV canonico.
+
+O site publico consome a versao gerada em:
 
 ```text
-Produtos\datasets\orca_tpu_p2s_220c_dataset.csv
+lib/slicer-pricing-data.js
 ```
 
-Campos principais:
+Premissas atuais do custo direto:
 
-- `sample_id`
-- `model_file`
-- `gcode_file`
-- `material_grams`
-- `print_minutes`
-- `filament_mm`
-- `orca_version`
-- `profile_id`
-- `printer_id`
-- `material_id`
-- `nozzle_temp_c`
-- `bed_temp_c`
-- `sliced_at`
-- `parser`
-
-Antes de usar os dados no site, revise amostras com `material_grams` ou `print_minutes` zerados. Isso indica que o Orca gerou um G-code em formato nao reconhecido pelo parser ou que o fatiamento falhou sem erro explicito.
-
-## Limitacoes atuais
-
-O fluxo automatico consegue extrair solidos das saidas dos componentes, mas nao entende sozinho qual geometria representa a peca final quando a definicao contem volumes auxiliares.
-
-Antes de usar os dados como base comercial, valide:
-
-- se o `.3mf` exportado contem apenas a peca final;
-- se a unidade do modelo esta em milimetros;
-- se a orientacao e a escala estao corretas;
-- se os parametros usados no Grasshopper correspondem aos parametros do configurador;
-- se o fatiamento usa o perfil real de TPU e impressora.
+```text
+TPU: R$ 170/kg
+Energia SP efetiva: R$ 0,95/kWh
+Bambu Lab P2S: 200 W medios durante impressao
+Perda operacional: 5%
+```

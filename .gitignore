@@ -11,8 +11,9 @@ tmp
 Produtos/3MF/
 Produtos/STL/
 Produtos/datasets/*.csv
+!Produtos/datasets/slicer_pricing_dataset.csv
 Produtos/logs/
 Produtos/orca-exported-profiles/
-Produtos/slicer-output/
-Produtos/slicer-output-test/
+Produtos/slicer-output*/
 Produtos/tools/
+Produtos/validation/

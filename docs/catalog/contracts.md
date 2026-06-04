@@ -152,8 +152,8 @@ Estados CAD:
 
 Regras:
 
-- `estimated`: calculo rapido por aproximacao geometrica, usado antes de existir STL;
 - `sliced`: calculo real gerado por Orca Slicer a partir do STL registrado;
+- estimativas geometricas nao devem ser usadas como fonte comercial publica;
 - o resultado do Orca nao altera automaticamente o preco cobrado do pedido;
 - erros de Orca ficam em `metadata.pricing.error` para diagnostico operacional;
 - resultados anteriores podem ser preservados em `metadata.pricing.previousResults` para calibracao.

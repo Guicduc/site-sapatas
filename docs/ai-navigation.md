@@ -99,12 +99,14 @@ O Mercado Pago fica isolado em `lib/mercado-pago.js`.
 
 ## Precificacao
 
-Ha dois modos:
+A base de slice e precificacao foi reiniciada em uma unica tabela:
 
-- `estimated`: estimativa geometrica em `calculatePriceBreakdown`.
-- `sliced`: referencia de fatiamento Orca quando existe amostra em `lib/sliced-pricing-data.js`.
+- `Produtos/datasets/slicer_pricing_dataset.csv`: parametros reais do produto, arquivos exportados e dados Orca.
+- `Produtos/scripts/gh_export_variations.py`: exporta `.3mf`/`.stl` e cria linhas com parametros do configurador.
+- `Produtos/scripts/orca-slice-dataset.mjs`: le essa mesma tabela e preenche `material_grams` e `print_minutes`.
+- `lib/pricing-engine.js`: continua atendendo a validacao administrativa de um STL ja gerado com Orca.
 
-`lib/pricing-engine.js` concentra calculo de custo com dados de fatiamento real: material, tempo de impressao, maquina, energia, taxa de canal e markup. Operacao e embalagem nao entram no custo do produto.
+Nao recrie CSV bruto separado do Orca como fonte de preco; ele nao contem medidas das pecas. O site tambem nao deve voltar a usar volume geometrico como fallback comercial.
 
 ## Produtos, Grasshopper e 3MF
 
@@ -118,8 +120,9 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 1. Adicione ou revise o script em `Produtos/Scripts-GH/`.
 2. Atualize `lib/configurator-data.js` com categoria/formato/parametros.
 3. Se houver pagina SEO, atualize `lib/site-data.js`.
-4. Se houver dados reais de fatiamento, atualize `lib/sliced-pricing-data.js`.
-5. Valide o configurador e o carrinho.
+4. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
+5. Rode `npm run export:gh`, `npm run slice:dataset` e `npm run slice:check`.
+6. Valide o configurador e o carrinho.
 
 ## Cuidados ao alterar
 

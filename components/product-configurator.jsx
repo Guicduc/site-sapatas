@@ -447,9 +447,20 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               value={values[parameter.key] ?? ""}
               disabled={parameter.dependsOn && !values[parameter.dependsOn]}
               onChange={(event) => onChange(parameter.key, event.target.value)}
+              onBlur={(event) => {
+                const nextValue = formatParameterValue(event.target.value, parameter);
+                if (String(values[parameter.key] ?? "") !== nextValue) {
+                  onChange(parameter.key, nextValue);
+                }
+              }}
               onFocus={(event) => {
                 onFocus(parameter.key);
                 event.target.select();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
               }}
               aria-label={parameter.label}
             />
@@ -535,12 +546,6 @@ function ConfigurationSummary({
           <strong>Total</strong>
           <span>{formatCurrency(totalPrice)}</span>
         </article>
-        {priceBreakdown.pricingMode === "sliced" && (
-          <article>
-            <strong>Tempo Orca</strong>
-            <span>{priceBreakdown.printMinutes} min/un</span>
-          </article>
-        )}
         <article>
           <strong>Prazo</strong>
           <span>{leadTime} dias úteis</span>
