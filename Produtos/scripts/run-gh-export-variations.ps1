@@ -26,4 +26,4 @@ Start-Sleep -Seconds 5
 $command = '-_RunPythonScript ("' + $script + '")'
 $rhino.RunScript($command, 0) | Out-Null
 
-Write-Host "Exportacao iniciada no Rhino. Verifique Produtos\logs\grasshopper_3mf_variations.log"
+Write-Host "Exportacao iniciada no Rhino. Verifique Produtos\logs\slicer_pricing_dataset.log"

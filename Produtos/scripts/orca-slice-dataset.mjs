@@ -10,96 +10,279 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = process.env.TRACO_BASE_REPO
   ? path.resolve(process.env.TRACO_BASE_REPO)
   : path.resolve(scriptDir, "../..");
+const defaultOrcaPath = path.join(
+  repoRoot,
+  "Produtos",
+  "tools",
+  "OrcaSlicer_Windows_V2.3.1_portable",
+  "orca-slicer.exe"
+);
+const defaultLoadSettings = [
+  path.join(repoRoot, "Produtos", "orca-cli-profiles", "p2s-04-tpu-machine-cli-estimate.json"),
+  path.join(repoRoot, "Produtos", "orca-cli-profiles", "p2s-020-process.json")
+].join(";");
+const defaultLoadFilaments = path.join(
+  repoRoot,
+  "Produtos",
+  "orca-cli-profiles",
+  "generic-tpu-220.json"
+);
+
+const canonicalHeaders = [
+  "source_gh",
+  "sample_id",
+  "variation_index",
+  "product_family",
+  "category_slug",
+  "format_slug",
+  "variant_slug",
+  "has_neck",
+  "sample_strategy",
+  "export_selection",
+  "slider_values",
+  "model_file",
+  "stl_file",
+  "diametro",
+  "diametroBase",
+  "tamanhoBaseX",
+  "tamanhoBaseY",
+  "alturaBase",
+  "alturaPescoco",
+  "diametroPescoco",
+  "paredeTubo",
+  "pescoco",
+  "object_type",
+  "area_model_units2",
+  "volume_model_units3",
+  "bbox_x",
+  "bbox_y",
+  "bbox_z",
+  "gcode_file",
+  "material_grams",
+  "print_minutes",
+  "filament_mm",
+  "orca_version",
+  "profile_id",
+  "printer_id",
+  "material_id",
+  "nozzle_temp_c",
+  "bed_temp_c",
+  "sliced_at",
+  "parser",
+  "slice_status",
+  "slice_error"
+];
+
+const parameterHeaders = [
+  "diametro",
+  "diametroBase",
+  "tamanhoBaseX",
+  "tamanhoBaseY",
+  "alturaBase",
+  "alturaPescoco",
+  "diametroPescoco",
+  "paredeTubo",
+  "pescoco"
+];
+
+const args = new Set(process.argv.slice(2));
 
 const config = {
-  orcaPath: process.env.ORCA_SLICER_PATH || "",
-  modelDir: path.resolve(process.env.ORCA_MODEL_DIR || path.join(repoRoot, "Produtos", "STL")),
-  outputDir: path.resolve(process.env.ORCA_SLICER_OUTPUT_DIR || path.join(repoRoot, "Produtos", "slicer-output")),
+  orcaPath: resolveOptionalPath(process.env.ORCA_SLICER_PATH || defaultOrcaPath),
+  outputDir: path.resolve(
+    process.env.ORCA_SLICER_OUTPUT_DIR ||
+      path.join(repoRoot, "Produtos", "slicer-output-current")
+  ),
   datasetPath: path.resolve(
     process.env.ORCA_DATASET_PATH ||
-      path.join(repoRoot, "Produtos", "datasets", "orca_tpu_p2s_220c_dataset.csv")
+      path.join(repoRoot, "Produtos", "datasets", "slicer_pricing_dataset.csv")
   ),
-  loadSettings: process.env.ORCA_SLICER_LOAD_SETTINGS || process.env.ORCA_PRINTER_PROFILE || "",
-  loadFilaments: process.env.ORCA_SLICER_LOAD_FILAMENTS || process.env.ORCA_FILAMENT_PROFILE || "",
-  extraArgs: splitArgs(process.env.ORCA_SLICER_EXTRA_ARGS || ""),
+  loadSettings: process.env.ORCA_SLICER_LOAD_SETTINGS || defaultLoadSettings,
+  loadFilaments: process.env.ORCA_SLICER_LOAD_FILAMENTS || defaultLoadFilaments,
+  extraArgs: splitArgs(process.env.ORCA_SLICER_EXTRA_ARGS || "--allow-newer-file"),
   profileId: process.env.ORCA_SLICER_PROFILE_ID || "bambu-p2s-0.4-tpu-220c",
   printerId: process.env.ORCA_PRINTER_ID || "bambu-p2s",
   materialId: process.env.ORCA_MATERIAL_ID || "tpu",
   nozzleTempC: Number(process.env.ORCA_NOZZLE_TEMP_C || 220),
   bedTempC: Number(process.env.ORCA_BED_TEMP_C || 35),
   concurrency: Math.max(1, Number(process.env.ORCA_SLICER_CONCURRENCY || 4)),
-  timeoutMs: Number(process.env.ORCA_SLICER_TIMEOUT_MS || 180000)
+  timeoutMs: Number(process.env.ORCA_SLICER_TIMEOUT_MS || 180000),
+  sliceOnlyMissing: process.env.ORCA_SLICE_ONLY_MISSING === "true"
 };
 
 async function main() {
-  await assertFile(config.orcaPath, "Configure ORCA_SLICER_PATH com o executavel do Orca Slicer.");
-  await fs.mkdir(config.outputDir, { recursive: true });
-  await fs.mkdir(path.dirname(config.datasetPath), { recursive: true });
+  const { headers, rows } = await readDataset(config.datasetPath);
+  const validation = validateDataset(headers, rows);
 
-  const modelFiles = await listModelFiles(config.modelDir);
-
-  if (modelFiles.length === 0) {
-    throw new Error(`Nenhum modelo .stl ou .3mf encontrado em ${config.modelDir}.`);
+  if (validation.errors.length > 0) {
+    throw new Error(validation.errors.join("\n"));
   }
 
-  const rows = await mapConcurrent(modelFiles, config.concurrency, sliceModel);
-  const validRows = rows.filter((row) => {
-    return row.gcode_file && Number(row.material_grams) > 0 && Number(row.print_minutes) > 0;
-  });
-  const rejectedRows = rows.filter((row) => !validRows.includes(row));
+  for (const warning of validation.warnings) {
+    console.warn(`Aviso: ${warning}`);
+  }
 
-  if (rejectedRows.length > 0) {
-    console.warn(`Amostras rejeitadas por metricas invalidas: ${rejectedRows.length}`);
-    for (const row of rejectedRows.slice(0, 20)) {
-      console.warn(`- ${row.sample_id}: material=${row.material_grams}, tempo=${row.print_minutes}, gcode=${row.gcode_file || "N/A"}`);
+  if (args.has("--check")) {
+    console.log(`Dataset canonico OK: ${config.datasetPath}`);
+    console.log(`Linhas: ${rows.length}`);
+    return;
+  }
+
+  await assertFile(config.orcaPath, "Configure ORCA_SLICER_PATH com o executavel do Orca Slicer.");
+  await fs.mkdir(config.outputDir, { recursive: true });
+
+  if (rows.length === 0) {
+    console.log(`Dataset sem linhas para fatiar: ${config.datasetPath}`);
+    return;
+  }
+
+  const slicedRows = await mapConcurrent(rows, config.concurrency, sliceDatasetRow);
+  const outputHeaders = mergeHeaders(headers, canonicalHeaders, slicedRows);
+  await fs.writeFile(config.datasetPath, toCsv(slicedRows, outputHeaders));
+
+  const okCount = slicedRows.filter((row) => row.slice_status === "ok").length;
+  const warningCount = slicedRows.filter((row) => row.slice_status && row.slice_status !== "ok").length;
+  console.log(`Dataset atualizado: ${config.datasetPath}`);
+  console.log(`Linhas OK: ${okCount}`);
+  console.log(`Linhas com alerta: ${warningCount}`);
+}
+
+async function readDataset(datasetPath) {
+  const text = (await fs.readFile(datasetPath, "utf8").catch(() => "")).replace(/^\uFEFF/, "");
+
+  if (!text.trim()) {
+    throw new Error(
+      `Dataset canonico nao encontrado ou vazio: ${datasetPath}\n` +
+        "Gere primeiro com npm run export:gh."
+    );
+  }
+
+  const records = parseCsv(text);
+  const headers = records[0] || [];
+  const rows = records.slice(1).map((record) => {
+    return Object.fromEntries(headers.map((header, index) => [header, record[index] ?? ""]));
+  });
+
+  return { headers, rows };
+}
+
+function validateDataset(headers, rows) {
+  const errors = [];
+  const warnings = [];
+  const requiredHeaders = [
+    "source_gh",
+    "sample_id",
+    "category_slug",
+    "format_slug",
+    "variant_slug",
+    "model_file",
+    "stl_file",
+    "material_grams",
+    "print_minutes"
+  ];
+
+  for (const header of requiredHeaders) {
+    if (!headers.includes(header)) {
+      errors.push(`Coluna obrigatoria ausente no dataset canonico: ${header}`);
     }
   }
 
-  if (validRows.length === 0) {
-    throw new Error("Nenhuma amostra valida foi gerada pelo Orca; dataset nao foi atualizado.");
+  const seen = new Set();
+
+  rows.forEach((row, index) => {
+    const line = index + 2;
+    const sampleId = String(row.sample_id || "").trim();
+
+    if (!sampleId) {
+      errors.push(`Linha ${line}: sample_id vazio.`);
+    } else if (seen.has(sampleId)) {
+      errors.push(`Linha ${line}: sample_id duplicado (${sampleId}).`);
+    } else {
+      seen.add(sampleId);
+    }
+
+    if (!row.model_file && !row.stl_file) {
+      errors.push(`Linha ${line}: model_file/stl_file vazios.`);
+    }
+
+    if (!parameterHeaders.some((header) => String(row[header] ?? "").trim() !== "")) {
+      warnings.push(`Linha ${line}: sem parametros de produto preenchidos.`);
+    }
+  });
+
+  if (rows.length === 0) {
+    warnings.push("dataset ainda nao tem linhas; rode o exportador do Grasshopper.");
   }
 
-  await fs.writeFile(config.datasetPath, toCsv(validRows));
-  console.log(`Dataset gerado: ${config.datasetPath}`);
-  console.log(`Modelos fatiados: ${rows.length}`);
-  console.log(`Amostras validas: ${validRows.length}`);
+  return { errors, warnings };
 }
 
-async function sliceModel(modelPath, index, total) {
-  const sampleId = sanitizeSampleId(path.basename(modelPath, path.extname(modelPath)));
+async function sliceDatasetRow(row, index, total) {
+  if (
+    config.sliceOnlyMissing &&
+    row.slice_status === "ok" &&
+    Number(row.material_grams || 0) > 0 &&
+    Number(row.print_minutes || 0) > 0
+  ) {
+    return row;
+  }
+
+  const sampleId = sanitizeSampleId(row.sample_id || `sample-${index + 1}`);
+  const modelPath = resolveModelPath(row);
+
+  if (!modelPath) {
+    return markSliceError(row, "missing_model_file", "stl_file/model_file vazio");
+  }
+
+  const stat = await fs.stat(modelPath).catch(() => null);
+
+  if (!stat?.isFile()) {
+    return markSliceError(row, "missing_model", `Arquivo nao encontrado: ${relativePath(modelPath)}`);
+  }
+
   const sampleOutputDir = path.join(config.outputDir, sampleId);
+  await fs.rm(sampleOutputDir, { recursive: true, force: true });
   await fs.mkdir(sampleOutputDir, { recursive: true });
 
-  const args = buildOrcaArgs({ modelPath, outputDir: sampleOutputDir });
   const startedAt = new Date().toISOString();
-  console.log(`[${index + 1}/${total}] Fatiando ${path.basename(modelPath)}`);
-  let stdout = "";
-  let stderr = "";
-  let errorMessage = "";
+  const args = buildOrcaArgs({ modelPath, outputDir: sampleOutputDir });
+  console.log(`[${index + 1}/${total}] Fatiando ${path.basename(modelPath)} (${sampleId})`);
 
   try {
-    const result = await execFileAsync(config.orcaPath, args, {
+    const { stdout = "", stderr = "" } = await execFileAsync(config.orcaPath, args, {
       windowsHide: true,
       timeout: config.timeoutMs,
       maxBuffer: 1024 * 1024 * 16
     });
-    stdout = result.stdout || "";
-    stderr = result.stderr || "";
+    return readSliceResult(row, sampleOutputDir, startedAt, `${stdout}\n${stderr}`);
   } catch (error) {
-    stdout = error.stdout || "";
-    stderr = error.stderr || "";
-    errorMessage = [error.message, stderr, stdout].filter(Boolean).join("\n").slice(0, 4000);
-    console.warn(`Falha ao fatiar ${sampleId}: ${errorMessage.split("\n")[0]}`);
-  }
+    const output = `${error.stdout || ""}\n${error.stderr || ""}`;
+    const parsedRow = await readSliceResult(row, sampleOutputDir, startedAt, output);
 
-  const gcodePath = await findNewestGcode(sampleOutputDir);
-  const gcodeText = gcodePath ? await fs.readFile(gcodePath, "utf8") : "";
-  const parsed = parseOrcaMetrics(`${stdout}\n${stderr}\n${gcodeText}`);
-  const parseStatus = gcodePath && parsed.materialGrams > 0 && parsed.printMinutes > 0 ? "valid" : "invalid";
+    if (Number(parsedRow.material_grams || 0) > 0 && Number(parsedRow.print_minutes || 0) > 0) {
+      return {
+        ...parsedRow,
+        slice_status: "ok",
+        slice_error: ""
+      };
+    }
+
+    return {
+      ...parsedRow,
+      slice_status: "error",
+      slice_error: truncate(error.message || "Orca retornou erro.")
+    };
+  }
+}
+
+async function readSliceResult(row, outputDir, startedAt, processOutput) {
+  const gcodePath = await findNewestGcode(outputDir);
+  const gcodeText = gcodePath ? await fs.readFile(gcodePath, "utf8").catch(() => "") : "";
+  const parsed = parseOrcaMetrics(`${processOutput}\n${gcodeText}`);
+  const hasMetrics = parsed.materialGrams > 0 && parsed.printMinutes > 0;
 
   return {
-    sample_id: sampleId,
-    model_file: relativePath(modelPath),
+    ...row,
     gcode_file: gcodePath ? relativePath(gcodePath) : "",
     material_grams: parsed.materialGrams,
     print_minutes: parsed.printMinutes,
@@ -112,8 +295,23 @@ async function sliceModel(modelPath, index, total) {
     bed_temp_c: config.bedTempC,
     sliced_at: startedAt,
     parser: parsed.parser,
-    parse_status: parseStatus,
-    error: errorMessage
+    slice_status: hasMetrics ? "ok" : "metrics_missing",
+    slice_error: hasMetrics ? "" : "Orca gerou saida sem material_grams ou print_minutes reconhecivel."
+  };
+}
+
+function markSliceError(row, status, message) {
+  return {
+    ...row,
+    profile_id: config.profileId,
+    printer_id: config.printerId,
+    material_id: config.materialId,
+    nozzle_temp_c: config.nozzleTempC,
+    bed_temp_c: config.bedTempC,
+    sliced_at: new Date().toISOString(),
+    parser: "orca-gcode-comments-v1",
+    slice_status: status,
+    slice_error: message
   };
 }
 
@@ -149,7 +347,22 @@ function buildOrcaArgs({ modelPath, outputDir }) {
   return args;
 }
 
-async function listModelFiles(root) {
+function resolveModelPath(row) {
+  const modelValue = row.stl_file || row.model_file || "";
+
+  if (!modelValue) {
+    return "";
+  }
+
+  return path.isAbsolute(modelValue) ? modelValue : path.resolve(repoRoot, modelValue);
+}
+
+async function findNewestGcode(outputDir) {
+  const files = await listGcodeFiles(outputDir);
+  return files.sort((left, right) => right.mtimeMs - left.mtimeMs)[0]?.filePath || "";
+}
+
+async function listGcodeFiles(root) {
   const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => []);
   const files = [];
 
@@ -157,28 +370,14 @@ async function listModelFiles(root) {
     const entryPath = path.join(root, entry.name);
 
     if (entry.isDirectory()) {
-      files.push(...(await listModelFiles(entryPath)));
-    } else if (/\.(3mf|stl)$/i.test(entry.name)) {
-      files.push(entryPath);
+      files.push(...(await listGcodeFiles(entryPath)));
+    } else if (/\.gcode$/i.test(entry.name)) {
+      const stat = await fs.stat(entryPath);
+      files.push({ filePath: entryPath, mtimeMs: stat.mtimeMs });
     }
   }
 
-  return files.sort((left, right) => left.localeCompare(right));
-}
-
-async function findNewestGcode(outputDir) {
-  const entries = await fs.readdir(outputDir, { withFileTypes: true }).catch(() => []);
-  const files = await Promise.all(
-    entries
-      .filter((entry) => entry.isFile() && /\.gcode$/i.test(entry.name))
-      .map(async (entry) => {
-        const filePath = path.join(outputDir, entry.name);
-        const stat = await fs.stat(filePath);
-        return { filePath, mtimeMs: stat.mtimeMs };
-      })
-  );
-
-  return files.sort((left, right) => right.mtimeMs - left.mtimeMs)[0]?.filePath || "";
+  return files;
 }
 
 function parseOrcaMetrics(text) {
@@ -203,11 +402,11 @@ function parseOrcaMetrics(text) {
 
 function materialGrams(source) {
   const explicitGrams = firstNumber(source, [
-      /total\s+filament\s+used\s*\[g\]\s*=\s*([\d.,]+)/i,
-      /filament\s+used\s*\[g\]\s*=\s*([\d.,]+)/i,
-      /filament\s+weight\s*=\s*([\d.,]+)\s*g/i,
-      /used\s+filament\s*:\s*[\d.,]+\s*m\s*,\s*([\d.,]+)\s*g/i,
-      /total\s+filament\s+weight\s*:\s*([\d.,]+)\s*g/i
+    /total\s+filament\s+used\s*\[g\]\s*=\s*([\d.,]+)/i,
+    /filament\s+used\s*\[g\]\s*=\s*([\d.,]+)/i,
+    /filament\s+weight\s*=\s*([\d.,]+)\s*g/i,
+    /used\s+filament\s*:\s*[\d.,]+\s*m\s*,\s*([\d.,]+)\s*g/i,
+    /total\s+filament\s+weight\s*:\s*([\d.,]+)\s*g/i
   ]);
 
   if (explicitGrams > 0) {
@@ -259,13 +458,14 @@ function parseDurationToMinutes(value) {
     const first = Number(colon[1]);
     const second = Number(colon[2]);
     const third = Number(colon[3] || 0);
-    return colon[3] ? first * 60 + second + Math.round(third / 60) : first * 60 + second;
+    return colon[3] ? first * 60 + second + Math.ceil(third / 60) : first * 60 + second;
   }
 
   const hours = firstNumber(text, [/([\d.,]+)\s*h/i, /([\d.,]+)\s*hour/i]);
   const minutes = firstNumber(text, [/([\d.,]+)\s*m(?!m)/i, /([\d.,]+)\s*min/i]);
   const seconds = firstNumber(text, [/([\d.,]+)\s*s/i, /([\d.,]+)\s*sec/i]);
-  return Math.round(hours * 60 + minutes + seconds / 60);
+  const totalMinutes = hours * 60 + minutes + seconds / 60;
+  return totalMinutes > 0 ? Math.max(1, Math.ceil(totalMinutes)) : 0;
 }
 
 function firstNumber(text, patterns) {
@@ -292,8 +492,55 @@ function firstText(text, patterns) {
   return "";
 }
 
-function toCsv(rows) {
-  const headers = Object.keys(rows[0] || {});
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") {
+        index += 1;
+      }
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+
+    cell += char;
+  }
+
+  if (cell || row.length > 0) {
+    row.push(cell);
+    rows.push(row);
+  }
+
+  return rows.filter((record) => record.some((cellValue) => String(cellValue || "").trim() !== ""));
+}
+
+function toCsv(rows, headers) {
   const lines = [headers.join(",")];
 
   for (const row of rows) {
@@ -313,6 +560,26 @@ function csvCell(value) {
   return text;
 }
 
+function mergeHeaders(inputHeaders, baseHeaders, rows) {
+  const merged = [...baseHeaders];
+
+  for (const header of inputHeaders) {
+    if (header && !merged.includes(header)) {
+      merged.push(header);
+    }
+  }
+
+  for (const row of rows) {
+    for (const header of Object.keys(row)) {
+      if (header && !merged.includes(header)) {
+        merged.push(header);
+      }
+    }
+  }
+
+  return merged;
+}
+
 function splitArgs(value) {
   return String(value || "")
     .match(/(?:"[^"]+"|'[^']+'|\S+)/g)
@@ -323,7 +590,12 @@ function splitPathList(value) {
   return String(value || "")
     .split(";")
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((item) => (path.isAbsolute(item) ? item : path.resolve(repoRoot, item)));
+}
+
+function resolveOptionalPath(value) {
+  return value ? (path.isAbsolute(value) ? value : path.resolve(repoRoot, value)) : "";
 }
 
 function sanitizeSampleId(value) {
@@ -336,6 +608,11 @@ function sanitizeSampleId(value) {
 
 function relativePath(filePath) {
   return path.relative(repoRoot, filePath).replace(/\\/g, "/");
+}
+
+function truncate(value, maxLength = 500) {
+  const text = String(value || "");
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
 async function assertFile(filePath, message) {

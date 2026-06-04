@@ -153,7 +153,7 @@ Estados CAD:
 Regras:
 
 - `sliced`: calculo real gerado por Orca Slicer a partir do STL registrado;
-- medidas sem amostra exata devem usar interpolacao entre referencias Orca da mesma familia/formato;
+- estimativas geometricas nao devem ser usadas como fonte comercial publica;
 - o resultado do Orca nao altera automaticamente o preco cobrado do pedido;
 - erros de Orca ficam em `metadata.pricing.error` para diagnostico operacional;
 - resultados anteriores podem ser preservados em `metadata.pricing.previousResults` para calibracao.

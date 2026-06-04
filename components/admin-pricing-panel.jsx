@@ -5,6 +5,7 @@ export function AdminPricingPanel({ order, action }) {
   const pricing = order.metadata?.pricing || {};
   const cad = order.metadata?.cad || {};
   const canSlice = Boolean(cad.fileName) && [CAD_STATUS.GENERATED, CAD_STATUS.READY_FOR_PRINT].includes(cad.status);
+  const currentSummary = buildCurrentSummary(order);
   const difference = pricing.suggestedPriceBrl
     ? Number(pricing.suggestedPriceBrl) - Number(order.totalBrl || 0)
     : 0;
@@ -15,7 +16,7 @@ export function AdminPricingPanel({ order, action }) {
       <div className="pricing-panel">
         <div className="pricing-panel__header">
           <div>
-            <p className="eyebrow">{pricing.mode || "orca pendente"}</p>
+            <p className="eyebrow">{pricing.mode || "pending"}</p>
             <h3>{canSlice ? "Calculo real por fatiamento" : "Aguardando STL registrado"}</h3>
           </div>
           <form action={action}>
@@ -39,6 +40,10 @@ export function AdminPricingPanel({ order, action }) {
         )}
 
         <dl className="admin-payment-grid pricing-grid">
+          <div>
+            <dt>Resumo atual</dt>
+            <dd>{currentSummary.materialGrams} g | {currentSummary.printHours} h</dd>
+          </div>
           <div>
             <dt>Orca material</dt>
             <dd>{pricing.materialGrams ? `${pricing.materialGrams} g` : "N/A"}</dd>
@@ -70,6 +75,22 @@ export function AdminPricingPanel({ order, action }) {
       </div>
     </details>
   );
+}
+
+function buildCurrentSummary(order) {
+  const totals = order.items.reduce(
+    (sum, item) => {
+      sum.materialGrams += Number(item.priceBreakdown?.materialGrams || 0) * Number(item.quantity || 1);
+      sum.printHours += Number(item.priceBreakdown?.printHours || 0) * Number(item.quantity || 1);
+      return sum;
+    },
+    { materialGrams: 0, printHours: 0 }
+  );
+
+  return {
+    materialGrams: Math.round(totals.materialGrams * 10) / 10,
+    printHours: Math.round(totals.printHours * 10) / 10
+  };
 }
 
 function formatMinutes(minutes) {

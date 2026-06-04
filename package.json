@@ -8,7 +8,10 @@
     "start": "next start",
     "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
     "slice:dataset": "node Produtos/scripts/orca-slice-dataset.mjs",
-    "build:sliced-data": "node Produtos/scripts/build-sliced-pricing-data.mjs"
+    "slice:check": "node Produtos/scripts/orca-slice-dataset.mjs --check",
+    "cost:build": "node Produtos/scripts/build-production-cost-data.mjs",
+    "pricing:build-data": "npm run cost:build && node Produtos/scripts/build-site-pricing-data.mjs",
+    "pricing:check": "node Produtos/scripts/diagnose-pricing-sweeps.mjs --check"
   },
   "dependencies": {
     "next": "16.2.3",

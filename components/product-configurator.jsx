@@ -14,7 +14,6 @@ import {
   calculatePriceBreakdown,
   getFormat,
   getInitialValues,
-  getParameterMax,
   validateConfiguration
 } from "@/lib/configurator-data";
 
@@ -41,16 +40,12 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setAdded(false);
   }, [category, formatSlug]);
 
+  const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
+  const validForCart = issues.length === 0;
   const priceBreakdown = useMemo(
     () => calculatePriceBreakdown(format, values, quantity),
     [format, values, quantity]
   );
-  const issues = useMemo(() => {
-    const configurationIssues = validateConfiguration(format, values);
-
-    return configurationIssues;
-  }, [format, values]);
-  const validForCart = issues.length === 0 && priceBreakdown.pricingAvailable !== false;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
@@ -191,7 +186,6 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
             totalPrice={totalPrice}
             priceBreakdown={priceBreakdown}
             leadTime={leadTime}
-            showProductionInfo={category.slug !== "sapata-base-lisa"}
             validForCart={validForCart}
             added={added}
             onAddToCart={handleAddToCart}
@@ -343,7 +337,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       event.currentTarget.setPointerCapture?.(event.pointerId);
     }
 
-    const nextValue = getPointerValue(event, parameter, getParameterMax(format, values, parameter));
+    const nextValue = getPointerValue(event, parameter);
     onFocus(parameter.key);
 
     if (String(values[parameter.key] ?? "") !== nextValue) {
@@ -352,7 +346,6 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
   }
 
   function handleRangeKeyDown(event, parameter) {
-    const parameterMax = getParameterMax(format, values, parameter);
     const currentValue = Number(values[parameter.key] ?? parameter.defaultValue ?? parameter.min);
     const step = Number(parameter.step || 1);
     const largeStep = step * 10;
@@ -364,7 +357,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
       PageDown: currentValue - largeStep,
       PageUp: currentValue + largeStep,
       Home: parameter.min,
-      End: parameterMax
+      End: parameter.max
     };
 
     if (!(event.key in keyHandlers)) {
@@ -372,7 +365,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
     }
 
     event.preventDefault();
-    const nextValue = formatParameterValue(keyHandlers[event.key], parameter, parameterMax);
+    const nextValue = formatParameterValue(keyHandlers[event.key], parameter);
 
     if (String(values[parameter.key] ?? "") !== nextValue) {
       onChange(parameter.key, nextValue);
@@ -391,7 +384,6 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
         }
 
         const isBoolean = parameter.type === "boolean";
-        const parameterMax = getParameterMax(format, values, parameter);
 
         return (
         <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
@@ -400,7 +392,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               <span className="parameter-label">{parameter.label}</span>
               {parameter.type === "number" && (
                 <small>
-                  Min {parameter.min} / max {parameterMax} {parameter.unit}
+                  Min {parameter.min} / max {parameter.max} {parameter.unit}
                 </small>
               )}
             </span>
@@ -420,7 +412,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
           <div
             className="parameter-slider"
             style={{
-              "--value-position": `${getValuePosition(values[parameter.key], parameter, parameterMax)}%`
+              "--value-position": `${getValuePosition(values[parameter.key], parameter)}%`
             }}
           >
             <div
@@ -429,7 +421,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               tabIndex={parameter.dependsOn && !values[parameter.dependsOn] ? -1 : 0}
               aria-label={parameter.label}
               aria-valuemin={parameter.min}
-              aria-valuemax={parameterMax}
+              aria-valuemax={parameter.max}
               aria-valuenow={Number(values[parameter.key] ?? parameter.min)}
               aria-valuetext={`${values[parameter.key] ?? parameter.min} ${parameter.unit}`}
               aria-disabled={parameter.dependsOn && !values[parameter.dependsOn] ? "true" : undefined}
@@ -450,14 +442,25 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               }}
               type="number"
               min={parameter.min}
-              max={parameterMax}
+              max={parameter.max}
               step={parameter.step}
               value={values[parameter.key] ?? ""}
               disabled={parameter.dependsOn && !values[parameter.dependsOn]}
               onChange={(event) => onChange(parameter.key, event.target.value)}
+              onBlur={(event) => {
+                const nextValue = formatParameterValue(event.target.value, parameter);
+                if (String(values[parameter.key] ?? "") !== nextValue) {
+                  onChange(parameter.key, nextValue);
+                }
+              }}
               onFocus={(event) => {
                 onFocus(parameter.key);
                 event.target.select();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.currentTarget.blur();
+                }
               }}
               aria-label={parameter.label}
             />
@@ -475,9 +478,9 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
   );
 }
 
-function getValuePosition(value, parameter, parameterMax = parameter.max) {
+function getValuePosition(value, parameter) {
   const numericValue = Number(value ?? parameter.min);
-  const range = parameterMax - parameter.min;
+  const range = parameter.max - parameter.min;
 
   if (!Number.isFinite(numericValue) || range <= 0) {
     return 0;
@@ -486,21 +489,21 @@ function getValuePosition(value, parameter, parameterMax = parameter.max) {
   return Math.min(100, Math.max(0, ((numericValue - parameter.min) / range) * 100));
 }
 
-function getPointerValue(event, parameter, parameterMax = parameter.max) {
+function getPointerValue(event, parameter) {
   const rect = event.currentTarget.getBoundingClientRect();
   const ratio = rect.width > 0
     ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
     : 0;
-  const rawValue = parameter.min + ratio * (parameterMax - parameter.min);
+  const rawValue = parameter.min + ratio * (parameter.max - parameter.min);
 
-  return formatParameterValue(rawValue, parameter, parameterMax);
+  return formatParameterValue(rawValue, parameter);
 }
 
-function formatParameterValue(value, parameter, parameterMax = parameter.max) {
+function formatParameterValue(value, parameter) {
   const step = Number(parameter.step || 1);
   const decimals = getStepDecimals(step);
   const steppedValue = Math.round((Number(value) - parameter.min) / step) * step + parameter.min;
-  const clampedValue = Math.min(parameterMax, Math.max(parameter.min, steppedValue));
+  const clampedValue = Math.min(parameter.max, Math.max(parameter.min, steppedValue));
 
   return decimals > 0 ? clampedValue.toFixed(decimals) : String(Math.round(clampedValue));
 }
@@ -523,13 +526,10 @@ function ConfigurationSummary({
   totalPrice,
   priceBreakdown,
   leadTime,
-  showProductionInfo,
   validForCart,
   added,
   onAddToCart
 }) {
-  const hasPrice = priceBreakdown.pricingAvailable !== false;
-
   return (
     <div className="summary-panel">
       <div className="summary-heading">
@@ -540,18 +540,16 @@ function ConfigurationSummary({
       <div className="summary-stats">
         <article>
           <strong>Preço unitário</strong>
-          <span>{hasPrice ? formatCurrency(unitPrice) : "Sem preco Orca"}</span>
+          <span>{formatCurrency(unitPrice)}</span>
         </article>
         <article className="summary-total">
           <strong>Total</strong>
-          <span>{hasPrice ? formatCurrency(totalPrice) : "Sem preco Orca"}</span>
+          <span>{formatCurrency(totalPrice)}</span>
         </article>
-        {showProductionInfo && (
-          <article>
-            <strong>Prazo</strong>
+        <article>
+          <strong>Prazo</strong>
           <span>{leadTime} dias úteis</span>
-          </article>
-        )}
+        </article>
       </div>
       <button className="button button-primary button-block" type="button" disabled={!validForCart} onClick={onAddToCart}>
         Adicionar ao carrinho
@@ -564,4 +562,3 @@ function ConfigurationSummary({
     </div>
   );
 }
-
