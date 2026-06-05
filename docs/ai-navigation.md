@@ -27,9 +27,11 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 - `POST /api/orders`: cria pedido a partir do carrinho usando `buildOrderDraft` e `createOrder`.
 - `GET /api/orders/[id]`: consulta pedido.
-- `POST /api/payments/mercado-pago/preference`: cria preferencia de pagamento para pedido pagavel.
-- `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
-- `GET /api/webhooks/mercado-pago`: health check simples do webhook.
+- `POST /api/payments/shopify/draft-order`: cria um Draft Order no Shopify e retorna o link de checkout/invoice.
+- `POST /api/webhooks/shopify`: recebe atualizacoes de pedidos pagos/criados/atualizados no Shopify.
+- `GET /api/webhooks/shopify`: health check simples do webhook.
+- `POST /api/payments/mercado-pago/preference`: legado do fluxo anterior via Mercado Pago.
+- `POST /api/webhooks/mercado-pago`: legado do fluxo anterior via Mercado Pago.
 
 ## Dados de catalogo
 
@@ -89,13 +91,21 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
 - Regras de necessidade de CAD ficam em `lib/cad-contract.js`.
 
-## Pagamento
+## Checkout Shopify
 
-O Mercado Pago fica isolado em `lib/mercado-pago.js`.
+O checkout ativo fica isolado em `lib/shopify.js`.
 
-- A preferencia usa `NEXT_PUBLIC_SITE_URL` ou `VERCEL_URL` para callbacks.
-- O webhook valida assinatura quando `MERCADO_PAGO_WEBHOOK_SECRET` esta definido.
-- Webhook local aceita payload `type: "local_test"` fora de producao.
+- O site mantem configurador, precificacao e pedido local.
+- O fechamento de compra cria um Shopify Draft Order com line items customizados e preco calculado pelo site.
+- O cliente paga no link `invoiceUrl` retornado pelo Shopify.
+- Os detalhes de medida entram como `customAttributes` nos line items.
+- O pedido local fica vinculado ao Shopify por `traco_base_order_id`.
+- O webhook valida assinatura quando `SHOPIFY_WEBHOOK_SECRET` esta definido.
+- Configure no Shopify os webhooks `orders/create`, `orders/paid` e `orders/updated` apontando para `/api/webhooks/shopify`.
+
+## Pagamento legado
+
+O Mercado Pago permanece isolado em `lib/mercado-pago.js` enquanto a migracao nao for removida.
 
 ## Precificacao
 
