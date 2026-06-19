@@ -98,11 +98,12 @@ export function CartPage() {
 function CheckoutForm() {
   const { items, clearCart } = useCart();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
-  const canSubmit = items.length > 0 && name.trim() && contact.trim();
+  const canSubmit = items.length > 0 && name.trim() && email.trim();
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -122,7 +123,7 @@ function CheckoutForm() {
         },
         body: JSON.stringify({
           source: "configurator",
-          customer: { name, contact },
+          customer: { name, email, contact: contact || email },
           notes: "",
           items
         })
@@ -143,7 +144,7 @@ function CheckoutForm() {
         return;
       }
 
-      const paymentResponse = await fetch("/api/payments/mercado-pago/preference", {
+      const paymentResponse = await fetch("/api/payments/shopify/draft-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -155,7 +156,7 @@ function CheckoutForm() {
       if (!paymentResponse.ok) {
         throw new Error(
           paymentPayload.message ||
-            "Pedido criado, mas o pagamento Mercado Pago ainda não foi gerado."
+            "Pedido criado, mas o checkout Shopify ainda nao foi gerado."
         );
       }
 
@@ -175,10 +176,19 @@ function CheckoutForm() {
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <label className="field">
-        <span>Contato</span>
+        <span>Email</span>
+        <input
+          type="email"
+          value={email}
+          placeholder="email@dominio.com"
+          onChange={(event) => setEmail(event.target.value)}
+        />
+      </label>
+      <label className="field">
+        <span>WhatsApp</span>
         <input
           value={contact}
-          placeholder="WhatsApp ou email"
+          placeholder="Opcional"
           onChange={(event) => setContact(event.target.value)}
         />
       </label>
