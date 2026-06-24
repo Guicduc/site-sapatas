@@ -51,6 +51,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
   const sku = useMemo(() => buildConfigurationSku(format, values), [format, values]);
   const headingDescription = getConfiguratorDescription(category);
+  const hasColorChoices = category.colors.length > 1;
+  const hasFinishChoices = category.finishes.length > 0;
 
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
@@ -135,10 +137,17 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
         </div>
 
         <aside className="configurator-side">
-          <div className="option-panel">
-            <p className="eyebrow">Escolhas</p>
-            <ColorSelector colors={category.colors} value={color} onChange={setColor} />
-            {category.finishes.length > 0 && (
+          <div className={`option-panel${!hasColorChoices && !hasFinishChoices ? " option-panel--compact" : ""}`}>
+            <p className="eyebrow">{hasColorChoices || hasFinishChoices ? "Escolhas" : "Pedido"}</p>
+            {hasColorChoices ? (
+              <ColorSelector colors={category.colors} value={color} onChange={setColor} />
+            ) : (
+              <div className="field option-static">
+                <span>Cor</span>
+                <strong>{color}</strong>
+              </div>
+            )}
+            {hasFinishChoices && (
               <label className="field">
                 <span>Acabamento</span>
                 <select value={finish} onChange={(event) => setFinish(event.target.value)}>
