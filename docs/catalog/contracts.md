@@ -163,8 +163,8 @@ Regras:
 ```json
 {
   "provider": "mercado_pago",
-  "provider_preference_id": "123456",
-  "provider_payment_id": "987654",
+  "provider_preference_id": "1234567890",
+  "provider_payment_id": "9876543210",
   "status": "approved",
   "checkout_url": "https://www.mercadopago.com.br/checkout/...",
   "amount_brl": 234.92
@@ -210,5 +210,5 @@ Regras:
 - apenas configuracoes dentro dos ranges validados podem gerar pagamento direto;
 - configuracoes fora dos ranges viram pedido `needs_technical_review`;
 - `SpecialRequest` deve ser acionavel no contexto da familia atual;
-- o contrato deve ser portavel para pedido proprio, Mercado Pago e futura plataforma de comercio sem mudar a taxonomia base.
+- o contrato deve ser portavel para pedido proprio e Mercado Pago sem mudar a taxonomia base.
 

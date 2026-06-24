@@ -1,0 +1,142 @@
+[
+  {
+    "product": "sapata-lisa-redonda",
+    "productName": "Sapata lisa redonda",
+    "type": "hero",
+    "title": "Produto solo",
+    "src": "/products/sapata-lisa-redonda-hero.png"
+  },
+  {
+    "product": "sapata-lisa-redonda",
+    "productName": "Sapata lisa redonda",
+    "type": "variacoes",
+    "title": "Variações de tamanho e forma",
+    "src": "/products/sapata-lisa-redonda-variacoes.png"
+  },
+  {
+    "product": "sapata-lisa-redonda",
+    "productName": "Sapata lisa redonda",
+    "type": "montagem",
+    "title": "Ilustração de montagem",
+    "src": "/products/sapata-lisa-redonda-montagem.png"
+  },
+  {
+    "product": "sapata-lisa-redonda",
+    "productName": "Sapata lisa redonda",
+    "type": "aplicacao",
+    "title": "Aplicação realista",
+    "src": "/products/sapata-lisa-redonda-aplicacao.png"
+  },
+  {
+    "product": "sapata-lisa-quadrada",
+    "productName": "Sapata lisa quadrada",
+    "type": "hero",
+    "title": "Produto solo",
+    "src": "/products/sapata-lisa-quadrada-hero.png"
+  },
+  {
+    "product": "sapata-lisa-quadrada",
+    "productName": "Sapata lisa quadrada",
+    "type": "variacoes",
+    "title": "Variações de tamanho e forma",
+    "src": "/products/sapata-lisa-quadrada-variacoes.png"
+  },
+  {
+    "product": "sapata-lisa-quadrada",
+    "productName": "Sapata lisa quadrada",
+    "type": "montagem",
+    "title": "Ilustração de montagem",
+    "src": "/products/sapata-lisa-quadrada-montagem.png"
+  },
+  {
+    "product": "sapata-lisa-quadrada",
+    "productName": "Sapata lisa quadrada",
+    "type": "aplicacao",
+    "title": "Aplicação realista",
+    "src": "/products/sapata-lisa-quadrada-aplicacao.png"
+  },
+  {
+    "product": "sapata-tubo-redondo",
+    "productName": "Sapata para tubo redondo",
+    "type": "hero",
+    "title": "Produto solo",
+    "src": "/products/sapata-tubo-redondo-hero.png"
+  },
+  {
+    "product": "sapata-tubo-redondo",
+    "productName": "Sapata para tubo redondo",
+    "type": "variacoes",
+    "title": "Variações de tamanho e forma",
+    "src": "/products/sapata-tubo-redondo-variacoes.png"
+  },
+  {
+    "product": "sapata-tubo-redondo",
+    "productName": "Sapata para tubo redondo",
+    "type": "montagem",
+    "title": "Ilustração de montagem",
+    "src": "/products/sapata-tubo-redondo-montagem.png"
+  },
+  {
+    "product": "sapata-tubo-redondo",
+    "productName": "Sapata para tubo redondo",
+    "type": "aplicacao",
+    "title": "Aplicação realista",
+    "src": "/products/sapata-tubo-redondo-aplicacao.png"
+  },
+  {
+    "product": "sapata-tubo-quadrado",
+    "productName": "Sapata para tubo quadrado",
+    "type": "hero",
+    "title": "Produto solo",
+    "src": "/products/sapata-tubo-quadrado-hero.png"
+  },
+  {
+    "product": "sapata-tubo-quadrado",
+    "productName": "Sapata para tubo quadrado",
+    "type": "variacoes",
+    "title": "Variações de tamanho e forma",
+    "src": "/products/sapata-tubo-quadrado-variacoes.png"
+  },
+  {
+    "product": "sapata-tubo-quadrado",
+    "productName": "Sapata para tubo quadrado",
+    "type": "montagem",
+    "title": "Ilustração de montagem",
+    "src": "/products/sapata-tubo-quadrado-montagem.png"
+  },
+  {
+    "product": "sapata-tubo-quadrado",
+    "productName": "Sapata para tubo quadrado",
+    "type": "aplicacao",
+    "title": "Aplicação realista",
+    "src": "/products/sapata-tubo-quadrado-aplicacao.png"
+  },
+  {
+    "product": "sapata-tubo-oblongo",
+    "productName": "Sapata para tubo oblongo",
+    "type": "hero",
+    "title": "Produto solo",
+    "src": "/products/sapata-tubo-oblongo-hero.png"
+  },
+  {
+    "product": "sapata-tubo-oblongo",
+    "productName": "Sapata para tubo oblongo",
+    "type": "variacoes",
+    "title": "Variações de tamanho e forma",
+    "src": "/products/sapata-tubo-oblongo-variacoes.png"
+  },
+  {
+    "product": "sapata-tubo-oblongo",
+    "productName": "Sapata para tubo oblongo",
+    "type": "montagem",
+    "title": "Ilustração de montagem",
+    "src": "/products/sapata-tubo-oblongo-montagem.png"
+  },
+  {
+    "product": "sapata-tubo-oblongo",
+    "productName": "Sapata para tubo oblongo",
+    "type": "aplicacao",
+    "title": "Aplicação realista",
+    "src": "/products/sapata-tubo-oblongo-aplicacao.png"
+  }
+]
