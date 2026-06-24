@@ -71,6 +71,95 @@ create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists payments_order_id_idx on payments(order_id);
 create index if not exists payments_provider_payment_idx on payments(provider_payment_id);
 
+create table if not exists account_access_codes (
+  id text primary key,
+  email text not null,
+  order_id text not null,
+  code_hash text not null,
+  attempts integer not null default 0,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists account_access_codes_email_idx on account_access_codes(email, created_at desc);
+
+-- Fulfillment operacional fica em orders.metadata->'fulfillment'.
+-- Estrutura atual:
+-- {
+--   "schemaVersion": 1,
+--   "production": {
+--     "status": "waiting_payment|waiting_cad|queued|scheduled|in_production|quality_check|ready_to_ship|blocked|shipped|cancelled",
+--     "priority": "normal|high|urgent|low",
+--     "scheduledDate": "YYYY-MM-DD",
+--     "machine": "P2S-04",
+--     "operator": "nome",
+--     "notes": "observacoes"
+--   },
+--   "invoice": {
+--     "status": "pending|manual_pending|manual_issued|not_required|cancelled",
+--     "mode": "manual",
+--     "number": "000123",
+--     "series": "1",
+--     "accessKey": "chave NF-e se houver",
+--     "issuedAt": "ISO datetime"
+--   },
+--   "shipment": {
+--     "status": "pending|packing|ready_for_pickup|shipped|delivered|cancelled",
+--     "carrier": "transportadora/manual/retirada",
+--     "trackingCode": "codigo",
+--     "shippedAt": "ISO datetime"
+--   },
+--   "capacity": {
+--     "model": "made_to_order_queue",
+--     "units": 0,
+--     "workUnits": 0,
+--     "printMinutes": 0,
+--     "dailyCapacityUnits": 120
+--   }
+-- }
+-- Nao ha baixa de estoque tradicional: capacidade e fila por pedido sob demanda.
+create index if not exists orders_fulfillment_production_status_idx
+  on orders ((metadata->'fulfillment'->'production'->>'status'));
+
+create index if not exists orders_fulfillment_invoice_status_idx
+  on orders ((metadata->'fulfillment'->'invoice'->>'status'));
+
+create index if not exists orders_fulfillment_shipment_status_idx
+  on orders ((metadata->'fulfillment'->'shipment'->>'status'));
+
+create table if not exists cart_recovery_leads (
+  id text primary key,
+  token_hash text not null,
+  status text not null default 'active',
+  customer jsonb not null default '{}'::jsonb,
+  shipping_address jsonb not null default '{}'::jsonb,
+  coupon_code text,
+  items jsonb not null default '[]'::jsonb,
+  commerce jsonb not null default '{}'::jsonb,
+  cart_hash text not null,
+  order_id text,
+  source text not null default 'checkout',
+  user_agent text,
+  ip_hash text,
+  first_seen_at timestamptz not null default now(),
+  converted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists cart_recovery_leads_status_idx
+  on cart_recovery_leads(status, updated_at desc);
+
+create index if not exists cart_recovery_leads_email_idx
+  on cart_recovery_leads((lower(customer->>'email')), updated_at desc);
+
+create index if not exists cart_recovery_leads_order_id_idx
+  on cart_recovery_leads(order_id);
+
+-- Retencao operacional:
+-- a aplicacao remove leads antigos de recuperacao de carrinho usando
+-- CART_RECOVERY_RETENTION_DAYS, com padrao de 90 dias e limite maximo de 365 dias.
+
 create table if not exists competitor_product_prices (
   id text primary key,
   supplier text not null,

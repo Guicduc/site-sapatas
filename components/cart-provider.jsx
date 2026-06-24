@@ -38,6 +38,7 @@ export function CartProvider({ children }) {
   const value = useMemo(
     () => ({
       items,
+      loaded,
       count: items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
       total: items.reduce((sum, item) => sum + Number(item.priceBrl || 0), 0),
       addItem(item) {

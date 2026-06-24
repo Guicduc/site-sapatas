@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { useCart } from "@/components/cart-provider";
+import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
 import { ORDER_STATUS } from "@/lib/order-status";
+
+const recoveryStorageKey = "traco-base-cart-recovery";
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -96,13 +99,159 @@ export function CartPage() {
 }
 
 function CheckoutForm() {
-  const { items, clearCart } = useCart();
+  const { items, clearCart, loaded } = useCart();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [address, setAddress] = useState({
+    postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
-  const canSubmit = items.length > 0 && name.trim() && contact.trim();
+  const [recoveryState, setRecoveryState] = useState({ status: "idle", lastSavedAt: "" });
+  const [shippingQuoteState, setShippingQuoteState] = useState({
+    status: "idle",
+    quote: null,
+    commerce: null
+  });
+  const itemsSubtotal = items.reduce((sum, item) => sum + Number(item.priceBrl || item.totalPriceBrl || 0), 0);
+  const localCommerce = calculateCommerceAdjustments({
+    itemsSubtotalBrl: itemsSubtotal,
+    shippingAddress: address,
+    couponCode
+  });
+  const commerce = shippingQuoteState.commerce || localCommerce;
+  const couponReady = !couponCode || commerce.discount.applied;
+  const canSubmit = items.length > 0 && name.trim() && email.trim() && contact.trim()
+    && address.postalCode.trim() && address.street.trim() && address.number.trim()
+    && address.city.trim() && address.state.trim().length === 2
+    && couponReady;
+  const recoverySnapshotKey = JSON.stringify({
+    items,
+    name,
+    email,
+    contact,
+    address,
+    couponCode,
+    commerceTotalBrl: commerce.totalBrl
+  });
+  const quoteSnapshotKey = JSON.stringify({
+    items,
+    postalCode: address.postalCode,
+    state: address.state,
+    couponCode
+  });
+
+  useEffect(() => {
+    const postalCode = String(address.postalCode || "").replace(/\D/g, "");
+    if (!loaded || !items.length || postalCode.length < 8) {
+      setShippingQuoteState({ status: "idle", quote: null, commerce: null });
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setShippingQuoteState((current) => ({ ...current, status: "loading" }));
+        const response = await fetch("/api/shipping/quote", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            items,
+            shippingAddress: address,
+            couponCode: normalizeCouponCode(couponCode)
+          })
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.message || "Nao foi possivel cotar o frete.");
+        }
+
+        if (!cancelled) {
+          setShippingQuoteState({
+            status: "quoted",
+            quote: payload.shippingQuote || null,
+            commerce: payload.commerce || null
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setShippingQuoteState({ status: "idle", quote: null, commerce: null });
+        }
+      }
+    }, 550);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [loaded, quoteSnapshotKey]);
+
+  useEffect(() => {
+    if (!loaded || createdOrder || !canSaveRecoveryLead({ items, email, contact })) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setRecoveryState((current) => ({ ...current, status: "saving" }));
+        const recovery = await persistCartRecoveryLead({
+          status: "active",
+          name,
+          email,
+          contact,
+          address,
+          couponCode,
+          items
+        });
+
+        if (!cancelled) {
+          setRecoveryState({ status: "saved", lastSavedAt: recovery.updatedAt || "" });
+        }
+      } catch {
+        if (!cancelled) {
+          setRecoveryState((current) => ({ ...current, status: "idle" }));
+        }
+      }
+    }, 1200);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [loaded, recoverySnapshotKey, createdOrder]);
+
+  function updateAddress(key, value) {
+    setAddress((current) => ({ ...current, [key]: value }));
+  }
+
+  async function markRecoveryLeadConverted(orderId) {
+    if (!canSaveRecoveryLead({ items, email, contact })) {
+      return;
+    }
+
+    try {
+      await persistCartRecoveryLead({
+        status: "converted",
+        orderId,
+        name,
+        email,
+        contact,
+        address,
+        couponCode,
+        items
+      });
+      window.localStorage.removeItem(recoveryStorageKey);
+    } catch {
+      // Recuperacao de carrinho nao deve bloquear checkout ou pagamento.
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -122,7 +271,9 @@ function CheckoutForm() {
         },
         body: JSON.stringify({
           source: "configurator",
-          customer: { name, contact },
+          customer: { name, email, contact },
+          shippingAddress: address,
+          couponCode: normalizeCouponCode(couponCode),
           notes: "",
           items
         })
@@ -136,6 +287,7 @@ function CheckoutForm() {
       const order = orderPayload.order;
       setCreatedOrder(order);
       window.sessionStorage.setItem("traco-base-last-order-id", order.id);
+      await markRecoveryLeadConverted(order.id);
 
       if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
         clearCart();
@@ -172,25 +324,96 @@ function CheckoutForm() {
     <form className="checkout-form" onSubmit={handleSubmit}>
       <label className="field">
         <span>Nome</span>
-        <input value={name} onChange={(event) => setName(event.target.value)} />
+        <input autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <label className="field">
-        <span>Contato</span>
+        <span>E-mail</span>
+        <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+      </label>
+      <label className="field">
+        <span>WhatsApp</span>
         <input
+          type="tel"
+          autoComplete="tel"
+          required
           value={contact}
-          placeholder="WhatsApp ou email"
+          placeholder="(11) 99999-0000"
           onChange={(event) => setContact(event.target.value)}
         />
       </label>
+      <fieldset className="checkout-address">
+        <legend>Endereço de entrega</legend>
+        <div className="field-row">
+          <label className="field"><span>CEP</span><input inputMode="numeric" autoComplete="postal-code" required value={address.postalCode} onChange={(event) => updateAddress("postalCode", event.target.value)} /></label>
+          <label className="field"><span>UF</span><input maxLength="2" autoComplete="address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
+        </div>
+        <label className="field"><span>Rua ou avenida</span><input autoComplete="address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
+        <div className="field-row">
+          <label className="field"><span>Número</span><input autoComplete="address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
+          <label className="field"><span>Complemento</span><input value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
+        </div>
+        <div className="field-row">
+          <label className="field"><span>Bairro</span><input autoComplete="address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
+          <label className="field"><span>Cidade</span><input autoComplete="address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
+        </div>
+      </fieldset>
+      <label className="field">
+        <span>Cupom</span>
+        <input
+          autoComplete="off"
+          value={couponCode}
+          placeholder="TRACO10"
+          onChange={(event) => setCouponCode(normalizeCouponCode(event.target.value))}
+        />
+      </label>
+      <dl className="checkout-totals" aria-label="Resumo de valores">
+        <div>
+          <dt>Produtos</dt>
+          <dd>{formatCurrency(commerce.itemsSubtotalBrl)}</dd>
+        </div>
+        <div>
+          <dt>Desconto</dt>
+          <dd>{commerce.discount.applied ? `-${formatCurrency(commerce.discount.amountBrl)}` : formatCurrency(0)}</dd>
+        </div>
+        <div>
+          <dt>Frete</dt>
+          <dd>
+            {shippingQuoteState.status === "loading"
+              ? "Calculando..."
+              : commerce.shipping.status === "pending_address"
+                ? "Informe o CEP"
+                : formatCurrency(commerce.shipping.amountBrl)}
+          </dd>
+        </div>
+        <div className="checkout-totals__total">
+          <dt>Total</dt>
+          <dd>{formatCurrency(commerce.totalBrl)}</dd>
+        </div>
+      </dl>
+      {(couponCode || commerce.shipping.message) && (
+        <p className={`checkout-note${commerce.discount.status === "invalid" || commerce.discount.status === "not_eligible" ? " checkout-note--warning" : ""}`}>
+          {couponCode ? commerce.discount.message : commerce.shipping.message}
+        </p>
+      )}
+      {shippingQuoteState.status === "loading" && (
+        <p className="checkout-note">
+          Consultando frete para o CEP informado.
+        </p>
+      )}
+      {recoveryState.status === "saved" && !createdOrder && (
+        <p className="checkout-note">
+          Carrinho salvo para retomada pelo atendimento. Nenhuma mensagem automatica sera enviada.
+        </p>
+      )}
       {createdOrder && (
-        <div className="success-box">
+        <div className="success-box" role="status">
           <strong>Pedido criado</strong>
           <span>{createdOrder.orderNumber}</span>
           <Link href={`/pedido-confirmado?orderId=${createdOrder.id}`}>Ver status do pedido</Link>
         </div>
       )}
       {error && (
-        <div className="issue-box">
+        <div className="issue-box" role="alert">
           <strong>Falha no checkout</strong>
           <span>{error}</span>
         </div>
@@ -210,4 +433,56 @@ function formatKey(key) {
     .replace("Inserção", "inserção")
     .replace("Apoio", "apoio")
     .replace("Aparente", "aparente");
+}
+
+function canSaveRecoveryLead({ items, email, contact }) {
+  return items.length > 0 && isValidEmail(email) && String(contact || "").replace(/\D/g, "").length >= 8;
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
+async function persistCartRecoveryLead({ status, orderId, name, email, contact, address, couponCode, items }) {
+  const savedRecovery = readSavedRecoveryLead();
+  const response = await fetch("/api/cart-recovery", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      recoveryId: savedRecovery?.id,
+      recoveryToken: savedRecovery?.token,
+      status,
+      orderId,
+      source: "checkout",
+      customer: { name, email, contact },
+      shippingAddress: address,
+      couponCode: normalizeCouponCode(couponCode),
+      items
+    })
+  });
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.message || "Nao foi possivel salvar o carrinho.");
+  }
+
+  if (payload.recovery?.id && payload.recovery?.token) {
+    window.localStorage.setItem(
+      recoveryStorageKey,
+      JSON.stringify({ id: payload.recovery.id, token: payload.recovery.token })
+    );
+  }
+
+  return payload.recovery;
+}
+
+function readSavedRecoveryLead() {
+  try {
+    const saved = window.localStorage.getItem(recoveryStorageKey);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
 }

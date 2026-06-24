@@ -6,6 +6,7 @@ import {
   verifyMercadoPagoSignature
 } from "@/lib/mercado-pago";
 import { recordMercadoPagoUpdate } from "@/lib/order-store";
+import { notifyPaymentResolved } from "@/lib/transactional-email";
 
 export async function POST(request) {
   let payload;
@@ -26,6 +27,7 @@ export async function POST(request) {
       amountBrl: payload.amountBrl || null,
       raw: payload
     });
+    await notifyPaymentResolved(order, order?.paymentStatus || status);
 
     return NextResponse.json({
       received: true,
@@ -62,6 +64,7 @@ export async function POST(request) {
       amountBrl: payment.transaction_amount,
       raw: payment
     });
+    await notifyPaymentResolved(order, order?.paymentStatus || status);
 
     return NextResponse.json({
       received: true,

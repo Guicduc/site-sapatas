@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-export function AdminCadPanel({ order, payload, action }) {
+export function AdminCadPanel({ order, payload, action, token = "" }) {
   const [copied, setCopied] = useState(false);
   const payloadText = useMemo(() => JSON.stringify(payload, null, 2), [payload]);
   const suggestedFileName = payload.items?.[0]?.outputs?.stlFileName || "";
@@ -37,6 +37,7 @@ export function AdminCadPanel({ order, payload, action }) {
 
         <form className="cad-form" action={action}>
           <input type="hidden" name="orderId" value={order.id} />
+          <input type="hidden" name="token" value={token} />
           <label className="field">
             <span>Arquivo STL gerado</span>
             <input

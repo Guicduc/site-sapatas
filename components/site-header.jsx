@@ -58,6 +58,13 @@ export function SiteHeader() {
             {item.href === "/carrinho" && <span className="cart-count">{count}</span>}
           </Link>
         ))}
+        <Link
+          href="/conta"
+          className={isActive(pathname, "/conta") ? "is-active" : ""}
+          onClick={() => setOpen(false)}
+        >
+          Minha conta
+        </Link>
       </nav>
     </header>
   );

@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 
+import { getAccountSession, getOrderAccess } from "@/lib/account-session";
 import { createMercadoPagoPreference } from "@/lib/mercado-pago";
-import { createPayment, getLatestPaymentForOrder, getOrderById } from "@/lib/order-store";
+import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForEmail } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
 
 export async function POST(request) {
   try {
     const { orderId } = await request.json();
-    const order = await getOrderById(orderId);
+    const [session, orderAccess] = await Promise.all([getAccountSession(), getOrderAccess()]);
+    let order = session ? await getOrderForEmail(orderId, session.email) : null;
+
+    if (!order && orderAccess?.orderId === orderId) {
+      order = await getOrderById(orderId);
+    }
 
     if (!order) {
       return NextResponse.json(
@@ -39,7 +45,10 @@ export async function POST(request) {
     const existingPayment = await getLatestPaymentForOrder(order.id);
 
     if (existingPayment?.checkoutUrl && existingPayment.status === PAYMENT_STATUS.PENDING) {
-      return NextResponse.json({ payment: existingPayment, checkoutUrl: existingPayment.checkoutUrl });
+      return NextResponse.json({
+        payment: { status: existingPayment.status, amountBrl: existingPayment.amountBrl },
+        checkoutUrl: existingPayment.checkoutUrl
+      });
     }
 
     const preference = await createMercadoPagoPreference(order);
@@ -58,7 +67,10 @@ export async function POST(request) {
       updatedAt: new Date().toISOString()
     });
 
-    return NextResponse.json({ payment, checkoutUrl });
+    return NextResponse.json({
+      payment: { status: payment.status, amountBrl: payment.amountBrl },
+      checkoutUrl
+    });
   } catch (error) {
     const status = error.code === "missing_mercado_pago_token" ? 503 : 502;
 

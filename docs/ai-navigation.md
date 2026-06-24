@@ -19,17 +19,30 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/configurar/[categoria]`: abre o configurador de uma categoria de produto.
 - `/carrinho`: exibe itens salvos no carrinho local do navegador.
 - `/pedido-confirmado`: mostra o resultado do pedido/pagamento.
+- `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
 - `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
+
+## Rotas administrativas
+
+- `/admin/pedidos`: lista pedidos, revisao CAD, precificacao, pagamento e links para relatorios/operacao.
+- `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
+- `/admin/operacao`: fila de producao, capacidade, nota fiscal manual, expedicao e observacoes internas.
+- `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
+- `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`.
 
 ## APIs
 
 - `POST /api/orders`: cria pedido a partir do carrinho usando `buildOrderDraft` e `createOrder`.
 - `GET /api/orders/[id]`: consulta pedido.
+- `POST/DELETE /api/account/session`: inicia ou encerra a sessao da conta.
+- `POST /api/cart-recovery`: salva ou converte lead de recuperacao de carrinho. O endpoint recalcula totais no servidor e aplica rate limit em memoria.
+- `POST /api/shipping/quote`: calcula frete para o checkout. Usa `SHIPPING_PROVIDER=melhor_envio` quando configurado e fallback manual quando nao houver token/CEP de origem.
 - `POST /api/payments/mercado-pago/preference`: cria preferencia de pagamento para pedido pagavel.
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
+- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
 
 ## Dados de catalogo
 
@@ -75,7 +88,7 @@ As familias atuais publicadas sao:
 - `components/parametric-drawing.jsx`: desenho 2D interativo do produto configurado.
 - `components/parametric-model-viewer.jsx`: visualizacao 3D com Three.js quando usada.
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `traco-base-cart`.
-- `components/cart-page.jsx`: checkout local e criacao de pedido.
+- `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
 - `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: operacao administrativa de CAD e precificacao.
 
@@ -83,10 +96,28 @@ As familias atuais publicadas sao:
 
 O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `lib/order-status.js`.
 
+## Ajustes comerciais
+
+- `lib/commerce-adjustments.js`: regras compartilhadas de cupom, desconto e frete estimado.
+- O carrinho usa esse modulo para preview, mas `lib/order-validation.js` recalcula tudo no servidor antes de salvar o pedido.
+- Quando frete/desconto alteram o total, `lib/mercado-pago.js` envia uma linha consolidada ao Mercado Pago para manter o valor cobrado igual ao `order.totalBrl`.
+- `lib/cart-recovery.js`: recuperacao de carrinho com hash de token, IP hasheado, recalculo server-side dos itens e retencao por `CART_RECOVERY_RETENTION_DAYS`.
+- `lib/shipping.js`: adaptador de frete. O provedor real implementado e `melhor_envio`; os dados de envio sao derivados dos itens normalizados, com dimensoes em cm e peso em kg.
+
+## Operacao e relatorios
+
+- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal manual, expedicao e capacidade.
+- `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
+- `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
+- `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
+- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal externa ainda nao possui fornecedor ativo.
+
 - Sem `DATABASE_URL`, pedidos sao persistidos em `.local-data/orders.dev.json`.
+- O armazenamento JSON e exclusivo de desenvolvimento; producao exige `DATABASE_URL`.
 - Com `DATABASE_URL`, `lib/order-store.js` cria e usa tabelas Postgres automaticamente.
 - O schema SQL tambem esta documentado em `docs/ops/database.sql`.
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
+- A conta usa OTP por e-mail, cookie HttpOnly assinado por `ACCOUNT_SESSION_SECRET` e associacao individual de pedidos confirmados. O acesso temporario pos-checkout e limitado ao pedido recem-criado.
 - Regras de necessidade de CAD ficam em `lib/cad-contract.js`.
 
 ## Pagamento

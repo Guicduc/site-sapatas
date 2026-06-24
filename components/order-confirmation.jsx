@@ -159,12 +159,40 @@ export function OrderConfirmation({ initialOrderId = "" }) {
         </div>
       )}
 
+      {order.commerce && (
+        <article className="surface-card order-commerce">
+          <p className="eyebrow">Valores</p>
+          <h2>Resumo comercial</h2>
+          <dl className="checkout-totals">
+            <div>
+              <dt>Produtos</dt>
+              <dd>{formatCurrency(order.commerce.itemsSubtotalBrl)}</dd>
+            </div>
+            <div>
+              <dt>Desconto</dt>
+              <dd>{order.commerce.discount?.applied ? `-${formatCurrency(order.commerce.discount.amountBrl)}` : formatCurrency(0)}</dd>
+            </div>
+            <div>
+              <dt>Frete</dt>
+              <dd>{formatCurrency(order.commerce.shipping?.amountBrl || 0)}</dd>
+            </div>
+            <div className="checkout-totals__total">
+              <dt>Total</dt>
+              <dd>{formatCurrency(order.commerce.totalBrl)}</dd>
+            </div>
+          </dl>
+        </article>
+      )}
+
       <div className="action-row">
         <button className="button button-secondary" type="button" onClick={() => window.location.reload()}>
           Atualizar status
         </button>
         <Link className="button button-primary" href="/">
           Configurar novo pedido
+        </Link>
+        <Link className="button button-secondary" href="/conta">
+          Ver minha conta
         </Link>
       </div>
     </section>

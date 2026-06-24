@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
+import { AdminAccessRequired } from "@/components/admin-access-required";
 import { AdminCadPanel } from "@/components/admin-cad-panel";
+import { AdminLogoutForm } from "@/components/admin-logout-form";
 import { AdminPricingPanel } from "@/components/admin-pricing-panel";
+import { adminHref, assertAdminAccess, getAdminAccess } from "@/lib/admin-session";
 import { CAD_STATUS, getGrasshopperPayload, shouldRequireCad } from "@/lib/cad-contract";
 import { formatCurrency } from "@/lib/format";
 import { getOrderById, getStoreMode, listOrders, updateOrderCadState, updateOrderPricingState } from "@/lib/order-store";
@@ -19,17 +22,10 @@ export const metadata = {
 export default async function AdminOrdersPage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
   const token = resolvedSearchParams?.token || "";
+  const access = await getAdminAccess(token);
 
-  if (!canViewAdmin(token)) {
-    return (
-      <section className="page-panel narrow-panel">
-        <p className="eyebrow">Admin</p>
-        <h1>Acesso restrito.</h1>
-        <p className="lead">
-          Configure `ADMIN_ACCESS_TOKEN` e acesse `/admin/pedidos?token=...` para ver os pedidos.
-        </p>
-      </section>
-    );
+  if (!access.allowed) {
+    return <AdminAccessRequired nextPath="/admin/pedidos" scope="os pedidos" />;
   }
 
   const orders = await listOrders({ limit: 100 });
@@ -41,9 +37,18 @@ export default async function AdminOrdersPage({ searchParams }) {
           <p className="eyebrow">Admin | {getStoreMode()}</p>
           <h1>Pedidos, pagamentos e revisões técnicas.</h1>
         </div>
-        <Link className="button button-secondary" href="/">
-          Voltar ao site
-        </Link>
+        <div className="admin-heading-actions">
+          <Link className="button button-secondary" href={adminHref("/admin/relatorios", access)}>
+            Ver relatorios
+          </Link>
+          <Link className="button button-secondary" href={adminHref("/admin/operacao", access)}>
+            Ver operacao
+          </Link>
+          <Link className="button button-secondary" href="/">
+            Voltar ao site
+          </Link>
+          <AdminLogoutForm />
+        </div>
       </div>
 
       {orders.length === 0 ? (
@@ -54,7 +59,7 @@ export default async function AdminOrdersPage({ searchParams }) {
       ) : (
         <div className="admin-order-list">
           {orders.map((order) => (
-            <article className="surface-card admin-order-card" key={order.id}>
+            <article className="surface-card admin-order-card" id={`order-${order.id}`} key={order.id}>
               <div className="admin-order-header">
                 <div>
                   <p className="eyebrow">{order.source}</p>
@@ -97,6 +102,31 @@ export default async function AdminOrdersPage({ searchParams }) {
                 <p>Pedido especial sem item precificado.</p>
               )}
 
+              {order.metadata?.commerce && (
+                <dl className="checkout-totals admin-commerce-totals">
+                  <div>
+                    <dt>Produtos</dt>
+                    <dd>{formatCurrency(order.metadata.commerce.itemsSubtotalBrl)}</dd>
+                  </div>
+                  <div>
+                    <dt>Desconto</dt>
+                    <dd>
+                      {order.metadata.commerce.discount?.applied
+                        ? `-${formatCurrency(order.metadata.commerce.discount.amountBrl)}`
+                        : formatCurrency(0)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Frete</dt>
+                    <dd>{formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}</dd>
+                  </div>
+                  <div className="checkout-totals__total">
+                    <dt>Total</dt>
+                    <dd>{formatCurrency(order.metadata.commerce.totalBrl)}</dd>
+                  </div>
+                </dl>
+              )}
+
               {order.technicalReviews?.length > 0 && (
                 <details>
                   <summary>Revisão técnica</summary>
@@ -114,8 +144,9 @@ export default async function AdminOrdersPage({ searchParams }) {
                     }}
                     payload={getGrasshopperPayload(order)}
                     action={registerCadFile}
+                    token={access.token}
                   />
-                  <AdminPricingPanel order={order} action={calculateOrcaPricing} />
+                  <AdminPricingPanel order={order} action={calculateOrcaPricing} token={access.token} />
                 </>
               )}
 
@@ -149,6 +180,12 @@ export default async function AdminOrdersPage({ searchParams }) {
 async function registerCadFile(formData) {
   "use server";
 
+  try {
+    await assertAdminAccess(String(formData.get("token") || ""));
+  } catch {
+    return;
+  }
+
   const orderId = String(formData.get("orderId") || "");
   const cadFileName = String(formData.get("cadFileName") || "").trim();
   const cadModelVersion = String(formData.get("cadModelVersion") || "").trim();
@@ -167,6 +204,12 @@ async function registerCadFile(formData) {
 
 async function calculateOrcaPricing(formData) {
   "use server";
+
+  try {
+    await assertAdminAccess(String(formData.get("token") || ""));
+  } catch {
+    return;
+  }
 
   const orderId = String(formData.get("orderId") || "");
 
@@ -198,14 +241,6 @@ async function calculateOrcaPricing(formData) {
   }
 
   revalidatePath("/admin/pedidos");
-}
-
-function canViewAdmin(token) {
-  if (process.env.ADMIN_ACCESS_TOKEN) {
-    return token && token === process.env.ADMIN_ACCESS_TOKEN;
-  }
-
-  return process.env.NODE_ENV !== "production";
 }
 
 function formatValues(values = {}) {

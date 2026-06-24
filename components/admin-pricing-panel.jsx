@@ -1,13 +1,14 @@
 import { CAD_STATUS } from "@/lib/cad-contract";
 import { formatCurrency } from "@/lib/format";
 
-export function AdminPricingPanel({ order, action }) {
+export function AdminPricingPanel({ order, action, token = "" }) {
   const pricing = order.metadata?.pricing || {};
   const cad = order.metadata?.cad || {};
   const canSlice = Boolean(cad.fileName) && [CAD_STATUS.GENERATED, CAD_STATUS.READY_FOR_PRINT].includes(cad.status);
   const currentSummary = buildCurrentSummary(order);
+  const productSubtotalBrl = order.metadata?.commerce?.itemsSubtotalBrl ?? order.totalBrl;
   const difference = pricing.suggestedPriceBrl
-    ? Number(pricing.suggestedPriceBrl) - Number(order.totalBrl || 0)
+    ? Number(pricing.suggestedPriceBrl) - Number(productSubtotalBrl || 0)
     : 0;
 
   return (
@@ -21,6 +22,7 @@ export function AdminPricingPanel({ order, action }) {
           </div>
           <form action={action}>
             <input type="hidden" name="orderId" value={order.id} />
+            <input type="hidden" name="token" value={token} />
             <button className="button button-primary" type="submit" disabled={!canSlice}>
               Calcular com Orca
             </button>
@@ -61,7 +63,7 @@ export function AdminPricingPanel({ order, action }) {
             <dd>{pricing.suggestedPriceBrl ? formatCurrency(pricing.suggestedPriceBrl) : "N/A"}</dd>
           </div>
           <div>
-            <dt>Dif. vs cobrado</dt>
+            <dt>Dif. vs produtos</dt>
             <dd>{pricing.suggestedPriceBrl ? formatCurrency(difference) : "N/A"}</dd>
           </div>
         </dl>
