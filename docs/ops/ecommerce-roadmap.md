@@ -2,6 +2,8 @@
 
 Este documento registra o estado atual do e-commerce e os pontos que ficaram intencionalmente para uma fase futura.
 
+Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/ops/agent-runbook.md`.
+
 ## Escopo ativo agora
 
 - Pagamento ativo: Mercado Pago.

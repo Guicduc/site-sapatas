@@ -2,6 +2,8 @@
 
 Este documento existe para orientar agentes de IA que precisam entender ou alterar o projeto sem depender de documentacao antiga.
 
+Antes de alterar checkout, pagamento, frete, admin ou deploy, leia tambem `docs/ops/agent-runbook.md`. Ele registra decisoes operacionais que nao aparecem diretamente no codigo, incluindo deploy por `main`, conflito remoto com Shopify e validacoes minimas.
+
 ## Estrutura principal
 
 - `app/`: rotas do Next.js App Router, metadados e APIs.
@@ -157,6 +159,7 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 
 ## Cuidados ao alterar
 
+- Leia `docs/ops/agent-runbook.md` antes de fazer merge, deploy ou mudancas no fluxo comercial.
 - Nao duplique regras de produto em componentes; prefira `lib/configurator-data.js`.
 - Nao coloque chaves secretas no repositorio; use `.env.local`.
 - Preserve slugs existentes quando eles ja forem usados por URLs publicas.

@@ -53,6 +53,8 @@ Use `.env.example` como base.
 
 Leia [docs/ai-navigation.md](docs/ai-navigation.md) antes de alterar o projeto. Esse arquivo descreve a estrutura real da aplicacao, pontos de entrada e modulos que concentram regras de negocio.
 
+Para sessoes futuras com agentes, leia tambem [docs/ops/agent-runbook.md](docs/ops/agent-runbook.md). Ele registra decisoes que nao devem ser redescobertas, como deploy por `main`, Shopify fora da arquitetura, validacoes minimas e cuidados de merge.
+
 O estado de prontidao operacional e o backlog futuro do e-commerce ficam em [docs/ops/ecommerce-roadmap.md](docs/ops/ecommerce-roadmap.md).
 
 A ativacao e homologacao de frete real ficam em [docs/ops/shipping-integration.md](docs/ops/shipping-integration.md).
