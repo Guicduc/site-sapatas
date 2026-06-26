@@ -8,7 +8,7 @@ Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/op
 
 - Pagamento ativo: Mercado Pago.
 - Plataforma propria: catalogo, configurador, carrinho, checkout, pedido, conta do cliente e administracao rodam no proprio site.
-- Shopify nao faz parte da arquitetura atual nem do roadmap futuro.
+- Checkout externo de loja nao faz parte da arquitetura atual nem do roadmap futuro.
 - Frete tem adaptador real para Melhor Envio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
 - Nota fiscal esta em modo manual/operacional, sem fornecedor externo contratado no codigo.
 
@@ -55,7 +55,7 @@ Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/op
 - Testes E2E de checkout, webhook, conta, admin e operacao.
 - Observabilidade de producao: logs estruturados, alertas para falha de pagamento, erro de e-mail e fila operacional.
 - LGPD operacional: tela de exclusao/anonimizacao de cliente e politica formal de retencao.
-- Canais externos de venda, sem Shopify, somente se houver decisao futura de sincronizacao sem substituir o checkout proprio.
+- Canais externos de venda somente se houver decisao futura de sincronizacao sem substituir o checkout proprio.
 
 ## Ordem recomendada da proxima fase
 

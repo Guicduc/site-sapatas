@@ -15,7 +15,7 @@ Antes de alterar checkout, pedidos, pagamento, frete, admin, deploy ou documenta
 
 ## Decisoes que nao devem ser reabertas sem pedido explicito
 
-- Shopify nao faz parte da arquitetura nem do roadmap.
+- Nao adicione outro checkout/plataforma externa sem pedido explicito do usuario.
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio deve criar pedido local antes de gerar pagamento.
 - Frete real usa Melhor Envio via `lib/shipping.js`; sem credenciais, preserve fallback manual.
@@ -30,13 +30,13 @@ Depois de mudancas de codigo, rode:
 npm run build
 ```
 
-Depois de merges ou alteracoes em checkout/pagamento, confira que Shopify nao voltou ao codigo:
+Depois de merges ou alteracoes em checkout/pagamento, confira que nenhum checkout externo voltou ao codigo:
 
 ```bash
-rg -n "Shopify|shopify|SHOPIFY" .env.example README.md docs app lib components package.json
+rg -n "DRAFT_ORDER|draft-order|STORE_DOMAIN|SHOP_|draftOrder|invoiceUrl" .env.example app lib components package.json
 ```
 
-So devem restar mencoes negativas em documentacao.
+Nao deve haver rota de pagamento alternativa nem variaveis de plataforma externa, exceto as explicitamente documentadas para Mercado Pago e Melhor Envio.
 
 ## Deploy
 
@@ -44,7 +44,7 @@ So devem restar mencoes negativas em documentacao.
 - `vercel.json` habilita deploy apenas para `main`.
 - Se o Vercel CLI nao estiver instalado, publique por commit e push para `origin/main`.
 - Antes de pushar, rode `npm run build`.
-- Se `origin/main` estiver adiantada, integre o remoto sem reintroduzir Shopify. Nao use `git reset --hard` para resolver divergencia.
+- Se `origin/main` estiver adiantada, integre o remoto sem reintroduzir checkout externo. Nao use `git reset --hard` para resolver divergencia.
 
 ## Areas sensiveis
 

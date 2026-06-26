@@ -13,14 +13,14 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 
 ## Decisoes fixas
 
-- Shopify nao faz parte da arquitetura nem do roadmap.
+- Nao adicione outro checkout/plataforma externa sem pedido explicito do usuario.
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
 - Nota fiscal externa ainda nao tem fornecedor ativo; mantenha `INVOICE_PROVIDER=manual`.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
-Se algum branch, PR ou merge trouxer arquivos Shopify, remova-os antes de publicar. Tambem remova variaveis `SHOPIFY_*`, rotas `/api/payments/shopify/*`, webhooks Shopify, `lib/shopify.js` e textos que tratem Shopify como caminho futuro.
+Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
 
 ## Fluxo de checkout
 
@@ -54,7 +54,7 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
 - Se `git push origin main` for recusado por remoto adiantado, use:
   1. `git fetch origin main`
   2. inspecione `git log --oneline --decorate --graph --max-count=8 --all`
-  3. integre o remoto sem reintroduzir Shopify
+  3. integre o remoto sem reintroduzir checkout externo
   4. rode `npm run build`
   5. faça push novamente
 
@@ -98,12 +98,12 @@ Resultado esperado sem credenciais: resposta `200` com `shippingQuote.provider` 
 
 ## Cuidados de merge
 
-- `origin/main` ja recebeu historico externo que tentou migrar checkout para Shopify. Essa direcao esta cancelada.
-- Ao aceitar arquivos remotos de catalogo, imagens ou precificacao, confira se eles nao alteram o checkout/pagamento para Shopify.
+- `origin/main` ja recebeu historico externo que tentou migrar o checkout para uma plataforma de loja externa. Essa direcao esta cancelada.
+- Ao aceitar arquivos remotos de catalogo, imagens ou precificacao, confira se eles nao alteram o checkout/pagamento para outro provedor.
 - Depois de qualquer merge, rode:
 
 ```bash
-rg -n "Shopify|shopify|SHOPIFY" .env.example README.md docs app lib components package.json
+rg -n "DRAFT_ORDER|draft-order|STORE_DOMAIN|SHOP_|draftOrder|invoiceUrl" .env.example app lib components package.json
 ```
 
-So devem restar mencoes negativas em documentacao, deixando claro que Shopify nao entra na arquitetura.
+Nao deve haver rota de pagamento alternativa nem variaveis de plataforma externa, exceto as explicitamente documentadas para Mercado Pago e Melhor Envio.

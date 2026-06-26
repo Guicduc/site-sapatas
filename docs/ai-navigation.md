@@ -2,7 +2,7 @@
 
 Este documento existe para orientar agentes de IA que precisam entender ou alterar o projeto sem depender de documentacao antiga.
 
-Antes de alterar checkout, pagamento, frete, admin ou deploy, leia tambem `docs/ops/agent-runbook.md`. Ele registra decisoes operacionais que nao aparecem diretamente no codigo, incluindo deploy por `main`, conflito remoto com Shopify e validacoes minimas.
+Antes de alterar checkout, pagamento, frete, admin ou deploy, leia tambem `docs/ops/agent-runbook.md`. Ele registra decisoes operacionais que nao aparecem diretamente no codigo, incluindo deploy por `main`, historico de conflito remoto sobre checkout externo e validacoes minimas.
 
 ## Estrutura principal
 

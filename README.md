@@ -11,7 +11,7 @@ Aplicacao Next.js para catalogo configuravel e pedidos de sapatas sob medida par
 - Fluxo comercial: usuario escolhe categoria/formato, configura medidas, adiciona ao carrinho, informa entrega/cupom, cria pedido e pode gerar pagamento via Mercado Pago.
 - Administracao: `/admin`, `/admin/pedidos`, `/admin/relatorios` e `/admin/operacao` concentram login operacional, pedidos, indicadores, producao, nota fiscal manual e expedicao.
 - Recuperacao de carrinho: quando o checkout tem e-mail e WhatsApp validos, o site salva um lead de retomada sem disparar mensagens automaticas. Em desenvolvimento fica em `.local-data/cart-recovery.dev.json`; com `DATABASE_URL`, fica na tabela `cart_recovery_leads`.
-- Pagamento ativo: Mercado Pago. Shopify nao faz parte da arquitetura do projeto.
+- Pagamento ativo: Mercado Pago. Nao ha checkout externo de loja na arquitetura do projeto.
 - Dados de catalogo e regras de configuracao ficam em `lib/configurator-data.js`.
 - Dados institucionais, SEO e familias ficam em `lib/site-data.js`.
 - Scripts Grasshopper e fluxo 3MF ficam em `Produtos/`.
@@ -53,7 +53,7 @@ Use `.env.example` como base.
 
 Leia [docs/ai-navigation.md](docs/ai-navigation.md) antes de alterar o projeto. Esse arquivo descreve a estrutura real da aplicacao, pontos de entrada e modulos que concentram regras de negocio.
 
-Para sessoes futuras com agentes, leia tambem [docs/ops/agent-runbook.md](docs/ops/agent-runbook.md). Ele registra decisoes que nao devem ser redescobertas, como deploy por `main`, Shopify fora da arquitetura, validacoes minimas e cuidados de merge.
+Para sessoes futuras com agentes, leia tambem [docs/ops/agent-runbook.md](docs/ops/agent-runbook.md). Ele registra decisoes que nao devem ser redescobertas, como deploy por `main`, checkout externo fora da arquitetura, validacoes minimas e cuidados de merge.
 
 O estado de prontidao operacional e o backlog futuro do e-commerce ficam em [docs/ops/ecommerce-roadmap.md](docs/ops/ecommerce-roadmap.md).
 
