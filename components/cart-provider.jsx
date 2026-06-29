@@ -9,7 +9,7 @@ import {
 } from "@/lib/configurator-data";
 
 const CartContext = createContext(null);
-const storageKey = "traco-base-cart";
+const storageKey = "baseforma-cart";
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);

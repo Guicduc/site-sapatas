@@ -16,7 +16,7 @@ Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/op
 
 - Painel de produtos via catalogo configuravel em `lib/configurator-data.js` e rotas `/catalogo` e `/configurar/[categoria]`.
 - Gestao de pedidos em `/admin/pedidos`, com dados persistidos em Postgres quando `DATABASE_URL` existe.
-- Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail.
+- Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail e login Google opcional quando OAuth estiver configurado.
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
 - Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`.
@@ -31,13 +31,22 @@ Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/op
 
 ## Condicoes para operar em producao
 
+- Estado externo em 28/06/2026:
+  - Dominio `baseforma.com.br` comprado no Registro.br e zona DNS em modo avancado.
+  - DNS salvo com `A` do dominio raiz para Vercel, `CNAME www` para Vercel e registros de envio Resend para DKIM/SPF/MX no subdominio `send`.
+  - Dominio no Resend criado em Sao Paulo (`sa-east-1`) e verificacao DNS em estado `Pending` ate propagacao.
+  - Neon Postgres criado no Vercel (`neon-cordovan-fence`, regiao Sao Paulo) e conectado ao projeto com `DATABASE_URL`; schema de `docs/ops/database.sql` aplicado.
+  - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420`, nota manual e capacidade operacional foram adicionadas no Vercel para Production/Preview.
+  - Mercado Pago permanece pendente de login/criacao de conta/app pelo titular; configurar token e webhook depois disso.
+  - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao.
 - Definir `DATABASE_URL` e confirmar que o banco executa o schema documentado em `docs/ops/database.sql`.
 - Definir `NEXT_PUBLIC_SITE_URL` com a URL publica final.
-- Definir `MERCADO_PAGO_ACCESS_TOKEN` e configurar o webhook no painel do Mercado Pago.
+- Definir `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_ENV`, `MERCADO_PAGO_STATEMENT_DESCRIPTOR` e configurar o webhook no painel do Mercado Pago.
 - Definir `MERCADO_PAGO_WEBHOOK_SECRET` em producao.
 - Definir `ADMIN_ACCESS_TOKEN` forte e fora do repositorio.
 - Definir `ADMIN_SESSION_SECRET` forte e fora do repositorio.
 - Definir `ACCOUNT_SESSION_SECRET` forte e fora do repositorio.
+- Para login Google na conta do cliente, definir `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` e cadastrar `/api/account/google/callback` como redirect URI no Google Cloud.
 - Definir `RESEND_API_KEY`, `ACCOUNT_EMAIL_FROM`, `TRANSACTIONAL_EMAIL_FROM` e `TRANSACTIONAL_EMAIL_REPLY_TO`.
 - Para frete real, definir `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Homologar dimensoes/peso de envio com pedidos reais antes de trocar `MELHOR_ENVIO_ENV` para `production`.

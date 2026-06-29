@@ -10,6 +10,7 @@ import { notifyPaymentResolved } from "@/lib/transactional-email";
 
 export async function POST(request) {
   let payload;
+  const requestUrl = new URL(request.url);
 
   try {
     payload = await request.json();
@@ -37,7 +38,8 @@ export async function POST(request) {
     });
   }
 
-  const dataId = payload?.data?.id || new URL(request.url).searchParams.get("data.id");
+  const dataId = payload?.data?.id || requestUrl.searchParams.get("data.id") || requestUrl.searchParams.get("id");
+  const topic = normalizeTopic(payload?.type || requestUrl.searchParams.get("type") || requestUrl.searchParams.get("topic"));
   const validSignature = verifyMercadoPagoSignature({
     signatureHeader: request.headers.get("x-signature"),
     requestId: request.headers.get("x-request-id"),
@@ -47,6 +49,10 @@ export async function POST(request) {
 
   if (!validSignature) {
     return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
+  }
+
+  if (topic && topic !== "payment") {
+    return NextResponse.json({ received: true, ignored: "unsupported_topic", topic });
   }
 
   if (!dataId) {
@@ -93,4 +99,10 @@ function normalizeLocalStatus(status) {
   }
 
   return "unknown";
+}
+
+function normalizeTopic(topic) {
+  const normalized = String(topic || "").trim().toLowerCase();
+  if (normalized === "payments") return "payment";
+  return normalized;
 }

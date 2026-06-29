@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getAccountSession, getOrderAccess } from "@/lib/account-session";
-import { createMercadoPagoPreference } from "@/lib/mercado-pago";
+import { createMercadoPagoPreference, getMercadoPagoCheckoutUrl } from "@/lib/mercado-pago";
 import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForEmail } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
 
@@ -52,7 +52,17 @@ export async function POST(request) {
     }
 
     const preference = await createMercadoPagoPreference(order);
-    const checkoutUrl = preference.init_point || preference.sandbox_init_point;
+    const checkoutUrl = getMercadoPagoCheckoutUrl(preference);
+
+    if (!checkoutUrl) {
+      return NextResponse.json(
+        {
+          error: "mercado_pago_checkout_url_missing",
+          message: "Mercado Pago criou a preferencia, mas nao retornou URL de checkout."
+        },
+        { status: 502 }
+      );
+    }
     const payment = await createPayment({
       id: crypto.randomUUID(),
       orderId: order.id,

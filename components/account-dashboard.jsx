@@ -31,7 +31,18 @@ const PAYMENT_ACTION_NEEDED = new Set([
   PAYMENT_STATUS.UNKNOWN
 ]);
 
-export function AccountAccess() {
+const AUTH_ERROR_MESSAGES = {
+  google_login_cancelled: "Login Google cancelado.",
+  google_login_failed: "Nao foi possivel concluir o login Google.",
+  google_login_unavailable: "Login Google indisponivel no momento.",
+  google_state_invalid: "Sessao de login expirada. Tente novamente.",
+  missing_google_oauth_config: "Login Google ainda nao esta configurado.",
+  google_oauth_token_failed: "Nao foi possivel validar o login Google.",
+  google_userinfo_failed: "Nao foi possivel carregar os dados da conta Google.",
+  google_email_not_verified: "A conta Google precisa ter e-mail verificado."
+};
+
+export function AccountAccess({ googleEnabled = false, authError = "" }) {
   const [email, setEmail] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -84,9 +95,20 @@ export function AccountAccess() {
       <form className="account-login" onSubmit={handleSubmit} aria-busy={submitting}>
         <div>
           <p className="eyebrow">Acesso seguro</p>
-          <h2>Entre com uma compra</h2>
-          <p>Use o e-mail e o número de qualquer pedido associado a ele.</p>
+          <h2>Entre na sua conta</h2>
+          <p>Use sua conta Google ou receba um codigo no e-mail de qualquer pedido associado a ele.</p>
         </div>
+        {googleEnabled && (
+          <>
+            <a className="button button-secondary button-block account-google-button" href="/api/account/google/start?returnTo=/conta">
+              <span aria-hidden="true">G</span>
+              Entrar com Google
+            </a>
+            <div className="account-login__divider" role="separator">
+              <span>ou</span>
+            </div>
+          </>
+        )}
         <label className="field">
           <span>E-mail da compra</span>
           <input
@@ -116,6 +138,9 @@ export function AccountAccess() {
           </label>
         )}
         {devCode && <p className="account-alert" role="status">Ambiente local: use o código <strong>{devCode}</strong>.</p>}
+        {authError && AUTH_ERROR_MESSAGES[authError] && (
+          <p className="account-alert account-alert--error" role="alert">{AUTH_ERROR_MESSAGES[authError]}</p>
+        )}
         {error && <p className="account-alert account-alert--error" role="alert">{error}</p>}
         <button className="button button-primary button-block" disabled={submitting}>
           {submitting ? "Validando..." : phase === "verify" ? "Confirmar código" : "Enviar código de acesso"}

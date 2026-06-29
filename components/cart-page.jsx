@@ -8,7 +8,7 @@ import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerc
 import { formatCurrency } from "@/lib/format";
 import { ORDER_STATUS } from "@/lib/order-status";
 
-const recoveryStorageKey = "traco-base-cart-recovery";
+const recoveryStorageKey = "baseforma-cart-recovery";
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -286,7 +286,7 @@ function CheckoutForm() {
 
       const order = orderPayload.order;
       setCreatedOrder(order);
-      window.sessionStorage.setItem("traco-base-last-order-id", order.id);
+      window.sessionStorage.setItem("baseforma-last-order-id", order.id);
       await markRecoveryLeadConverted(order.id);
 
       if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {

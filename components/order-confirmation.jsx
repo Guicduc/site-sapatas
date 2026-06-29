@@ -17,7 +17,7 @@ export function OrderConfirmation({ initialOrderId = "" }) {
       return;
     }
 
-    const savedId = window.sessionStorage.getItem("traco-base-last-order-id");
+    const savedId = window.sessionStorage.getItem("baseforma-last-order-id");
 
     if (savedId) {
       setOrderId(savedId);

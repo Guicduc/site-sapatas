@@ -35,10 +35,14 @@ Use `.env.example` como base.
 - `DATABASE_SSL`: controla SSL da conexao Postgres.
 - `NEXT_PUBLIC_SITE_URL`: URL publica usada em callbacks e links.
 - `MERCADO_PAGO_ACCESS_TOKEN`: habilita criacao de preferencia de pagamento.
+- `MERCADO_PAGO_ENV`: `sandbox` ou `production`; em sandbox, o checkout usa `sandbox_init_point` quando o Mercado Pago retornar esse link.
+- `MERCADO_PAGO_STATEMENT_DESCRIPTOR`: nome curto, sem acentos, exibido na fatura quando aceito pelo Mercado Pago. Padrao sugerido: `BASEFORMA`.
 - `MERCADO_PAGO_WEBHOOK_SECRET`: valida assinatura do webhook do Mercado Pago quando configurado.
 - `ADMIN_ACCESS_TOKEN`: token usado para iniciar sessao nas areas administrativas.
 - `ADMIN_SESSION_SECRET`: assina o cookie HttpOnly do admin. Se vazio, usa `ACCOUNT_SESSION_SECRET`; em producao, configure um valor proprio.
 - `ACCOUNT_SESSION_SECRET`: assina as sessoes da area do cliente e e obrigatorio em producao.
+- `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET`: habilitam o botao "Entrar com Google" em `/conta`. Configure no Google Cloud o redirect URI publico como `/api/account/google/callback` na URL de `NEXT_PUBLIC_SITE_URL`.
+- `GOOGLE_OAUTH_LOGIN_HINT`: e-mail sugerido na tela Google, opcional. Para operar com a conta preferencial deste projeto, use `gemignanidesign@gmail.com`.
 - `RESEND_API_KEY` e `ACCOUNT_EMAIL_FROM`: enviam o codigo de uso unico da conta em producao.
 - `TRANSACTIONAL_EMAIL_FROM` e `TRANSACTIONAL_EMAIL_REPLY_TO`: configuram e-mails opcionais de pedido criado e pagamento aprovado/nao aprovado. Se `TRANSACTIONAL_EMAIL_FROM` nao existir, o app usa `ACCOUNT_EMAIL_FROM`.
 - `SHIPPING_PROVIDER`: `manual` ou `melhor_envio`. Em `melhor_envio`, o checkout consulta frete real por `/api/shipping/quote` e o pedido recalcula o frete no servidor antes de salvar.
