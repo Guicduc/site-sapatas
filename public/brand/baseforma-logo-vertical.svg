@@ -1,0 +1,13 @@
+<svg width="320" height="360" viewBox="0 0 320 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Baseforma</title>
+  <desc id="desc">Logotipo vertical Baseforma.</desc>
+  <rect x="76" y="32" width="168" height="168" rx="24" fill="#181c1d"/>
+  <path d="M105 153h110v18H105v-18Z" fill="#c76345"/>
+  <path d="M114 78h92v68h-92V78Z" fill="#f5f7f4"/>
+  <path d="M132 99h56v30h-56V99Z" fill="#202629"/>
+  <path d="M151 58h18v113h-18V58Z" fill="#007a70"/>
+  <circle cx="114" cy="78" r="8" fill="#2c6b9a"/>
+  <circle cx="206" cy="146" r="8" fill="#2c6b9a"/>
+  <text x="48" y="275" fill="#181c1d" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="700">Base</text>
+  <text x="171" y="275" fill="#007a70" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="700">forma</text>
+</svg>

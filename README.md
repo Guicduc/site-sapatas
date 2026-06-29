@@ -1,4 +1,4 @@
-# Traco Base
+# Baseforma
 
 Aplicacao Next.js para catalogo configuravel e pedidos de sapatas sob medida para mobiliario.
 

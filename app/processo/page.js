@@ -3,7 +3,7 @@ import Link from "next/link";
 export const metadata = {
   title: "Processo e material",
   description:
-    "Conheça a base técnica da Traço Base: famílias parametrizadas, impressão 3D sob demanda, validação funcional e uso inicial de TPU.",
+    "Conheça a base técnica da Baseforma: famílias parametrizadas, impressão 3D sob demanda, validação funcional e uso inicial de TPU.",
   alternates: {
     canonical: "/processo"
   }

@@ -43,7 +43,7 @@ export function AdminCadPanel({ order, payload, action, token = "" }) {
             <input
               name="cadFileName"
               defaultValue={order.cad?.fileName || suggestedFileName}
-              placeholder="ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.stl"
+              placeholder="ORDER-BF-260504-AB12-BF-RD-PI-22X28X18.stl"
               required
             />
           </label>

@@ -10,7 +10,7 @@ Compradores de componentes para mobiliário, incluindo marcenarias, serralherias
 
 ## Product Purpose
 
-Permitir que o cliente configure sapatas e ponteiras sob medida, compre com segurança e acompanhe toda a relação comercial com a Traço Base. O sucesso é uma jornada rastreável, da configuração ao pagamento e à produção, com dados técnicos claros e recompra previsível por SKU.
+Permitir que o cliente configure sapatas e ponteiras sob medida, compre com segurança e acompanhe toda a relação comercial com a Baseforma. O sucesso é uma jornada rastreável, da configuração ao pagamento e à produção, com dados técnicos claros e recompra previsível por SKU.
 
 ## Brand Personality
 

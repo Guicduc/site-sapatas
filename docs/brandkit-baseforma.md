@@ -1,8 +1,8 @@
-# Brandkit Traço Base
+# Brandkit Baseforma
 
 ## Posicionamento
 
-Traço Base é uma marca técnica para sapatas e ponteiras 3D sob demanda para mobiliário. A percepção desejada é precisa, industrial, adaptável e premium, sem parecer decorativa ou genérica.
+Baseforma é uma marca técnica para sapatas e ponteiras 3D sob demanda para mobiliário. A percepção desejada é precisa, industrial, adaptável e premium, sem parecer decorativa ou genérica.
 
 ## Mood
 
@@ -14,8 +14,8 @@ Traço Base é uma marca técnica para sapatas e ponteiras 3D sob demanda para m
 
 ## Identidade visual
 
-- **Nome:** Traço Base
-- **Assinatura:** Sapatas 3D sob demanda para mobiliário
+- **Nome:** Baseforma
+- **Assinatura:** Componentes técnicos sob medida para mobiliário
 - **Tom:** técnico, direto, seguro e de especificação
 - **Estética:** produto real em bancada clara, grade paramétrica, TPU fosco, metal preto, terracota técnico e detalhes minerais
 - **Forma:** cantos controlados, seções tubulares, cortes cotados, linhas finas e marcadores de medida
@@ -42,12 +42,12 @@ Traço Base é uma marca técnica para sapatas e ponteiras 3D sob demanda para m
 
 ## Assets
 
-- Logo horizontal: `/brand/traco-base-logo.svg`
-- Simbolo: `/brand/traco-base-mark.svg`
-- Hero: `/brand/traco-base-hero.png`
+- Logo horizontal: `/brand/baseforma-logo-horizontal.svg`
+- Simbolo: `/brand/baseforma-icon.svg`
+- Hero de produto: `/brand/traco-base-hero.png` (imagem de produto preservada)
 - Categoria ponteira interna: `/brand/categoria-ponteira-interna-tubo.png`
 - Categoria sapata base lisa: `/brand/categoria-sapata-base-lisa.png`
-- Open Graph: `/brand/traco-base-og.png`
+- Open Graph: `/brand/baseforma-og.png`
 
 ## Direcao de imagem
 

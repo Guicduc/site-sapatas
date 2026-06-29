@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 
 export const metadata = {
   title: "Admin relatorios",
-  description: "Relatorios comerciais basicos da operacao Traco Base."
+  description: "Relatorios comerciais basicos da operacao Baseforma."
 };
 
 export default async function AdminReportsPage({ searchParams }) {

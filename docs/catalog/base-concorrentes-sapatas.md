@@ -2,7 +2,7 @@
 
 Fonte: transcricao manual das imagens enviadas em 2026-05-25.
 
-Objetivo: manter uma base consultavel de produto concorrente, preco e equivalencia com o catalogo Traço Base.
+Objetivo: manter uma base consultavel de produto concorrente, preco e equivalencia com o catalogo Baseforma.
 
 Arquivo estruturado: [base-concorrentes-sapatas.csv](./base-concorrentes-sapatas.csv)
 
@@ -19,13 +19,13 @@ Arquivo estruturado: [base-concorrentes-sapatas.csv](./base-concorrentes-sapatas
 | `preco_final_brl` | Preco final unitario informado. |
 | `imagem_ref` | Referencia interna da linha de origem nas imagens. |
 | `observacao` | Medida, aplicacao ou observacao do concorrente. |
-| `nosso_modelo_comparativo_slug` | Slug da familia Traço Base mais proxima. |
-| `nosso_modelo_comparativo_nome` | Nome da familia Traço Base mais proxima. |
+| `nosso_modelo_comparativo_slug` | Slug da familia Baseforma mais proxima. |
+| `nosso_modelo_comparativo_nome` | Nome da familia Baseforma mais proxima. |
 | `status_comparativo` | `comparavel`, `comparavel_parcial` ou `sem_comparativo`. |
 | `criterio_comparacao` | Justificativa do mapeamento. |
 | `confianca` | Confianca da leitura/mapeamento. |
 
-## Familias Traço Base usadas no comparativo
+## Familias Baseforma usadas no comparativo
 
 | Slug | Nome | Quando usar |
 | --- | --- | --- |

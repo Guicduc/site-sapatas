@@ -16,7 +16,7 @@ export const runtime = "nodejs";
 
 export const metadata = {
   title: "Admin pedidos",
-  description: "Painel operacional de pedidos Traço Base."
+  description: "Painel operacional de pedidos Baseforma."
 };
 
 export default async function AdminOrdersPage({ searchParams }) {

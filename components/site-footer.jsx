@@ -7,7 +7,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div>
         <strong>{brand.name}</strong>
-        <p>Sapatas plásticas sob demanda para mobiliário.</p>
+        <p>Componentes técnicos sob medida para mobiliário.</p>
       </div>
       <div className="footer-links">
         <Link href="/catalogo">Catálogo</Link>

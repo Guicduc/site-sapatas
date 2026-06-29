@@ -40,7 +40,7 @@ const steps = [
 export const metadata = {
   title: "Como funciona",
   description:
-    "Entenda o fluxo da Traço Base: escolha de família, validação de variante, produção sob encomenda e projeto especial.",
+    "Entenda o fluxo da Baseforma: escolha de família, validação de variante, produção sob encomenda e projeto especial.",
   alternates: {
     canonical: "/como-funciona"
   }

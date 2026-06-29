@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 export const metadata = {
   title: "Admin",
-  description: "Acesso administrativo Traco Base."
+  description: "Acesso administrativo Baseforma."
 };
 
 function normalizeNextPath(value) {
