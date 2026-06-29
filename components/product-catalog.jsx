@@ -89,12 +89,12 @@ export function ProductCatalog({ categories }) {
           <img
             className="shop-hero__image"
             src="/brand/traco-base-hero.png"
-            alt="Sapatas e ponteiras Traço Base aplicadas em pés tubulares de mobiliário"
+            alt="Sapatas e ponteiras Baseforma aplicadas em pés tubulares de mobiliário"
           />
         </div>
       </div>
 
-      <div className="brand-mood" aria-label="Pilares da identidade Traço Base">
+      <div className="brand-mood" aria-label="Pilares da identidade Baseforma">
         {moodTerms.map((term, index) => (
           <article key={term.label}>
             <span className="brand-mood__icon" aria-hidden="true">

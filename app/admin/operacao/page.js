@@ -27,7 +27,7 @@ export const runtime = "nodejs";
 
 export const metadata = {
   title: "Admin operacao",
-  description: "Fila de producao, expedicao e nota fiscal manual Traco Base."
+  description: "Fila de producao, expedicao e nota fiscal manual Baseforma."
 };
 
 export default async function AdminOperationPage({ searchParams }) {

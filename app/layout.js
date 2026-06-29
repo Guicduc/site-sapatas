@@ -16,14 +16,14 @@ const brandDisplay = Barlow_Condensed({
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${brand.name} | Sapatas 3D sob demanda para mobiliário`,
+    default: `${brand.name} | Componentes técnicos sob medida para mobiliário`,
     template: `%s | ${brand.name}`
   },
   description: brand.description,
   applicationName: brand.name,
   icons: {
-    icon: "/brand/traco-base-mark-novo.png",
-    apple: "/brand/traco-base-mark-novo.png"
+    icon: "/brand/baseforma-mark.png",
+    apple: "/brand/baseforma-mark.png"
   },
   alternates: {
     canonical: "/"
@@ -32,23 +32,23 @@ export const metadata = {
     type: "website",
     locale: "pt_BR",
     siteName: brand.name,
-    title: `${brand.name} | Sapatas 3D sob demanda para mobiliário`,
+    title: `${brand.name} | Componentes técnicos sob medida para mobiliário`,
     description: brand.description,
     url: siteUrl,
     images: [
       {
-        url: "/brand/traco-base-og-novo.png",
+        url: "/brand/baseforma-og.png",
         width: 1200,
         height: 630,
-        alt: "Sapatas 3D sob demanda Traço Base"
+        alt: "Sapatas 3D sob demanda Baseforma"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.name} | Sapatas 3D sob demanda para mobiliário`,
+    title: `${brand.name} | Componentes técnicos sob medida para mobiliário`,
     description: brand.description,
-    images: ["/brand/traco-base-og-novo.png"]
+    images: ["/brand/baseforma-og.png"]
   }
 };
 

@@ -103,7 +103,7 @@ export function AccountAccess() {
           <input
             autoComplete="off"
             required
-            placeholder="TB-260619-ABCD"
+            placeholder="BF-260619-ABCD"
             disabled={phase === "verify"}
             value={orderNumber}
             onChange={(event) => setOrderNumber(event.target.value.toUpperCase())}
@@ -183,7 +183,7 @@ export function AccountDashboard({ email, orders }) {
         <div className="account-content">
           <section id="visao-geral" className="account-section" aria-labelledby="overview-title">
             <div className="account-section__heading">
-              <div><p className="eyebrow">Visão geral</p><h2 id="overview-title">Sua relação com a Traço Base</h2></div>
+              <div><p className="eyebrow">Visão geral</p><h2 id="overview-title">Sua relação com a Baseforma</h2></div>
               <Link className="button button-primary" href="/catalogo">Novo pedido</Link>
             </div>
             <dl className="account-metrics">

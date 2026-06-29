@@ -902,8 +902,8 @@ As sapatas nao se diferenciam apenas por forma e medida. O metodo de fixacao def
 | Rosca + bucha plastica | Moveis, armarios, sofas | Nivelamento e ajuste de altura | Mais alta, mais aparente, exige furo/bucha |
 | Rosca/inserto metalico no tubo | Estruturas metalicas | Alta carga e nivelamento preciso | Mais caro, mais industrial, exige componente metalico |
 | Adesivo | Metal, plastico, madeira acabada, PTFE/feltro | Sem furo, facil, bom para retrofit | Falha com poeira, oleo, umidade, arrasto e cisalhamento |
-| Clip-on / encaixe em trilho | Base tipo esqui e sistemas substituiveis | Troca rapida, bom para manutencao | Precisa de geometria bem especifica |
-| Base fixa + refil clicavel | Glides premium internacionais | Troca so a parte de desgaste | Pouco comum no varejo brasileiro |
+| Clip-on / encaixe em trilho | Base tipo esqui e sistemas substituiveis | troca rapida, bom para manutencao | Precisa de geometria bem especifica |
+| Base fixa + refil clicavel | Glides premium internacionais | troca so a parte de desgaste | Pouco comum no varejo brasileiro |
 | Velcro/hook-and-loop tecnico | Pads removiveis, prototipos, manutencao | Reposicao facil | Espessura alta e menor estabilidade lateral |
 | Cola estrutural | Reparos e aplicacoes permanentes | Pode resolver geometrias sem furo | Instalacao menos limpa, cura lenta, dificil padronizar |
 | Sobre-moldagem ou peca hibrida | Produto industrial | Excelente integracao de materiais | Exige processo e volume maiores |
@@ -1206,7 +1206,7 @@ Adicionar ao roteiro de atendimento:
 
 ## Recomendacao de catalogo inicial
 
-Para Traco Base / operacao TPU, a linha inicial deve evitar concorrer com commodities e focar em familias onde a customizacao tem valor.
+Para Baseforma / operacao TPU, a linha inicial deve evitar concorrer com commodities e focar em familias onde a customizacao tem valor.
 
 ### Familia 1: Tubo Redondo Interno
 

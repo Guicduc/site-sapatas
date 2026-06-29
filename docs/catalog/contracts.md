@@ -27,7 +27,7 @@
 
 ```json
 {
-  "sku": "TB-RD-PF-2008-GRA",
+  "sku": "BF-RD-PF-2008-GRA",
   "family_slug": "sapata-tubo-redondo",
   "nome_comercial": "Tubo redondo 20 x 8 grafite",
   "dimensions": {
@@ -42,7 +42,7 @@
   "price_brl": 34.9,
   "lead_time_days": 5,
   "status": "active",
-  "technical_file": "stl/aprovados/TB-RD-PF-2008-GRA.stl"
+  "technical_file": "stl/aprovados/BF-RD-PF-2008-GRA.stl"
 }
 ```
 
@@ -51,7 +51,7 @@
 ```json
 {
   "id": "uuid",
-  "order_number": "TB-260424-AB12",
+  "order_number": "BF-260424-AB12",
   "source": "configurator",
   "status": "pending_payment",
   "payment_status": "pending",
@@ -63,7 +63,7 @@
   },
   "items": [
     {
-      "sku": "TB-RD-PI-22X28X18",
+      "sku": "BF-RD-PI-22X28X18",
       "category_slug": "ponteira-interna-tubo",
       "format_slug": "redondo",
       "values": {
@@ -89,7 +89,7 @@
   "contractVersion": "rhino-gh-v1",
   "status": "cad_pending",
   "modelVersion": "tube-round-gh-v1",
-  "fileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.stl",
+  "fileName": "ORDER-BF-260504-AB12-BF-RD-PI-22X28X18.stl",
   "generatedAt": "2026-05-04T14:20:00.000Z",
   "items": [
     {
@@ -97,8 +97,8 @@
       "modelVersion": "tube-round-gh-v1",
       "engine": "rhino_grasshopper",
       "generationMode": "local_manual",
-      "orderNumber": "TB-260504-AB12",
-      "sku": "TB-RD-PI-22X28X18",
+      "orderNumber": "BF-260504-AB12",
+      "sku": "BF-RD-PI-22X28X18",
       "categorySlug": "ponteira-interna-tubo",
       "formatSlug": "redondo",
       "quantity": 4,
@@ -117,8 +117,8 @@
         "meshToleranceMm": 0.15
       },
       "outputs": {
-        "stlFileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.stl",
-        "optionalPreviewFileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.glb"
+        "stlFileName": "ORDER-BF-260504-AB12-BF-RD-PI-22X28X18.stl",
+        "optionalPreviewFileName": "ORDER-BF-260504-AB12-BF-RD-PI-22X28X18.glb"
       }
     }
   ]
@@ -146,7 +146,7 @@ Estados CAD:
   "directCostBrl": 12.68,
   "suggestedPriceBrl": 30.9,
   "calculatedAt": "2026-05-05T23:20:00.000Z",
-  "gcodeFileName": "ORDER-TB-260504-AB12-TB-RD-PI-22X28X18.gcode"
+  "gcodeFileName": "ORDER-BF-260504-AB12-BF-RD-PI-22X28X18.gcode"
 }
 ```
 
@@ -196,7 +196,7 @@ Regras:
   "slug": "sapata-tubo-redondo",
   "keyword_primary": "sapata para tubo redondo",
   "search_intent": "transacional",
-  "title": "Sapata para tubo redondo impressa em 3D | Traco Base",
+  "title": "Sapata para tubo redondo impressa em 3D | Baseforma",
   "description": "Sapata sob encomenda para pes tubulares com medidas e cores padronizadas.",
   "content_sections": ["hero", "compatibilidade", "matriz", "faq"],
   "internal_links": ["/catalogo", "/projeto-especial"]

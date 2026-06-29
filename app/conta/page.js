@@ -5,7 +5,7 @@ import { listOrdersByEmail } from "@/lib/order-store";
 
 export const metadata = {
   title: "Minha conta",
-  description: "Pedidos, pagamentos e dados da sua relação com a Traço Base."
+  description: "Pedidos, pagamentos e dados da sua relação com a Baseforma."
 };
 
 export const dynamic = "force-dynamic";
