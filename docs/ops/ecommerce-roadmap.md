@@ -3,6 +3,7 @@
 Este documento registra o estado atual do e-commerce e os pontos que ficaram intencionalmente para uma fase futura.
 
 Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/ops/agent-runbook.md`.
+Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use tambem `docs/ops/payment-email-handoff.md`.
 
 ## Escopo ativo agora
 
