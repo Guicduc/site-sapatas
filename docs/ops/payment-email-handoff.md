@@ -28,17 +28,21 @@ O codigo do site ja usa Mercado Pago como pagamento ativo:
 - `app/api/payments/mercado-pago/preference/route.js`
 - `app/api/webhooks/mercado-pago/route.js`
 
-O que falta para habilitar producao:
+Estado em 29/06/2026:
 
-- Concluir login/validacao de identidade da conta Mercado Pago.
-- Criar ou acessar a aplicacao do projeto no painel de desenvolvedores.
-- Obter `MERCADO_PAGO_ACCESS_TOKEN`.
-- Definir `MERCADO_PAGO_ENV=production` quando a conta estiver pronta para receber pagamentos reais.
-- Definir `MERCADO_PAGO_WEBHOOK_SECRET` se o painel fornecer assinatura/secret para webhooks.
-- Cadastrar webhook:
-  - URL: `https://baseforma.com.br/api/webhooks/mercado-pago`
-  - Evento minimo esperado: pagamentos.
-- Conferir se o painel exige conta PJ, dados bancarios, validacao facial ou homologacao adicional antes de liberar credenciais de producao.
+- Aplicacao Mercado Pago em Checkout Pro acessada com credenciais produtivas.
+- `MERCADO_PAGO_ACCESS_TOKEN` produtivo configurado no Vercel para Production e Preview.
+- `MERCADO_PAGO_ENV=production` configurado no Vercel para Production e Preview.
+- `MERCADO_PAGO_STATEMENT_DESCRIPTOR=BASEFORMA` confirmado no Vercel para Production e Preview.
+- `MERCADO_PAGO_WEBHOOK_SECRET` configurado no Vercel para Production e Preview.
+- Production redeploy executado no Vercel e alias `https://www.baseforma.com.br` atualizado.
+- Health check administrativo de producao retornou Mercado Pago `ok=true`, modo `production`.
+
+Webhook esperado no painel Mercado Pago:
+
+- URL: `https://baseforma.com.br/api/webhooks/mercado-pago`
+- Evento minimo esperado: pagamentos.
+- Assinatura secreta deve corresponder ao valor configurado em `MERCADO_PAGO_WEBHOOK_SECRET` no Vercel.
 
 Estado do login nesta sessao:
 
