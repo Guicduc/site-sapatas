@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useCart } from "@/components/cart-provider";
@@ -107,10 +107,15 @@ function CheckoutForm() {
   const [address, setAddress] = useState({
     postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
   });
+  const lastPostalCodeLookupRef = useRef("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
   const [recoveryState, setRecoveryState] = useState({ status: "idle", lastSavedAt: "" });
+  const [postalCodeLookupState, setPostalCodeLookupState] = useState({
+    status: "idle",
+    message: ""
+  });
   const [shippingQuoteState, setShippingQuoteState] = useState({
     status: "idle",
     quote: null,
@@ -143,6 +148,75 @@ function CheckoutForm() {
     state: address.state,
     couponCode
   });
+
+  useEffect(() => {
+    const postalCode = String(address.postalCode || "").replace(/\D/g, "");
+
+    if (postalCode.length < 8) {
+      lastPostalCodeLookupRef.current = "";
+      setPostalCodeLookupState({ status: "idle", message: "" });
+      return undefined;
+    }
+
+    if (lastPostalCodeLookupRef.current === postalCode) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        setPostalCodeLookupState({ status: "loading", message: "Consultando CEP..." });
+        const response = await fetch(`/api/postal-code/${postalCode}`);
+        const payload = await response.json();
+
+        if (response.status === 404) {
+          lastPostalCodeLookupRef.current = postalCode;
+          if (!cancelled) {
+            setPostalCodeLookupState({
+              status: "not_found",
+              message: "CEP nao encontrado. Preencha o endereco manualmente."
+            });
+          }
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(payload.message || "Nao foi possivel consultar o CEP.");
+        }
+
+        if (!cancelled && payload.address) {
+          const lookupAddress = payload.address;
+          lastPostalCodeLookupRef.current = lookupAddress.postalCodeDigits || postalCode;
+          setAddress((current) => ({
+            ...current,
+            postalCode: lookupAddress.postalCode || current.postalCode,
+            street: lookupAddress.street || "",
+            district: lookupAddress.district || "",
+            city: lookupAddress.city || current.city,
+            state: lookupAddress.state || current.state
+          }));
+          setPostalCodeLookupState({
+            status: "found",
+            message: lookupAddress.city && lookupAddress.state
+              ? `Endereco localizado em ${lookupAddress.city}/${lookupAddress.state}.`
+              : "Endereco localizado pelo CEP."
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setPostalCodeLookupState({
+            status: "error",
+            message: "Nao foi possivel consultar o CEP agora. Preencha o endereco manualmente."
+          });
+        }
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [address.postalCode]);
 
   useEffect(() => {
     const postalCode = String(address.postalCode || "").replace(/\D/g, "");
@@ -229,6 +303,12 @@ function CheckoutForm() {
 
   function updateAddress(key, value) {
     setAddress((current) => ({ ...current, [key]: value }));
+  }
+
+  function updatePostalCode(value) {
+    const digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    updateAddress("postalCode", formatted);
   }
 
   async function markRecoveryLeadConverted(orderId) {
@@ -322,39 +402,49 @@ function CheckoutForm() {
 
   return (
     <form className="checkout-form" onSubmit={handleSubmit}>
-      <label className="field">
-        <span>Nome</span>
-        <input autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
-      </label>
-      <label className="field">
-        <span>E-mail</span>
-        <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
-      </label>
-      <label className="field">
-        <span>WhatsApp</span>
-        <input
-          type="tel"
-          autoComplete="tel"
-          required
-          value={contact}
-          placeholder="(11) 99999-0000"
-          onChange={(event) => setContact(event.target.value)}
-        />
-      </label>
+      <div className="checkout-contact-grid">
+        <label className="field">
+          <span>Nome</span>
+          <input autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
+        </label>
+        <label className="field">
+          <span>E-mail</span>
+          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+        </label>
+        <label className="field">
+          <span>WhatsApp</span>
+          <input
+            type="tel"
+            autoComplete="tel"
+            required
+            value={contact}
+            placeholder="(11) 99999-0000"
+            onChange={(event) => setContact(event.target.value)}
+          />
+        </label>
+      </div>
       <fieldset className="checkout-address">
         <legend>Endereço de entrega</legend>
         <div className="field-row">
-          <label className="field"><span>CEP</span><input inputMode="numeric" autoComplete="postal-code" required value={address.postalCode} onChange={(event) => updateAddress("postalCode", event.target.value)} /></label>
-          <label className="field"><span>UF</span><input maxLength="2" autoComplete="address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
+          <label className="field checkout-field--postal"><span>CEP</span><input inputMode="numeric" autoComplete="postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
+          <label className="field checkout-field--state"><span>UF</span><input maxLength="2" autoComplete="address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
         </div>
-        <label className="field"><span>Rua ou avenida</span><input autoComplete="address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
+        {postalCodeLookupState.status !== "idle" && (
+          <p
+            className={`checkout-note${postalCodeLookupState.status === "not_found" || postalCodeLookupState.status === "error" ? " checkout-note--warning" : ""}`}
+            aria-live="polite"
+          >
+            {postalCodeLookupState.message}
+          </p>
+        )}
+        <label className="field checkout-field--street"><span>Rua ou avenida</span><input autoComplete="address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
         <div className="field-row">
-          <label className="field"><span>Número</span><input autoComplete="address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
-          <label className="field"><span>Complemento</span><input value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
+          <label className="field checkout-field--number"><span>Número</span><input autoComplete="address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
+          <label className="field checkout-field--complement"><span>Complemento</span><input value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
         </div>
         <div className="field-row">
-          <label className="field"><span>Bairro</span><input autoComplete="address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
-          <label className="field"><span>Cidade</span><input autoComplete="address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
+          <label className="field checkout-field--district"><span>Bairro</span><input autoComplete="address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
+          <label className="field checkout-field--city"><span>Cidade</span><input autoComplete="address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
         </div>
       </fieldset>
       <label className="field">
