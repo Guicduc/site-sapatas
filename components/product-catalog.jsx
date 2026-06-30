@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 
-import { colorMap } from "@/lib/brand-colors";
-
 const moodTerms = [
   {
     icon: "fit",
@@ -138,18 +136,6 @@ export function ProductCatalog({ categories }) {
                 {category.formats.length > 1 && (
                   <span>{category.formats.map((format) => format.name).join(" / ")}</span>
                 )}
-              </div>
-              <div className="swatch-row" aria-label="Cores disponíveis">
-                {category.colors.map((color) => (
-                  <span
-                    key={color}
-                    className="swatch"
-                    style={{ "--swatch": colorMap[color] || "#808784" }}
-                    title={color}
-                  >
-                    <span className="visually-hidden">{color}</span>
-                  </span>
-                ))}
               </div>
             </div>
             <Link className="button button-primary" href={`/configurar/${category.slug}`}>
