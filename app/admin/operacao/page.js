@@ -49,12 +49,10 @@ export default async function AdminOperationPage({ searchParams }) {
       <div className="configurator-heading">
         <div>
           <p className="eyebrow">Admin | {getStoreMode()} | operacao sob demanda</p>
-          <h1>Producao, expedicao e nota fiscal.</h1>
-          <p>
-            A capacidade e tratada como fila de producao por pedido, sem baixa de estoque tradicional.
-          </p>
+          <h1>Operacao</h1>
+          <p className="lead">Fila compacta para producao, nota fiscal manual e expedicao.</p>
         </div>
-        <div className="status-stack">
+        <div className="admin-heading-actions">
           <Link className="button button-secondary" href={adminHref("/admin/pedidos", access)}>
             Ver pedidos
           </Link>
@@ -68,19 +66,24 @@ export default async function AdminOperationPage({ searchParams }) {
         </div>
       </div>
 
-      <article className="surface-card admin-order-card">
-        <div className="admin-order-header">
-          <div>
-            <p className="eyebrow">Fila operacional</p>
-            <h2>{summary.orders} pedido(s) em capacidade</h2>
-            <p>
-              {summary.demandUnits} unidades de trabalho | capacidade diaria {summary.dailyCapacityUnits} |{" "}
-              {summary.estimatedProductionDays} dia(s) estimados.
-            </p>
-          </div>
-          <span className="chip">{summary.model}</span>
-        </div>
-      </article>
+      <div className="admin-overview-strip" aria-label="Resumo operacional">
+        <article>
+          <span>Pedidos em fila</span>
+          <strong>{summary.orders}</strong>
+        </article>
+        <article>
+          <span>Un. de trabalho</span>
+          <strong>{summary.demandUnits}</strong>
+        </article>
+        <article>
+          <span>Capacidade diaria</span>
+          <strong>{summary.dailyCapacityUnits}</strong>
+        </article>
+        <article>
+          <span>Dias estimados</span>
+          <strong>{summary.estimatedProductionDays}</strong>
+        </article>
+      </div>
 
       {operationOrders.length === 0 ? (
         <article className="empty-cart">
@@ -89,175 +92,204 @@ export default async function AdminOperationPage({ searchParams }) {
         </article>
       ) : (
         <div className="admin-order-list">
-          {operationOrders.map(({ order, fulfillment, queuePosition, capacity }) => (
-            <article className="surface-card admin-order-card" key={order.id}>
-              <div className="admin-order-header">
-                <div>
-                  <p className="eyebrow">
-                    {queuePosition ? `Fila #${queuePosition}` : "Historico operacional"}
-                  </p>
-                  <h2>{order.orderNumber}</h2>
-                  <p>{order.customer?.name || "Cliente"} | {order.customer?.contact || "sem contato"}</p>
-                </div>
-                <div className="status-stack">
-                  <span className="chip">{getOrderStatusLabel(order.status)}</span>
-                  <span className="chip">{getPaymentStatusLabel(order.paymentStatus)}</span>
-                  <strong>{formatCurrency(order.totalBrl)}</strong>
-                </div>
-              </div>
-
-              <dl className="admin-payment-grid">
-                <div>
-                  <dt>Producao</dt>
-                  <dd>{getProductionStatusLabel(fulfillment.production.status)}</dd>
-                </div>
-                <div>
-                  <dt>Nota fiscal</dt>
-                  <dd>{getInvoiceStatusLabel(fulfillment.invoice.status)}</dd>
-                </div>
-                <div>
-                  <dt>Expedicao</dt>
-                  <dd>{getShipmentStatusLabel(fulfillment.shipment.status)}</dd>
-                </div>
-                <div>
-                  <dt>Capacidade</dt>
-                  <dd>
-                    {capacity
-                      ? `${capacity.demandUnits} un. trabalho | D+${capacity.estimatedDayOffset}`
-                      : `${fulfillment.capacity.workUnits} un. trabalho`}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Impressao estimada</dt>
-                  <dd>{formatMinutes(fulfillment.capacity.printMinutes)}</dd>
-                </div>
-                <div>
-                  <dt>Itens</dt>
-                  <dd>{fulfillment.capacity.units || order.items?.length || 0}</dd>
-                </div>
-              </dl>
-
-              {order.items?.length > 0 && (
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>SKU</th>
-                        <th>Formato</th>
-                        <th>Qtd.</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.items.map((item) => (
-                        <tr key={item.id}>
-                          <td>{item.sku}</td>
-                          <td>{item.formatName}</td>
-                          <td>{item.quantity}</td>
-                          <td>{formatCurrency(item.totalPriceBrl)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <form className="cad-form" action={updateOperation}>
-                <input type="hidden" name="orderId" value={order.id} />
-                <input type="hidden" name="token" value={access.token} />
-                <label className="field">
-                  <span>Status producao</span>
-                  <select name="productionStatus" defaultValue={fulfillment.production.status}>
-                    {productionStatusOptions.map((status) => (
-                      <option key={status} value={status}>{getProductionStatusLabel(status)}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Prioridade</span>
-                  <select name="productionPriority" defaultValue={fulfillment.production.priority}>
-                    {["normal", "high", "urgent", "low"].map((priority) => (
-                      <option key={priority} value={priority}>{priority}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Data programada</span>
-                  <input name="scheduledDate" type="date" defaultValue={fulfillment.production.scheduledDate} />
-                </label>
-                <label className="field">
-                  <span>Maquina</span>
-                  <input name="machine" defaultValue={fulfillment.production.machine} placeholder="P2S-04" />
-                </label>
-                <label className="field">
-                  <span>Operador</span>
-                  <input name="operator" defaultValue={fulfillment.production.operator} placeholder="Responsavel" />
-                </label>
-                <label className="field">
-                  <span>NF manual</span>
-                  <select name="invoiceStatus" defaultValue={fulfillment.invoice.status}>
-                    {invoiceStatusOptions.map((status) => (
-                      <option key={status} value={status}>{getInvoiceStatusLabel(status)}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Numero NF</span>
-                  <input name="invoiceNumber" defaultValue={fulfillment.invoice.number} placeholder="000123" />
-                </label>
-                <label className="field">
-                  <span>Serie NF</span>
-                  <input name="invoiceSeries" defaultValue={fulfillment.invoice.series} placeholder="1" />
-                </label>
-                <label className="field">
-                  <span>Chave de acesso</span>
-                  <input name="invoiceAccessKey" defaultValue={fulfillment.invoice.accessKey} placeholder="44 digitos" />
-                </label>
-                <label className="field">
-                  <span>Emissao NF</span>
-                  <input name="invoiceIssuedAt" type="datetime-local" defaultValue={toDateTimeLocal(fulfillment.invoice.issuedAt)} />
-                </label>
-                <label className="field">
-                  <span>Status expedicao</span>
-                  <select name="shipmentStatus" defaultValue={fulfillment.shipment.status}>
-                    {shipmentStatusOptions.map((status) => (
-                      <option key={status} value={status}>{getShipmentStatusLabel(status)}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Transportadora</span>
-                  <input name="carrier" defaultValue={fulfillment.shipment.carrier} placeholder="Manual / Correios / Retirada" />
-                </label>
-                <label className="field">
-                  <span>Rastreio</span>
-                  <input name="trackingCode" defaultValue={fulfillment.shipment.trackingCode} placeholder="Codigo de rastreio" />
-                </label>
-                <label className="field">
-                  <span>Saida</span>
-                  <input name="shippedAt" type="datetime-local" defaultValue={toDateTimeLocal(fulfillment.shipment.shippedAt)} />
-                </label>
-                <label className="field">
-                  <span>Notas de producao</span>
-                  <textarea name="productionNotes" defaultValue={fulfillment.production.notes} rows={3} />
-                </label>
-                <label className="field">
-                  <span>Notas fiscais/expedicao</span>
-                  <textarea
-                    name="operationNotes"
-                    defaultValue={[fulfillment.invoice.notes, fulfillment.shipment.notes].filter(Boolean).join("\n")}
-                    rows={3}
-                  />
-                </label>
-                <button className="button button-primary" type="submit">
-                  Salvar operacao
-                </button>
-              </form>
-            </article>
+          {operationOrders.map((item) => (
+            <AdminOperationRow item={item} access={access} key={item.order.id} />
           ))}
         </div>
       )}
     </section>
+  );
+}
+
+function AdminOperationRow({ item, access }) {
+  const { order, fulfillment, queuePosition, capacity } = item;
+  const tone = getOperationTone(fulfillment);
+  const action = getOperationAction(fulfillment, queuePosition);
+  const productSummary = formatOrderProducts(order);
+
+  return (
+    <details className={`surface-card admin-order-card admin-order-row admin-order-row--${tone}`} id={`operation-${order.id}`}>
+      <summary className="admin-order-summary admin-operation-summary">
+        <span className={`admin-status-dot admin-status-dot--${tone}`} aria-hidden="true" />
+        <span className="admin-order-summary__main">
+          <span className="eyebrow">{queuePosition ? `Fila #${queuePosition}` : "Historico operacional"}</span>
+          <strong>{order.orderNumber}</strong>
+          <small>{productSummary}</small>
+        </span>
+        <span className="admin-order-summary__customer">
+          <span>{order.customer?.name || "Cliente"}</span>
+          <small>{order.customer?.contact || "Sem contato"}</small>
+        </span>
+        <span className="admin-order-summary__status">
+          <span className={`admin-status-badge admin-status-badge--${tone}`}>
+            {getProductionStatusLabel(fulfillment.production.status)}
+          </span>
+          <small>{getShipmentStatusLabel(fulfillment.shipment.status)}</small>
+        </span>
+        <span className="admin-order-summary__action">
+          <span>{action}</span>
+          <small>{getInvoiceStatusLabel(fulfillment.invoice.status)}</small>
+        </span>
+        <span className="admin-order-summary__total">
+          <strong>{formatCurrency(order.totalBrl)}</strong>
+          <small>{capacity ? `${capacity.demandUnits} un. trab. | D+${capacity.estimatedDayOffset}` : `${fulfillment.capacity.workUnits} un. trab.`}</small>
+        </span>
+      </summary>
+
+      <div className="admin-order-expanded">
+        <dl className="admin-order-snapshot">
+          <div>
+            <dt>Pedido</dt>
+            <dd>{getOrderStatusLabel(order.status)}</dd>
+          </div>
+          <div>
+            <dt>Pagamento</dt>
+            <dd>{getPaymentStatusLabel(order.paymentStatus)}</dd>
+          </div>
+          <div>
+            <dt>Impressao estimada</dt>
+            <dd>{formatMinutes(fulfillment.capacity.printMinutes)}</dd>
+          </div>
+          <div>
+            <dt>Itens</dt>
+            <dd>{fulfillment.capacity.units || order.items?.length || 0}</dd>
+          </div>
+        </dl>
+
+        {order.items?.length > 0 && (
+          <section className="admin-order-section">
+            <h3>Itens em producao</h3>
+            <div className="table-wrap">
+              <table className="admin-items-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Produto</th>
+                    <th>Qtd.</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.map((orderItem) => (
+                    <tr key={orderItem.id}>
+                      <td>{orderItem.sku}</td>
+                      <td>{formatProductName(orderItem)}</td>
+                      <td>{orderItem.quantity}</td>
+                      <td>{formatCurrency(orderItem.totalPriceBrl)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        <form className="cad-form operation-form" action={updateOperation}>
+          <input type="hidden" name="orderId" value={order.id} />
+          <input type="hidden" name="token" value={access.token} />
+
+          <fieldset className="operation-form__group">
+            <legend>Producao</legend>
+            <label className="field">
+              <span>Status producao</span>
+              <select name="productionStatus" defaultValue={fulfillment.production.status}>
+                {productionStatusOptions.map((status) => (
+                  <option key={status} value={status}>{getProductionStatusLabel(status)}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Prioridade</span>
+              <select name="productionPriority" defaultValue={fulfillment.production.priority}>
+                {["normal", "high", "urgent", "low"].map((priority) => (
+                  <option key={priority} value={priority}>{priority}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Data programada</span>
+              <input name="scheduledDate" type="date" defaultValue={fulfillment.production.scheduledDate} />
+            </label>
+            <label className="field">
+              <span>Maquina</span>
+              <input name="machine" defaultValue={fulfillment.production.machine} placeholder="P2S-04" />
+            </label>
+            <label className="field">
+              <span>Operador</span>
+              <input name="operator" defaultValue={fulfillment.production.operator} placeholder="Responsavel" />
+            </label>
+            <label className="field field-wide">
+              <span>Notas de producao</span>
+              <textarea name="productionNotes" defaultValue={fulfillment.production.notes} rows={3} />
+            </label>
+          </fieldset>
+
+          <fieldset className="operation-form__group">
+            <legend>Nota fiscal manual</legend>
+            <label className="field">
+              <span>NF manual</span>
+              <select name="invoiceStatus" defaultValue={fulfillment.invoice.status}>
+                {invoiceStatusOptions.map((status) => (
+                  <option key={status} value={status}>{getInvoiceStatusLabel(status)}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Numero NF</span>
+              <input name="invoiceNumber" defaultValue={fulfillment.invoice.number} placeholder="000123" />
+            </label>
+            <label className="field">
+              <span>Serie NF</span>
+              <input name="invoiceSeries" defaultValue={fulfillment.invoice.series} placeholder="1" />
+            </label>
+            <label className="field">
+              <span>Chave de acesso</span>
+              <input name="invoiceAccessKey" defaultValue={fulfillment.invoice.accessKey} placeholder="44 digitos" />
+            </label>
+            <label className="field">
+              <span>Emissao NF</span>
+              <input name="invoiceIssuedAt" type="datetime-local" defaultValue={toDateTimeLocal(fulfillment.invoice.issuedAt)} />
+            </label>
+          </fieldset>
+
+          <fieldset className="operation-form__group">
+            <legend>Expedicao</legend>
+            <label className="field">
+              <span>Status expedicao</span>
+              <select name="shipmentStatus" defaultValue={fulfillment.shipment.status}>
+                {shipmentStatusOptions.map((status) => (
+                  <option key={status} value={status}>{getShipmentStatusLabel(status)}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Transportadora</span>
+              <input name="carrier" defaultValue={fulfillment.shipment.carrier} placeholder="Manual / Correios / Retirada" />
+            </label>
+            <label className="field">
+              <span>Rastreio</span>
+              <input name="trackingCode" defaultValue={fulfillment.shipment.trackingCode} placeholder="Codigo de rastreio" />
+            </label>
+            <label className="field">
+              <span>Saida</span>
+              <input name="shippedAt" type="datetime-local" defaultValue={toDateTimeLocal(fulfillment.shipment.shippedAt)} />
+            </label>
+            <label className="field field-wide">
+              <span>Notas fiscais/expedicao</span>
+              <textarea
+                name="operationNotes"
+                defaultValue={[fulfillment.invoice.notes, fulfillment.shipment.notes].filter(Boolean).join("\n")}
+                rows={3}
+              />
+            </label>
+          </fieldset>
+
+          <button className="button button-primary" type="submit">
+            Salvar operacao
+          </button>
+        </form>
+      </div>
+    </details>
   );
 }
 
@@ -321,6 +353,84 @@ function mergeQueueWithRecentOrders(queue, orders) {
     .slice(0, 25);
 
   return [...queue, ...recentOperational];
+}
+
+function getOperationTone(fulfillment) {
+  if (
+    fulfillment.production.status === PRODUCTION_STATUS.CANCELLED ||
+    fulfillment.shipment.status === SHIPMENT_STATUS.CANCELLED
+  ) {
+    return "danger";
+  }
+
+  if (fulfillment.production.status === PRODUCTION_STATUS.BLOCKED) return "danger";
+
+  if (
+    fulfillment.production.status === PRODUCTION_STATUS.WAITING_PAYMENT ||
+    fulfillment.production.status === PRODUCTION_STATUS.WAITING_CAD ||
+    fulfillment.invoice.status === INVOICE_STATUS.MANUAL_PENDING
+  ) {
+    return "warning";
+  }
+
+  if (
+    fulfillment.production.status === PRODUCTION_STATUS.SHIPPED ||
+    fulfillment.shipment.status === SHIPMENT_STATUS.SHIPPED ||
+    fulfillment.shipment.status === SHIPMENT_STATUS.DELIVERED
+  ) {
+    return "success";
+  }
+
+  return "info";
+}
+
+function getOperationAction(fulfillment, queuePosition) {
+  if (fulfillment.production.status === PRODUCTION_STATUS.WAITING_PAYMENT) return "Aguardar pagamento";
+  if (fulfillment.production.status === PRODUCTION_STATUS.WAITING_CAD) return "Aguardar CAD";
+  if (fulfillment.production.status === PRODUCTION_STATUS.BLOCKED) return "Resolver bloqueio";
+  if (fulfillment.production.status === PRODUCTION_STATUS.QUEUED) return queuePosition ? `Produzir fila #${queuePosition}` : "Colocar em producao";
+  if (fulfillment.production.status === PRODUCTION_STATUS.SCHEDULED) return "Conferir agenda";
+  if (fulfillment.production.status === PRODUCTION_STATUS.IN_PRODUCTION) return "Acompanhar impressao";
+  if (fulfillment.production.status === PRODUCTION_STATUS.QUALITY_CHECK) return "Fazer inspecao";
+  if (fulfillment.production.status === PRODUCTION_STATUS.READY_TO_SHIP) return "Expedir pedido";
+  if (fulfillment.shipment.status === SHIPMENT_STATUS.SHIPPED) return "Acompanhar entrega";
+  return "Atualizar operacao";
+}
+
+function formatOrderProducts(order) {
+  if (!order.items?.length) return "Pedido especial";
+
+  const [firstItem, ...remainingItems] = order.items;
+  const firstName = formatProductName(firstItem);
+
+  if (!remainingItems.length) return firstName;
+
+  return `${firstName} + ${remainingItems.length} item${remainingItems.length > 1 ? "s" : ""}`;
+}
+
+function formatProductName(item) {
+  const hasStem = Boolean(
+    item.values?.haste ||
+    item.values?.pescoco ||
+    Number(item.values?.alturaHaste || 0) > 0 ||
+    Number(item.values?.alturaPescoco || 0) > 0
+  );
+
+  const productNames = {
+    "ponteira-interna-tubo:redondo": "Sapata interna tubo redondo",
+    "ponteira-interna-tubo:quadrado": "Sapata interna tubo quadrado",
+    "ponteira-interna-tubo:retangular": "Sapata interna tubo retangular",
+    "ponteira-interna-tubo:oblongo": "Sapata interna tubo oblongo",
+    "sapata-base-lisa:redonda": `Sapata lisa redonda${hasStem ? " com haste" : ""}`,
+    "sapata-base-lisa:quadrada": `Sapata lisa quadrada${hasStem ? " com haste" : ""}`,
+    "sapata-base-lisa:oblonga": `Sapata lisa oblonga${hasStem ? " com haste" : ""}`,
+    "sapata-base-lisa:retangular": `Sapata lisa retangular${hasStem ? " com haste" : ""}`
+  };
+
+  const key = `${item.categorySlug}:${item.formatSlug}`;
+  if (productNames[key]) return productNames[key];
+
+  return [item.categoryName, item.formatName].filter(Boolean).join(" | ") || item.sku || "Produto sem nome";
 }
 
 function cleanFormValue(value) {

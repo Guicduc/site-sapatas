@@ -12,70 +12,67 @@ export function AdminPricingPanel({ order, action, token = "" }) {
     : 0;
 
   return (
-    <details open>
-      <summary>Precificacao Orca</summary>
-      <div className="pricing-panel">
-        <div className="pricing-panel__header">
-          <div>
-            <p className="eyebrow">{pricing.mode || "pending"}</p>
-            <h3>{canSlice ? "Calculo real por fatiamento" : "Aguardando STL registrado"}</h3>
-          </div>
-          <form action={action}>
-            <input type="hidden" name="orderId" value={order.id} />
-            <input type="hidden" name="token" value={token} />
-            <button className="button button-primary" type="submit" disabled={!canSlice}>
-              Calcular com Orca
-            </button>
-          </form>
+    <section className="pricing-panel">
+      <div className="pricing-panel__header">
+        <div>
+          <p className="eyebrow">{pricing.mode || "pending"}</p>
+          <h3>{canSlice ? "Calculo real por fatiamento" : "Aguardando STL registrado"}</h3>
         </div>
-
-        {!canSlice && (
-          <p className="admin-note">
-            Registre o STL no painel Rhino / Grasshopper antes de chamar o Orca Slicer.
-          </p>
-        )}
-
-        {pricing.error && (
-          <p className="admin-error">
-            {pricing.error.message}
-          </p>
-        )}
-
-        <dl className="admin-payment-grid pricing-grid">
-          <div>
-            <dt>Resumo atual</dt>
-            <dd>{currentSummary.materialGrams} g | {currentSummary.printHours} h</dd>
-          </div>
-          <div>
-            <dt>Orca material</dt>
-            <dd>{pricing.materialGrams ? `${pricing.materialGrams} g` : "N/A"}</dd>
-          </div>
-          <div>
-            <dt>Orca tempo</dt>
-            <dd>{pricing.printMinutes ? formatMinutes(pricing.printMinutes) : "N/A"}</dd>
-          </div>
-          <div>
-            <dt>Custo direto</dt>
-            <dd>{pricing.directCostBrl ? formatCurrency(pricing.directCostBrl) : "N/A"}</dd>
-          </div>
-          <div>
-            <dt>Preco sugerido</dt>
-            <dd>{pricing.suggestedPriceBrl ? formatCurrency(pricing.suggestedPriceBrl) : "N/A"}</dd>
-          </div>
-          <div>
-            <dt>Dif. vs produtos</dt>
-            <dd>{pricing.suggestedPriceBrl ? formatCurrency(difference) : "N/A"}</dd>
-          </div>
-        </dl>
-
-        {pricing.calculatedAt && (
-          <p className="admin-note">
-            Calculado em {new Date(pricing.calculatedAt).toLocaleString("pt-BR")} com perfil{" "}
-            {pricing.profileId || "default"}.
-          </p>
-        )}
+        <form action={action}>
+          <input type="hidden" name="orderId" value={order.id} />
+          <input type="hidden" name="token" value={token} />
+          <button className="button button-primary" type="submit" disabled={!canSlice}>
+            Calcular com Orca
+          </button>
+        </form>
       </div>
-    </details>
+
+      {!canSlice && (
+        <p className="admin-note">
+          Registre o STL no painel Rhino / Grasshopper antes de chamar o Orca Slicer.
+        </p>
+      )}
+
+      {pricing.error && (
+        <p className="admin-error">
+          {pricing.error.message}
+        </p>
+      )}
+
+      <dl className="admin-payment-grid pricing-grid">
+        <div>
+          <dt>Resumo atual</dt>
+          <dd>{currentSummary.materialGrams} g | {currentSummary.printHours} h</dd>
+        </div>
+        <div>
+          <dt>Orca material</dt>
+          <dd>{pricing.materialGrams ? `${pricing.materialGrams} g` : "N/A"}</dd>
+        </div>
+        <div>
+          <dt>Orca tempo</dt>
+          <dd>{pricing.printMinutes ? formatMinutes(pricing.printMinutes) : "N/A"}</dd>
+        </div>
+        <div>
+          <dt>Custo direto</dt>
+          <dd>{pricing.directCostBrl ? formatCurrency(pricing.directCostBrl) : "N/A"}</dd>
+        </div>
+        <div>
+          <dt>Preco sugerido</dt>
+          <dd>{pricing.suggestedPriceBrl ? formatCurrency(pricing.suggestedPriceBrl) : "N/A"}</dd>
+        </div>
+        <div>
+          <dt>Dif. vs produtos</dt>
+          <dd>{pricing.suggestedPriceBrl ? formatCurrency(difference) : "N/A"}</dd>
+        </div>
+      </dl>
+
+      {pricing.calculatedAt && (
+        <p className="admin-note">
+          Calculado em {new Date(pricing.calculatedAt).toLocaleString("pt-BR")} com perfil{" "}
+          {pricing.profileId || "default"}.
+        </p>
+      )}
+    </section>
   );
 }
 
