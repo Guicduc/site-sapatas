@@ -4,12 +4,21 @@ import { StructuredData } from "@/components/structured-data";
 
 const faqSections = [
   {
-    title: "Escolha e medida",
+    id: "medidas",
+    eyebrow: "Antes de configurar",
+    title: "Medidas e compatibilidade",
+    description:
+      "Use estas respostas para escolher a família certa e evitar peça folgada, apertada ou fora da faixa validada.",
     items: [
       {
         question: "Como escolho a família certa?",
         answer:
-          "Comece pelo tipo de apoio: ponteira interna para tubo ou sapata para base lisa. Depois escolha o formato e informe as medidas reais do seu projeto."
+          "Comece pelo tipo de apoio: ponteira interna para tubo ou sapata para base lisa. Depois escolha o formato, confira a faixa publicada e informe as medidas reais do seu projeto."
+      },
+      {
+        question: "Como devo medir antes de configurar?",
+        answer:
+          "Meça a peça real, não apenas a medida nominal do tubo ou do móvel. Para ponteiras internas, use a medida interna do tubo. Para sapatas de base lisa, use a área de apoio que receberá a peça."
       },
       {
         question: "Qual é o limite de medida?",
@@ -24,27 +33,69 @@ const faqSections = [
     ]
   },
   {
-    title: "Compra e produção",
+    id: "compra",
+    eyebrow: "Pedido e pagamento",
+    title: "Compra, preço e pagamento",
+    description:
+      "O checkout cria um pedido próprio da Baseforma antes de encaminhar o pagamento pelo Mercado Pago.",
     items: [
       {
         question: "Existe quantidade mínima?",
         answer:
-          "Não. A linha atual não aplica quantidade mínima; você pode configurar e pedir a quantidade necessária para o seu caso."
+          "Não. A linha atual não aplica quantidade mínima; você pode configurar desde 1 unidade. Quantidades maiores podem alterar preço unitário e prazo."
       },
       {
         question: "Como o preço é calculado?",
         answer:
-          "O preço parte da família, do formato, das medidas e da quantidade configurada. O carrinho consolida os itens antes do envio do pedido."
+          "O preço parte da família, do formato, das medidas, da quantidade e dos dados de produção disponíveis. O carrinho consolida itens, desconto e frete antes de criar o pedido."
       },
       {
-        question: "Qual é o prazo de produção?",
+        question: "Quais formas de pagamento estão disponíveis?",
         answer:
-          "O prazo aparece no produto configurado e pode variar conforme família, medida e fila de produção. Projetos especiais levam mais tempo porque exigem avaliação técnica."
+          "O pagamento ativo é Mercado Pago. Depois que o pedido local é criado, você é encaminhado para o checkout do Mercado Pago com as opções disponíveis naquele ambiente."
+      },
+      {
+        question: "O pedido já sai com nota fiscal?",
+        answer:
+          "A nota fiscal é tratada de forma manual na operação atual. Informe os dados corretos no pedido para que a emissão seja conferida antes da expedição, quando aplicável."
       }
     ]
   },
   {
+    id: "prazo",
+    eyebrow: "Produção e entrega",
+    title: "Prazo e entrega",
+    description:
+      "Separe prazo de produção e prazo de transporte: os dois entram na expectativa final de entrega.",
+    items: [
+      {
+        question: "Qual é o prazo de produção?",
+        answer:
+          "O prazo aparece no produto configurado e pode variar conforme família, medida e fila de produção. Projetos especiais levam mais tempo porque exigem avaliação técnica."
+      },
+      {
+        question: "Quando a produção começa?",
+        answer:
+          "A produção começa depois da aprovação do pagamento e da conferência técnica necessária para o pedido. Se o caso exigir projeto especial, a produção só avança após o briefing ser validado."
+      },
+      {
+        question: "Como o frete é calculado?",
+        answer:
+          "O carrinho estima o frete a partir do CEP e dos itens configurados. Quando a integração de frete real estiver ativa, a cotação usa o Melhor Envio; sem credenciais, o site preserva o cálculo manual."
+      },
+      {
+        question: "Qual é a diferença entre prazo de produção e prazo de entrega?",
+        answer:
+          "Prazo de produção é o tempo para fabricar e preparar as peças. Prazo de entrega inclui o transporte depois da expedição."
+      }
+    ]
+  },
+  {
+    id: "material",
+    eyebrow: "Linha atual",
     title: "Material e acabamento",
+    description:
+      "As respostas abaixo indicam o padrão atual da linha e quando vale tratar o pedido como projeto técnico.",
     items: [
       {
         question: "Qual cor está disponível agora?",
@@ -59,16 +110,45 @@ const faqSections = [
       {
         question: "O material serve para área interna e externa?",
         answer:
-          "O material foi escolhido para uso resistente, mas a aplicação real ainda deve considerar carga, piso, exposição e atrito. Casos críticos devem ser avaliados antes da compra."
+          "O material foi selecionado para suportar carga e atrito contínuos, mas a aplicação real depende de piso, exposição, umidade e carga. Casos críticos devem ser avaliados antes da compra."
+      },
+      {
+        question: "Quando devo abrir um projeto especial?",
+        answer:
+          "Abra projeto especial quando a medida passar da faixa publicada, a geometria não existir no catálogo, a cor fugir do padrão ou a aplicação tiver carga, exposição ou tolerância crítica."
       }
     ]
+  }
+];
+
+const faqPaths = [
+  {
+    step: "01",
+    title: "Configurador",
+    href: "/catalogo",
+    label: "Abrir catálogo",
+    body: "Use quando a família, o formato e as medidas estiverem dentro da faixa publicada."
+  },
+  {
+    step: "02",
+    title: "Carrinho",
+    href: "/carrinho",
+    label: "Revisar carrinho",
+    body: "Revise quantidade, preço, frete estimado e dados do pedido antes do pagamento."
+  },
+  {
+    step: "03",
+    title: "Projeto especial",
+    href: "/projeto-especial",
+    label: "Enviar briefing",
+    body: "Use para medidas fora da matriz, geometria nova, cor especial ou aplicação crítica."
   }
 ];
 
 export const metadata = {
   title: "FAQ técnico e comercial",
   description:
-    "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, produção, material, acabamento e projeto especial.",
+    "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, pagamento, frete, produção, material, acabamento e projeto especial.",
   alternates: {
     canonical: "/faq"
   }
@@ -99,71 +179,55 @@ export default function FaqPage() {
       <section className="faq-hero">
         <div>
           <p className="eyebrow">FAQ técnico-comercial</p>
-          <h1>Respostas diretas para configurar, comprar ou abrir um caso especial.</h1>
+          <h1>FAQ para medir, configurar e comprar sapatas sob medida.</h1>
           <p className="lead">
-            Use esta página para decidir se o pedido entra pelo configurador, pelo carrinho ou
+            Respostas práticas para decidir se o pedido segue pelo configurador, pelo carrinho ou
             pelo fluxo de projeto especial.
           </p>
+          <div className="faq-hero__actions" aria-label="Ações principais">
+            <Link className="button button-primary" href="/catalogo">
+              Abrir catálogo
+            </Link>
+            <Link className="button button-secondary" href="/projeto-especial">
+              Projeto especial
+            </Link>
+          </div>
         </div>
         <div className="faq-hero__aside">
-          <span>Antes de pedir</span>
-          <strong>Meça o apoio real e escolha a família pelo tipo de encaixe.</strong>
+          <span>Tenha em mãos</span>
+          <strong>Medida real, tipo de apoio, quantidade e CEP.</strong>
           <p>
-            Tubo interno e base lisa seguem lógicas diferentes. Quando a medida, o formato ou o
-            uso saem do padrão, o melhor caminho é projeto especial.
+            Tubo interno e base lisa seguem lógicas diferentes. Se medida, formato, cor ou uso
+            saírem do padrão publicado, trate como projeto especial.
           </p>
         </div>
       </section>
 
       <section className="faq-routing" aria-label="Caminhos principais">
-        <article>
-          <span>01</span>
-          <strong>Configure</strong>
-          <p>Escolha família, formato, medida e quantidade no catálogo.</p>
-        </article>
-        <article>
-          <span>02</span>
-          <strong>Revise</strong>
-          <p>Confira preço, prazo e itens no carrinho antes de enviar.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <strong>Encaminhe</strong>
-          <p>Use projeto especial para geometrias, cores ou usos fora da linha atual.</p>
-        </article>
+        {faqPaths.map((path) => (
+          <article key={path.title}>
+            <span>{path.step}</span>
+            <strong>{path.title}</strong>
+            <p>{path.body}</p>
+            <Link className="faq-routing__link" href={path.href}>
+              {path.label}
+            </Link>
+          </article>
+        ))}
       </section>
 
       <section className="faq-layout">
-        <aside className="faq-sidebar">
-          <p className="eyebrow">Atalhos</p>
-          <h2>O que normalmente define o caminho</h2>
-          <ul className="feature-list">
-            <li>tipo de apoio ou tubo</li>
-            <li>medida externa ou interna real</li>
-            <li>quantidade necessária</li>
-            <li>uso interno, externo ou critico</li>
-            <li>necessidade de cor ou geometria especial</li>
-          </ul>
-          <div className="action-column">
-            <Link className="button button-primary button-block" href="/catalogo">
-              Abrir catálogo
-            </Link>
-            <Link className="button button-secondary button-block" href="/projeto-especial">
-              Projeto especial
-            </Link>
-          </div>
-        </aside>
-
         <div className="faq-content">
-          {faqSections.map((section) => (
-            <article key={section.title} className="faq-section">
+          {faqSections.map((section, sectionIndex) => (
+            <article key={section.title} id={section.id} className="faq-section">
               <div className="faq-section__heading">
-                <p className="eyebrow">Perguntas frequentes</p>
+                <p className="eyebrow">{section.eyebrow}</p>
                 <h2>{section.title}</h2>
+                <p>{section.description}</p>
               </div>
               <div className="faq-stack">
                 {section.items.map((item, index) => (
-                  <details key={item.question} open={index === 0}>
+                  <details key={item.question} open={sectionIndex === 0 && index === 0}>
                     <summary>{item.question}</summary>
                     <p>{item.answer}</p>
                   </details>
@@ -177,10 +241,10 @@ export default function FaqPage() {
       <section className="cta-banner">
         <div>
           <p className="eyebrow">Ainda ficou dúvida?</p>
-          <h2>Se a resposta muda conforme medida ou uso, trate como decisão técnica.</h2>
+          <h2>Fora do padrão? Trate como projeto técnico, não como pedido comum.</h2>
           <p>
-            O configurador resolve os casos padrão. Casos com tolerância crítica, carga incomum
-            ou requisito estético específico devem entrar pelo briefing.
+            O configurador resolve os casos da matriz atual. Casos com tolerância crítica, carga
+            incomum ou requisito estético específico devem entrar pelo briefing.
           </p>
         </div>
         <div className="action-row">
