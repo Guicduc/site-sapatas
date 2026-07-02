@@ -173,14 +173,6 @@ export default function FaqPage() {
             </Link>
           </div>
         </div>
-        <div className="faq-hero__aside">
-          <span>Tenha em mãos</span>
-          <strong>Medida real, tipo de apoio, quantidade e CEP.</strong>
-          <p>
-            Aplicações diferentes pedem formas de medição diferentes. Se medida, formato ou uso
-            saírem do padrão publicado, trate como projeto especial.
-          </p>
-        </div>
       </section>
 
       <section className="faq-routing" aria-label="Caminhos principais">
