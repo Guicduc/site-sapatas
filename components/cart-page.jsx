@@ -190,8 +190,8 @@ function CheckoutForm() {
           setAddress((current) => ({
             ...current,
             postalCode: lookupAddress.postalCode || current.postalCode,
-            street: lookupAddress.street || "",
-            district: lookupAddress.district || "",
+            street: lookupAddress.street || current.street,
+            district: lookupAddress.district || current.district,
             city: lookupAddress.city || current.city,
             state: lookupAddress.state || current.state
           }));
