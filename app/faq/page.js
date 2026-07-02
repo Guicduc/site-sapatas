@@ -13,12 +13,12 @@ const faqSections = [
       {
         question: "Como escolho a família certa?",
         answer:
-          "Comece pelo tipo de apoio: ponteira interna para tubo ou sapata para base lisa. Depois escolha o formato, confira a faixa publicada e informe as medidas reais do seu projeto."
+          "Comece pelo tipo de apoio e pela forma de encaixe. Depois escolha o formato, confira a faixa publicada e informe as medidas reais do seu projeto."
       },
       {
         question: "Como devo medir antes de configurar?",
         answer:
-          "Meça a peça real, não apenas a medida nominal do tubo ou do móvel. Para ponteiras internas, use a medida interna do tubo. Para sapatas de base lisa, use a área de apoio que receberá a peça."
+          "Meça a peça real, não apenas a medida nominal do móvel. Use a dimensão do ponto de encaixe ou da área de apoio que receberá o componente."
       },
       {
         question: "Qual é o limite de medida?",
@@ -43,11 +43,6 @@ const faqSections = [
         question: "Existe quantidade mínima?",
         answer:
           "Não. A linha atual não aplica quantidade mínima; você pode configurar desde 1 unidade. Quantidades maiores podem alterar preço unitário e prazo."
-      },
-      {
-        question: "Como o preço é calculado?",
-        answer:
-          "O preço parte da família, do formato, das medidas, da quantidade e dos dados de produção disponíveis. O carrinho consolida itens, desconto e frete antes de criar o pedido."
       },
       {
         question: "Quais formas de pagamento estão disponíveis?",
@@ -76,46 +71,31 @@ const faqSections = [
       {
         question: "Quando a produção começa?",
         answer:
-          "A produção começa depois da aprovação do pagamento e da conferência técnica necessária para o pedido. Se o caso exigir projeto especial, a produção só avança após o briefing ser validado."
+          "O pedido entra em produção logo após a aprovação do pagamento."
       },
       {
         question: "Como o frete é calculado?",
         answer:
           "O carrinho estima o frete a partir do CEP e dos itens configurados. Quando a integração de frete real estiver ativa, a cotação usa o Melhor Envio; sem credenciais, o site preserva o cálculo manual."
-      },
-      {
-        question: "Qual é a diferença entre prazo de produção e prazo de entrega?",
-        answer:
-          "Prazo de produção é o tempo para fabricar e preparar as peças. Prazo de entrega inclui o transporte depois da expedição."
       }
     ]
   },
   {
     id: "material",
-    eyebrow: "Linha atual",
+    eyebrow: "Material",
     title: "Material e acabamento",
     description:
       "As respostas abaixo indicam o padrão atual da linha e quando vale tratar o pedido como projeto técnico.",
     items: [
       {
-        question: "Qual cor está disponível agora?",
-        answer:
-          "A cor padrão da linha atual é preta. Outras cores podem ser discutidas como demanda especial quando fizerem sentido para o projeto."
-      },
-      {
-        question: "Existe acabamento adicional?",
-        answer:
-          "Não na linha atual. As peças são tratadas como componentes funcionais sob medida, com material e acabamento padrão de produção."
-      },
-      {
         question: "O material serve para área interna e externa?",
         answer:
-          "O material foi selecionado para suportar carga e atrito contínuos, mas a aplicação real depende de piso, exposição, umidade e carga. Casos críticos devem ser avaliados antes da compra."
+          "Sim. O material pode ser usado em áreas internas e externas e pode substituir o feltro quando a aplicação pede uma solução sob medida, mais estável e com encaixe definido."
       },
       {
         question: "Quando devo abrir um projeto especial?",
         answer:
-          "Abra projeto especial quando a medida passar da faixa publicada, a geometria não existir no catálogo, a cor fugir do padrão ou a aplicação tiver carga, exposição ou tolerância crítica."
+          "Abra projeto especial quando a medida passar da faixa publicada, a geometria não existir no catálogo ou a aplicação tiver carga, exposição ou tolerância crítica."
       }
     ]
   }
@@ -141,14 +121,14 @@ const faqPaths = [
     title: "Projeto especial",
     href: "/projeto-especial",
     label: "Enviar briefing",
-    body: "Use para medidas fora da matriz, geometria nova, cor especial ou aplicação crítica."
+    body: "Use para medidas fora da matriz, geometria nova ou aplicação crítica."
   }
 ];
 
 export const metadata = {
   title: "FAQ técnico e comercial",
   description:
-    "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, pagamento, frete, produção, material, acabamento e projeto especial.",
+    "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, pagamento, frete, produção, material e projeto especial.",
   alternates: {
     canonical: "/faq"
   }
@@ -197,7 +177,7 @@ export default function FaqPage() {
           <span>Tenha em mãos</span>
           <strong>Medida real, tipo de apoio, quantidade e CEP.</strong>
           <p>
-            Tubo interno e base lisa seguem lógicas diferentes. Se medida, formato, cor ou uso
+            Aplicações diferentes pedem formas de medição diferentes. Se medida, formato ou uso
             saírem do padrão publicado, trate como projeto especial.
           </p>
         </div>
@@ -240,8 +220,8 @@ export default function FaqPage() {
 
       <section className="cta-banner">
         <div>
-          <p className="eyebrow">Ainda ficou dúvida?</p>
-          <h2>Fora do padrão? Trate como projeto técnico, não como pedido comum.</h2>
+          <p className="eyebrow">Ficou em dúvida?</p>
+          <h2>Precisa de um desenho específico?</h2>
           <p>
             O configurador resolve os casos da matriz atual. Casos com tolerância crítica, carga
             incomum ou requisito estético específico devem entrar pelo briefing.
