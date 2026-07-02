@@ -8,6 +8,7 @@ O provedor real implementado e Melhor Envio.
 - O checkout chama a rota interna `POST /api/shipping/quote`.
 - A criacao do pedido recalcula o frete no servidor antes de salvar, sem confiar no valor calculado pelo navegador.
 - Se o provedor estiver sem token ou sem CEP de origem, o site usa fallback manual e registra essa origem no objeto `commerce.shipping`.
+- Quando Melhor Envio esta ativo e configurado, a cotacao registra servico escolhido, alternativas retornadas, origem/destino, quantidade de produtos, peso total, valor segurado e dimensoes maximas do envio.
 
 ## Variaveis necessarias
 
@@ -25,8 +26,9 @@ Como os produtos sao parametricos, o codigo transforma as medidas da peca em dad
 
 - dimensoes enviadas em centimetros;
 - peso enviado em quilogramas;
-- peso vem de `priceBreakdown.materialGrams`;
-- `SHIPPING_PACKAGING_WEIGHT_GRAMS` adiciona peso de embalagem por produto;
+- peso por unidade vem de `priceBreakdown.materialGrams`;
+- valor segurado vem do preco unitario recalculado no servidor;
+- `SHIPPING_PACKAGING_WEIGHT_GRAMS` adiciona peso de embalagem por unidade;
 - `SHIPPING_PRODUCT_PADDING_CM` adiciona folga dimensional;
 - `SHIPPING_MIN_PRODUCT_DIMENSION_CM` e `SHIPPING_MIN_PRODUCT_WEIGHT_KG` impedem valores zerados ou pequenos demais.
 
