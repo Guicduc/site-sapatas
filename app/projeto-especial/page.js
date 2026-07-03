@@ -5,7 +5,7 @@ import { SpecialRequestBuilder } from "@/components/special-request-builder";
 export const metadata = {
   title: "Projeto especial de sapatas",
   description:
-    "Envie um briefing para desenvolver uma sapata fora da matriz padrão. Informe referência, medidas, aplicação, quantidade e prazo desejado.",
+    "Descreva a necessidade de uma sapata ou peça que não está disponível no catálogo da Baseforma.",
   alternates: {
     canonical: "/projeto-especial"
   }
@@ -16,14 +16,14 @@ export default function ProjetoEspecialPage() {
     <>
       <section className="page-panel narrow-panel special-request-hero">
         <p className="eyebrow">Projeto especial</p>
-        <h1>Briefing técnico para sapatas fora da matriz pública.</h1>
+        <h1>Descreva a sua necessidade de peça, que te ajudamos com o desenvolvimento.</h1>
         <p className="lead">
-          Envie medidas, aplicação e contexto de uso para avaliarmos o desenvolvimento. O retorno
-          acontece por e-mail com a próxima etapa e eventuais dúvidas técnicas.
+          Se a forma que você precisa não aparece no catálogo, conte o que a peça deve resolver.
+          Recebemos por e-mail e retornamos com o caminho de desenvolvimento.
         </p>
       </section>
 
-      <Suspense fallback={<div className="surface-card">Carregando briefing...</div>}>
+      <Suspense fallback={<div className="surface-card">Carregando formulário...</div>}>
         <SpecialRequestBuilder />
       </Suspense>
     </>
