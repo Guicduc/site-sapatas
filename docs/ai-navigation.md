@@ -28,7 +28,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 ## Rotas administrativas
 
-- `/admin/pedidos`: lista pedidos, revisao CAD, precificacao, pagamento e links para relatorios/operacao.
+- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal manual e expedicao.
 - `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
 - `/admin/operacao`: fila de producao, capacidade, nota fiscal manual, expedicao e observacoes internas.
 - `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
@@ -93,7 +93,7 @@ As familias atuais publicadas sao:
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
-- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: operacao administrativa de CAD e precificacao.
+- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: componentes legados de apoio tecnico, fora do fluxo administrativo principal. O admin simplificado nao possui etapa manual de CAD/Orca.
 
 ## Pedidos e persistencia
 
@@ -112,6 +112,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal manual, expedicao e capacidade.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
+- `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
 - Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal externa ainda nao possui fornecedor ativo.
 
