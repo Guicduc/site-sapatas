@@ -2,8 +2,11 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { AdminAccessRequired } from "@/components/admin-access-required";
+import { AdminCadPanel } from "@/components/admin-cad-panel";
 import { AdminLogoutForm } from "@/components/admin-logout-form";
+import { AdminPricingPanel } from "@/components/admin-pricing-panel";
 import { adminHref, assertAdminAccess, getAdminAccess } from "@/lib/admin-session";
+import { CAD_STATUS, getGrasshopperPayload, shouldRequireCad } from "@/lib/cad-contract";
 import {
   buildProductionQueue,
   getInvoiceStatusLabel,
@@ -14,7 +17,14 @@ import {
   SHIPMENT_STATUS,
 } from "@/lib/fulfillment";
 import { formatCurrency } from "@/lib/format";
-import { getStoreMode, listOrders, updateOrderFulfillmentState } from "@/lib/order-store";
+import {
+  getOrderById,
+  getStoreMode,
+  listOrders,
+  updateOrderCadState,
+  updateOrderFulfillmentState,
+  updateOrderPricingState
+} from "@/lib/order-store";
 import { ORDER_STATUS, PAYMENT_STATUS, getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 
 const FILTERS = [
@@ -160,7 +170,7 @@ function PrintQueuePanel({ rows, queueSummary, access }) {
       <div className="admin-section-heading">
         <div>
           <h2 id="print-queue-heading">Fila de impressao</h2>
-          <p>Pedidos pagos entram aqui automaticamente. A posicao segue prioridade e data programada.</p>
+          <p>Pedidos pagos e liberados para impressao entram aqui. A posicao segue prioridade e data programada.</p>
         </div>
         <span title="Unidades de trabalho estimadas e dias de capacidade da fila">
           {queueSummary.demandUnits} un. trab. | {queueSummary.estimatedProductionDays} dia(s)
@@ -312,6 +322,7 @@ function PrintModelInputs({ order }) {
 function AdminOrderCard({ row, access, activeFilter }) {
   const { order, fulfillment, queuePosition, capacity, nextAction } = row;
   const payment = order.payments?.[0];
+  const requiresCad = shouldRequireCad(order);
   const itemCount = order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
   const productSummary = formatOrderProducts(order);
   const productionStage = formatProductionStage(fulfillment.production.status);
@@ -447,6 +458,22 @@ function AdminOrderCard({ row, access, activeFilter }) {
             <summary>Revisao tecnica</summary>
             <pre className="brief-preview">{order.technicalReviews[0].notes}</pre>
           </details>
+        )}
+
+        {requiresCad && (
+          <section className="admin-workflow-panels" aria-label="CAD e precificacao">
+            <AdminCadPanel
+              order={{
+                id: order.id,
+                orderNumber: order.orderNumber,
+                cad: order.metadata?.cad || {}
+              }}
+              payload={getGrasshopperPayload(order)}
+              action={registerCadFile}
+              token={access.token}
+            />
+            <AdminPricingPanel order={order} action={calculateOrcaPricing} token={access.token} />
+          </section>
         )}
 
         <section className="admin-order-section">
@@ -594,6 +621,66 @@ function OperationForm({ order, fulfillment, access }) {
       </button>
     </form>
   );
+}
+
+async function registerCadFile(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  const cadFileName = cleanFormValue(formData.get("cadFileName"));
+  const cadModelVersion = cleanFormValue(formData.get("cadModelVersion"));
+
+  if (!orderId || !cadFileName || !cadModelVersion) {
+    return;
+  }
+
+  await updateOrderCadState(orderId, {
+    cadStatus: CAD_STATUS.READY_FOR_PRINT,
+    cadFileName,
+    cadModelVersion
+  });
+  revalidateAdminOrderPaths();
+}
+
+async function calculateOrcaPricing(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  if (!orderId) return;
+
+  const order = await getOrderById(orderId);
+  if (!order) return;
+
+  try {
+    const { priceOrderWithOrca } = await import("@/lib/orca-slicer");
+    const pricing = await priceOrderWithOrca(order);
+    await updateOrderPricingState(orderId, {
+      ...pricing,
+      error: null
+    });
+  } catch (error) {
+    await updateOrderPricingState(orderId, {
+      error: {
+        code: error.code || "orca_pricing_failed",
+        message: error.message || "Nao foi possivel calcular com Orca.",
+        happenedAt: new Date().toISOString()
+      }
+    });
+  }
+
+  revalidateAdminOrderPaths();
 }
 
 async function updateOperation(formData) {
@@ -760,12 +847,10 @@ function getRowFilters({ order, fulfillment }) {
 function isPrintQueueRelevant(order, fulfillment) {
   if (order.paymentStatus !== PAYMENT_STATUS.APPROVED || isCompleted(order, fulfillment)) return false;
   return [
-    PRODUCTION_STATUS.WAITING_CAD,
     PRODUCTION_STATUS.QUEUED,
     PRODUCTION_STATUS.SCHEDULED,
     PRODUCTION_STATUS.IN_PRODUCTION,
-    PRODUCTION_STATUS.QUALITY_CHECK,
-    PRODUCTION_STATUS.BLOCKED
+    PRODUCTION_STATUS.QUALITY_CHECK
   ].includes(fulfillment.production.status);
 }
 
@@ -835,7 +920,15 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
     };
   }
 
-  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK, PRODUCTION_STATUS.BLOCKED].includes(fulfillment.production.status)) {
+  if (fulfillment.production.status === PRODUCTION_STATUS.BLOCKED) {
+    return {
+      tone: "warning",
+      title: "Concluir revisao tecnica",
+      detail: "Pedido bloqueado ate validacao de CAD/operacao."
+    };
+  }
+
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK].includes(fulfillment.production.status)) {
     return {
       tone: "warning",
       title: "Imprimindo",
@@ -859,8 +952,9 @@ function comparePrintQueueRows(left, right) {
 
 function formatProductionStage(status) {
   if (status === PRODUCTION_STATUS.WAITING_PAYMENT) return "Aguardando pagamento";
-  if (status === PRODUCTION_STATUS.WAITING_CAD) return "Aguardando";
-  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK, PRODUCTION_STATUS.BLOCKED].includes(status)) {
+  if (status === PRODUCTION_STATUS.WAITING_CAD) return "Aguardando CAD";
+  if (status === PRODUCTION_STATUS.BLOCKED) return "Bloqueado";
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK].includes(status)) {
     return "Imprimindo";
   }
   if (status === PRODUCTION_STATUS.READY_TO_SHIP) return "Pronto para expedir";
@@ -884,7 +978,10 @@ function resolveSubmittedSimpleStatus({ currentStatus, submittedStatus, simplify
 }
 
 function formatOrderStatusForAdmin(status) {
-  if ([ORDER_STATUS.CAD_PENDING, ORDER_STATUS.CAD_GENERATED, ORDER_STATUS.READY_FOR_PRINT].includes(status)) {
+  if (status === ORDER_STATUS.CAD_PENDING) {
+    return "Pago, aguardando CAD";
+  }
+  if ([ORDER_STATUS.CAD_GENERATED, ORDER_STATUS.READY_FOR_PRINT].includes(status)) {
     return "Pago, na fila de impressao";
   }
   if (status === ORDER_STATUS.PAID_PENDING_REVIEW) {
@@ -897,7 +994,7 @@ function toSimpleProductionStatus(status) {
   if ([PRODUCTION_STATUS.READY_TO_SHIP, PRODUCTION_STATUS.SHIPPED].includes(status)) {
     return PRODUCTION_STATUS.READY_TO_SHIP;
   }
-  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK, PRODUCTION_STATUS.BLOCKED].includes(status)) {
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK].includes(status)) {
     return PRODUCTION_STATUS.IN_PRODUCTION;
   }
   return PRODUCTION_STATUS.QUEUED;

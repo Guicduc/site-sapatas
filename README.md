@@ -41,8 +41,6 @@ Use `.env.example` como base.
 - `ADMIN_ACCESS_TOKEN`: token usado para iniciar sessao nas areas administrativas.
 - `ADMIN_SESSION_SECRET`: assina o cookie HttpOnly do admin. Se vazio, usa `ACCOUNT_SESSION_SECRET`; em producao, configure um valor proprio.
 - `ACCOUNT_SESSION_SECRET`: assina as sessoes da area do cliente e e obrigatorio em producao.
-- `GOOGLE_OAUTH_CLIENT_ID` e `GOOGLE_OAUTH_CLIENT_SECRET`: habilitam o botao "Entrar com Google" em `/conta`. Configure no Google Cloud o redirect URI publico como `/api/account/google/callback` na URL de `NEXT_PUBLIC_SITE_URL`.
-- `GOOGLE_OAUTH_LOGIN_HINT`: e-mail sugerido na tela Google, opcional. Para operar com a conta preferencial deste projeto, use `gemignanidesign@gmail.com`.
 - `RESEND_API_KEY` e `ACCOUNT_EMAIL_FROM`: enviam o codigo de uso unico da conta em producao.
 - `TRANSACTIONAL_EMAIL_FROM` e `TRANSACTIONAL_EMAIL_REPLY_TO`: configuram e-mails opcionais de pedido criado e pagamento aprovado/nao aprovado. Se `TRANSACTIONAL_EMAIL_FROM` nao existir, o app usa `ACCOUNT_EMAIL_FROM`.
 - `SHIPPING_PROVIDER`: `manual` ou `melhor_envio`. Em `melhor_envio`, o checkout consulta frete real por `/api/shipping/quote` e o pedido recalcula o frete no servidor antes de salvar.

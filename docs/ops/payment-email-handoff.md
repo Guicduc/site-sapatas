@@ -18,7 +18,7 @@ Atualizado em 29/06/2026.
   - `A baseforma.com.br -> 216.198.79.1`.
   - `CNAME www.baseforma.com.br -> f81d286f1555399c.vercel-dns-017.com.`
   - DKIM/SPF/MX do Resend para envio pelo subdominio `send`.
-- Dominio `baseforma.com.br` no Resend ficou em verificacao `Pending`, aguardando propagacao DNS.
+- Dominio `send.baseforma.com.br` no Resend ficou em verificacao `Pending`, aguardando propagacao DNS.
 
 ## Mercado Pago
 
@@ -60,6 +60,7 @@ Separacao recomendada:
   - `atendimento@baseforma.com.br`
   - `pedidos@baseforma.com.br`
   - `conta@baseforma.com.br`
+  - `projetos@baseforma.com.br`
 
 Google Workspace e um provedor gerenciado de e-mail com dominio customizado. Para recebimento humano, o MX do dominio raiz deve apontar para o Google Workspace conforme o Admin Console. O Resend deve permanecer no subdominio `send.baseforma.com.br` para envio transacional, sem disputar o MX do dominio raiz.
 

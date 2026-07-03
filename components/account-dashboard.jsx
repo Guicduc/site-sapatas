@@ -330,10 +330,14 @@ function getClientOrderStatusLabel(order) {
   if (order.status === ORDER_STATUS.CANCELLED) return "Cancelado";
   if (PAYMENT_ACTION_NEEDED.has(order.paymentStatus)) return getOrderStatusLabel(order.status);
 
+  const productionStatus = order.fulfillment?.production?.status || "";
   const shipmentStatus = order.fulfillment?.shipment?.status || "";
 
   if (shipmentStatus === "delivered") return "Concluído";
   if (["packing", "ready_for_pickup", "shipped"].includes(shipmentStatus)) return "Enviando";
+  if (["waiting_cad", "blocked"].includes(productionStatus) || order.status === ORDER_STATUS.PAID_PENDING_REVIEW) return "Validação técnica";
+  if (productionStatus === "ready_to_ship") return "Pronto para expedir";
+  if (["queued", "scheduled"].includes(productionStatus)) return "Na fila de produção";
 
   return "Em produção";
 }

@@ -4,7 +4,7 @@ Este documento registra a regra operacional da fila de impressao usada no admin.
 
 ## Objetivo
 
-Manter uma lista simples de pedidos pagos que precisam ser impressos, sem tratar CAD como uma etapa manual separada. A geracao de modelos faz parte da operacao e deve ser automatizada pelo fluxo interno.
+Manter uma lista simples de pedidos pagos e liberados tecnicamente que precisam ser impressos. Pedidos que ainda dependem de CAD, revisao tecnica ou correcao de precificacao continuam visiveis no admin, mas nao ocupam posicao nem capacidade na fila de impressao.
 
 ## Entrada na fila
 
@@ -12,10 +12,11 @@ Um pedido entra na fila quando:
 
 - foi criado no checkout proprio;
 - tem pagamento aprovado pelo Mercado Pago;
+- ja passou pelo gate de CAD/revisao tecnica quando `shouldRequireCad` exigir modelo;
 - nao esta cancelado;
 - ainda nao foi expedido.
 
-Pedidos criados sem pagamento continuam visiveis no filtro `Pagamento`, mas nao devem ocupar posicao na fila de impressao.
+Pedidos criados sem pagamento continuam visiveis no filtro `Pagamento`, mas nao devem ocupar posicao na fila de impressao. Pedidos em `waiting_cad` ou `blocked` devem ser resolvidos na ficha do pedido antes de entrar na fila.
 
 ## Estados operacionais
 
