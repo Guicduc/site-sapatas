@@ -10,27 +10,24 @@ export function SpecialRequestBuilder() {
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
   const [reference, setReference] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [deadline, setDeadline] = useState("");
   const [project, setProject] = useState("");
 
   const subject = "Projeto especial de sapata";
   const body = [
-    "Olá, quero solicitar uma avaliação para projeto especial de sapata.",
+    "Olá, quero solicitar uma avaliação para uma peça especial.",
     "",
     `Nome: ${name || "Não informado"}`,
     `E-mail: ${email || "Não informado"}`,
     `Empresa: ${company || "Não informado"}`,
     `Telefone: ${phone || "Não informado"}`,
-    `Produto de referência: ${reference || "Não informado"}`,
-    `Quantidade estimada: ${quantity || "Não informado"}`,
-    `Prazo desejado: ${deadline || "Não informado"}`,
+    `Produto ou família de referência: ${reference || "Não informado"}`,
     "",
-    "Descrição técnica:",
+    "Necessidade da peça:",
     project || "Não informado"
   ].join("\n");
   const mailtoHref = `mailto:${projectsEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  const canSubmit = name.trim() && email.trim() && project.trim();
+  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canSubmit = name.trim() && emailIsValid && project.trim();
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -44,17 +41,19 @@ export function SpecialRequestBuilder() {
     <div className="brief-grid special-request-layout">
       <form className="surface-card brief-form" onSubmit={handleSubmit}>
         <div className="brief-form__heading">
-          <p className="eyebrow">Briefing</p>
-          <h2>Dados para avaliação</h2>
+          <p className="eyebrow">Formulário</p>
+          <h2>Descreva a sua necessidade de peça, que te ajudamos com o desenvolvimento</h2>
           <p>
-            Preencha o essencial para reduzir retornos: contato, referência de produto, medidas,
-            quantidade e condição de uso.
+            Use este canal para peças que não existem no catálogo: outro formato, outro encaixe,
+            uma geometria específica ou uma solução feita para o seu móvel.
           </p>
         </div>
 
         <div className="field-row">
           <label className="field">
-            <span>Nome</span>
+            <span>
+              Nome <small className="required-label">obrigatório</small>
+            </span>
             <input
               autoComplete="name"
               required
@@ -64,7 +63,9 @@ export function SpecialRequestBuilder() {
           </label>
 
           <label className="field">
-            <span>E-mail</span>
+            <span>
+              E-mail <small className="required-label">obrigatório</small>
+            </span>
             <input
               autoComplete="email"
               inputMode="email"
@@ -79,97 +80,56 @@ export function SpecialRequestBuilder() {
 
         <div className="field-row">
           <label className="field">
-            <span>Empresa</span>
+            <span>
+              Empresa <small className="optional-label">opcional</small>
+            </span>
             <input
               autoComplete="organization"
               value={company}
-              placeholder="Opcional"
+              placeholder="Nome da empresa"
               onChange={(event) => setCompany(event.target.value)}
             />
           </label>
 
           <label className="field">
-            <span>Telefone</span>
+            <span>
+              Telefone <small className="optional-label">opcional</small>
+            </span>
             <input
               autoComplete="tel"
               inputMode="tel"
               value={phone}
-              placeholder="Opcional"
+              placeholder="(11) 00000-0000"
               onChange={(event) => setPhone(event.target.value)}
             />
           </label>
         </div>
 
-        <div className="field-row">
-          <label className="field">
-            <span>Produto de referência</span>
-            <input
-              value={reference}
-              placeholder="Ex.: tubo redondo, tubo quadrado, sapata lisa"
-              onChange={(event) => setReference(event.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span>Quantidade estimada</span>
-            <input
-              inputMode="numeric"
-              value={quantity}
-              placeholder="Ex.: 12 unidades"
-              onChange={(event) => setQuantity(event.target.value)}
-            />
-          </label>
-        </div>
-
         <label className="field">
-          <span>Prazo desejado</span>
+          <span>Produto ou família de referência</span>
           <input
-            value={deadline}
-            placeholder="Ex.: preciso validar protótipo em 15 dias"
-            onChange={(event) => setDeadline(event.target.value)}
+            value={reference}
+            placeholder="Ex.: vi uma sapata parecida no catálogo, mas preciso de outro formato"
+            onChange={(event) => setReference(event.target.value)}
           />
         </label>
 
         <label className="field field-wide">
-          <span>Descreva o projeto</span>
+          <span>
+            Necessidade da peça <small className="required-label">obrigatório</small>
+          </span>
           <textarea
             required
-            aria-describedby="project-help"
-            placeholder="Ex.: tubo 24 mm interno, base 28 mm, altura 14 mm, uso em mesa de jantar com pé metálico. Informar carga, tipo de piso e restrições de montagem ajuda na avaliação."
+            placeholder="Descreva a forma que você precisa, onde a peça será usada e o que falta nas opções do site. Ex.: preciso de uma sapata para um pé inclinado, com desenho oval, encaixe interno e acabamento discreto para uma cadeira autoral."
             value={project}
             onChange={(event) => setProject(event.target.value)}
           />
-          <small id="project-help" className="field-help">
-            Inclua medidas internas e externas, aplicação, material do móvel, cor desejada e qualquer
-            restrição de montagem.
-          </small>
         </label>
 
         <button className="button button-primary button-block" type="submit" disabled={!canSubmit}>
-          Enviar briefing por e-mail
+          Enviar para {projectsEmail}
         </button>
       </form>
-
-      <aside className="surface-card brief-preview-card">
-        <p className="eyebrow">Destino</p>
-        <h2>{projectsEmail}</h2>
-        <p>
-          O formulário monta um e-mail com o briefing técnico preenchido. Depois do envio, a equipe
-          avalia viabilidade, dados faltantes e próximo passo.
-        </p>
-
-        <div className="brief-email-card" aria-label="Resumo do e-mail">
-          <span>Assunto</span>
-          <strong>{subject}</strong>
-        </div>
-
-        <ul className="brief-checklist">
-          <li>Medidas e encaixe</li>
-          <li>Aplicação e tipo de piso</li>
-          <li>Quantidade e prazo</li>
-          <li>Referência visual ou família próxima</li>
-        </ul>
-      </aside>
     </div>
   );
 }

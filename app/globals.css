@@ -2117,8 +2117,12 @@ dt {
   line-height: 1.5;
 }
 
-.special-request-layout {
-  background: var(--surface);
+.brief-grid.special-request-layout {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+  width: min(760px, 100%);
+  margin: 0 auto;
+  background: transparent;
 }
 
 .brief-grid {
@@ -2158,18 +2162,26 @@ dt {
 }
 
 .brief-form textarea {
-  min-height: 152px;
+  min-height: 190px;
   resize: vertical;
+}
+
+.brief-form .field > span {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
 }
 
 .brief-form .button {
   margin-top: 2px;
 }
 
-.field-help {
+.required-label,
+.optional-label {
   color: var(--ink-soft);
-  font-size: 0.86rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .brief-preview-card {
@@ -2183,6 +2195,11 @@ dt {
 
 .brief-preview-card h2 {
   font-size: 1.55rem;
+}
+
+.brief-email-link {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }
 
 .brief-preview-card p:not(.eyebrow) {
@@ -2307,6 +2324,16 @@ dt {
   align-content: start;
   padding: clamp(22px, 3vw, 36px);
   border-top: 0;
+  border-bottom: 0;
+}
+
+.brief-grid.special-request-layout {
+  grid-template-columns: minmax(0, 760px);
+}
+
+.brief-grid.special-request-layout > .surface-card,
+.brief-grid.special-request-layout > .surface-card:nth-child(odd) {
+  border-right: 0;
   border-bottom: 0;
 }
 
