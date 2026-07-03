@@ -10,6 +10,9 @@ export function SpecialRequestBuilder() {
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
   const [reference, setReference] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [deadline, setDeadline] = useState("");
+  const [constraints, setConstraints] = useState("");
   const [project, setProject] = useState("");
 
   const subject = "Projeto especial de sapata";
@@ -21,13 +24,15 @@ export function SpecialRequestBuilder() {
     `Empresa: ${company || "Não informado"}`,
     `Telefone: ${phone || "Não informado"}`,
     `Produto ou família de referência: ${reference || "Não informado"}`,
+    `Quantidade estimada: ${quantity || "Não informado"}`,
+    `Prazo desejado: ${deadline || "Não informado"}`,
+    `Medidas, material ou restrições: ${constraints || "Não informado"}`,
     "",
     "Necessidade da peça:",
     project || "Não informado"
   ].join("\n");
   const mailtoHref = `mailto:${projectsEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canSubmit = name.trim() && emailIsValid && project.trim();
+  const canSubmit = name.trim() && email.trim() && project.trim();
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -111,6 +116,42 @@ export function SpecialRequestBuilder() {
             value={reference}
             placeholder="Ex.: vi uma sapata parecida no catálogo, mas preciso de outro formato"
             onChange={(event) => setReference(event.target.value)}
+          />
+        </label>
+
+        <div className="field-row">
+          <label className="field">
+            <span>
+              Quantidade estimada <small className="optional-label">opcional</small>
+            </span>
+            <input
+              inputMode="numeric"
+              value={quantity}
+              placeholder="Ex.: 40 unidades"
+              onChange={(event) => setQuantity(event.target.value)}
+            />
+          </label>
+
+          <label className="field">
+            <span>
+              Prazo desejado <small className="optional-label">opcional</small>
+            </span>
+            <input
+              value={deadline}
+              placeholder="Ex.: ate a primeira semana de agosto"
+              onChange={(event) => setDeadline(event.target.value)}
+            />
+          </label>
+        </div>
+
+        <label className="field field-wide">
+          <span>
+            Medidas, material ou restrições <small className="optional-label">opcional</small>
+          </span>
+          <textarea
+            value={constraints}
+            placeholder="Inclua medidas importantes, tipo de piso, tubo ou móvel, material esperado, carga, cor, acabamento ou qualquer limite de instalação."
+            onChange={(event) => setConstraints(event.target.value)}
           />
         </label>
 
