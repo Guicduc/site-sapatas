@@ -1,12 +1,11 @@
 import { Suspense } from "react";
 
 import { SpecialRequestBuilder } from "@/components/special-request-builder";
-import { families } from "@/lib/site-data";
 
 export const metadata = {
   title: "Projeto especial de sapatas",
   description:
-    "Envie um briefing para desenvolver uma sapata fora da matriz padrão. Informe família de referência, medidas, aplicação, quantidade e acabamento desejado.",
+    "Envie um briefing para desenvolver uma sapata fora da matriz padrão. Informe referência, medidas, aplicação, quantidade e prazo desejado.",
   alternates: {
     canonical: "/projeto-especial"
   }
@@ -16,16 +15,16 @@ export default function ProjetoEspecialPage() {
   return (
     <>
       <section className="page-panel narrow-panel special-request-hero">
-        <p className="eyebrow">Linha premium</p>
-        <h1>Precisa de algo mais específico? Nós desenvolvemos.</h1>
+        <p className="eyebrow">Projeto especial</p>
+        <h1>Briefing técnico para sapatas fora da matriz pública.</h1>
         <p className="lead">
-          Aqui desenvolvemos formatos especiais sem necessidade de pedido mínimo, entre em
-          contato e vamos solucionar sua demanda.
+          Envie medidas, aplicação e contexto de uso para avaliarmos o desenvolvimento. O retorno
+          acontece por e-mail com a próxima etapa e eventuais dúvidas técnicas.
         </p>
       </section>
 
-      <Suspense fallback={<div className="surface-card">Carregando briefing…</div>}>
-        <SpecialRequestBuilder families={families} />
+      <Suspense fallback={<div className="surface-card">Carregando briefing...</div>}>
+        <SpecialRequestBuilder />
       </Suspense>
     </>
   );

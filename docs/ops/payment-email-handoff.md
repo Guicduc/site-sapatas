@@ -46,7 +46,6 @@ Webhook esperado no painel Mercado Pago:
 
 Estado do login nesta sessao:
 
-- Login por Google no browser embutido travou em `accounts.google.com/gsi/transform`.
 - Login por e-mail avancou.
 - Verificacao por WhatsApp foi selecionada e o codigo foi confirmado.
 - Depois disso, Mercado Pago exigiu reconhecimento facial.
@@ -57,14 +56,14 @@ Estado do login nesta sessao:
 Separacao recomendada:
 
 - Resend: manter para e-mails transacionais do site, como codigo de acesso, pedido criado e pagamento resolvido.
-- Proton Mail: usar para caixas humanas do dominio, por exemplo:
+- Google Workspace: usar para caixas humanas do dominio, por exemplo:
   - `atendimento@baseforma.com.br`
   - `pedidos@baseforma.com.br`
   - `conta@baseforma.com.br`
 
-Proton Mail nao e self-hosted. Ele e um provedor gerenciado de e-mail com dominio customizado. Se a decisao for Proton, adicionar no DNS os registros exigidos por ele para recebimento e autenticacao de e-mail. Antes de adicionar MX do Proton no dominio raiz, revisar conflito com qualquer recebimento configurado no Resend.
+Google Workspace e um provedor gerenciado de e-mail com dominio customizado. Para recebimento humano, o MX do dominio raiz deve apontar para o Google Workspace conforme o Admin Console. O Resend deve permanecer no subdominio `send.baseforma.com.br` para envio transacional, sem disputar o MX do dominio raiz.
 
-Nao usar Proton como canal primario dos envios automaticos do app sem uma decisao explicita. Isso evita limite de SMTP, bloqueios por automacao e acoplamento entre inbox humano e transacional.
+Nao usar Google Workspace como canal primario dos envios automaticos do app sem uma decisao explicita. Isso evita limite de SMTP, bloqueios por automacao e acoplamento entre inbox humano e transacional.
 
 ## Proximo chat
 
@@ -75,4 +74,4 @@ Ordem recomendada:
 3. Criar/acessar app da Baseforma.
 4. Configurar `MERCADO_PAGO_ACCESS_TOKEN` e webhook no Vercel.
 5. Fazer pedido teste em sandbox ou producao controlada, conforme credenciais disponiveis.
-6. Decidir Proton Mail ou outro provedor para caixas humanas e adicionar DNS correspondente.
+6. Concluir Google Workspace para caixas humanas e confirmar DNS de recebimento/autenticacao.
