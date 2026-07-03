@@ -21,9 +21,9 @@ Pedidos criados sem pagamento continuam visiveis no filtro `Pagamento`, mas nao 
 
 Use apenas estes estados no trabalho diario:
 
-- `Registrado na fila`: pedido pago, pronto para ser considerado na ordem de impressao.
-- `Aguardando`: pedido pago com alguma pendencia operacional antes de concluir a impressao.
-- `Concluida`: impressao finalizada, pedido pronto para nota fiscal manual e expedicao.
+- `Aguardando`: pedido pago na fila, ainda sem impressao iniciada.
+- `Imprimindo`: producao em andamento na mesa/impressora definida.
+- `Pronto para expedir`: impressao finalizada, pedido pronto para nota fiscal manual e expedicao.
 
 ## Expedicao
 
@@ -32,6 +32,8 @@ A expedicao tambem deve ficar simples:
 - `Aguardando expedicao`: ainda sem despacho.
 - `Pronto para expedir`: impressao concluida e pacote pronto para saida/coleta.
 - `Expedido`: pedido saiu da operacao e deve ter rastreio ou registro de retirada.
+
+Nota fiscal nao faz parte da fila de impressao. O Mercado Pago resolve pagamento, mas a emissao fiscal continua fora dele no fluxo atual; enquanto nao houver fornecedor fiscal integrado, mantenha `INVOICE_PROVIDER=manual` e trate NF na etapa de expedicao/fechamento operacional.
 
 ## Ordenacao
 
@@ -42,6 +44,10 @@ A fila usa a ordenacao de `lib/fulfillment.js`:
 - depois data de criacao do pedido.
 
 A capacidade diaria continua configurada por `PRODUCTION_DAILY_UNIT_CAPACITY`.
+
+## Inputs de modelo
+
+Cada item da fila pode ser expandido no admin para mostrar os inputs do modelo parametrico por produto comprado. Pedidos com mais de um tipo de produto devem listar um bloco de inputs por item, com SKU, familia/formato, quantidade e medidas.
 
 ## Notion
 

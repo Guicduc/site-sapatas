@@ -26,9 +26,24 @@ const FILTERS = [
 ];
 
 const SIMPLE_PRODUCTION_OPTIONS = [
-  { value: PRODUCTION_STATUS.QUEUED, label: "Registrado na fila" },
-  { value: PRODUCTION_STATUS.BLOCKED, label: "Aguardando" },
-  { value: PRODUCTION_STATUS.READY_TO_SHIP, label: "Concluida" }
+  {
+    value: PRODUCTION_STATUS.QUEUED,
+    label: "Aguardando",
+    description: "Pedido aguardando inicio de impressao.",
+    tone: "info"
+  },
+  {
+    value: PRODUCTION_STATUS.IN_PRODUCTION,
+    label: "Imprimindo",
+    description: "Producao em andamento na mesa/impressora.",
+    tone: "warning"
+  },
+  {
+    value: PRODUCTION_STATUS.READY_TO_SHIP,
+    label: "Pronto para expedir",
+    description: "Impressao concluida.",
+    tone: "success"
+  }
 ];
 
 const SIMPLE_INVOICE_OPTIONS = [
@@ -110,6 +125,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
           <Link
             className={`admin-workspace-tab${activeFilter === filter.id ? " is-active" : ""}`}
             href={adminHref(`/admin/pedidos?fila=${filter.id}`, access)}
+            aria-current={activeFilter === filter.id ? "page" : undefined}
             key={filter.id}
           >
             <span>{filter.label}</span>
@@ -118,11 +134,11 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
         ))}
       </nav>
 
-      {activeFilter === "todos" && (
-        <PrintQueuePanel rows={printQueueRows} queueSummary={printQueueSummary} />
+      {activeFilter === "impressao" && (
+        <PrintQueuePanel rows={printQueueRows} queueSummary={printQueueSummary} access={access} />
       )}
 
-      {filteredRows.length === 0 ? (
+      {activeFilter === "impressao" ? null : filteredRows.length === 0 ? (
         <article className="empty-cart">
           <h2>Nenhum pedido nesta etapa.</h2>
           <p>Quando um pedido entrar em {getFilterEmptyLabel(activeFilter)}, ele aparecera nesta lista.</p>
@@ -138,7 +154,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
   );
 }
 
-function PrintQueuePanel({ rows, queueSummary }) {
+function PrintQueuePanel({ rows, queueSummary, access }) {
   return (
     <section className="admin-print-queue" aria-labelledby="print-queue-heading">
       <div className="admin-section-heading">
@@ -146,7 +162,9 @@ function PrintQueuePanel({ rows, queueSummary }) {
           <h2 id="print-queue-heading">Fila de impressao</h2>
           <p>Pedidos pagos entram aqui automaticamente. A posicao segue prioridade e data programada.</p>
         </div>
-        <span>{queueSummary.demandUnits} un. trab. | {queueSummary.estimatedProductionDays} dia(s)</span>
+        <span title="Unidades de trabalho estimadas e dias de capacidade da fila">
+          {queueSummary.demandUnits} un. trab. | {queueSummary.estimatedProductionDays} dia(s)
+        </span>
       </div>
 
       {rows.length === 0 ? (
@@ -155,17 +173,138 @@ function PrintQueuePanel({ rows, queueSummary }) {
         <ol className="admin-print-queue__list">
           {rows.map((row) => (
             <li className="admin-print-queue__item" key={row.order.id}>
-              <strong>{row.queuePosition ? `#${row.queuePosition}` : "Sem posicao"}</strong>
-              <span>
-                {row.order.orderNumber}
-                <small>{row.order.customer.name || "Cliente"} | {formatOrderProducts(row.order)}</small>
-              </span>
-              <em>{formatProductionStage(row.fulfillment.production.status)}</em>
-              <small>{formatCapacitySummary(row.capacity, row.fulfillment, row.order.items.length)}</small>
+              <details className="admin-print-queue__details">
+                <summary className="admin-print-queue__summary">
+                  <strong>{row.queuePosition ? `#${row.queuePosition}` : "Sem posicao"}</strong>
+                  <span>
+                    {row.order.orderNumber}
+                    <small>{row.order.customer.name || "Cliente"} | {formatOrderProducts(row.order)}</small>
+                  </span>
+                  <em>{formatProductionStage(row.fulfillment.production.status)}</em>
+                  <small title="Unidades de trabalho e estimativa de dia na fila">
+                    {formatCapacitySummary(row.capacity, row.fulfillment, row.order.items.length)}
+                  </small>
+                </summary>
+
+                <div className="admin-print-queue__expanded">
+                  <PrintModelInputs order={row.order} />
+                  <section className="admin-order-section">
+                    <div className="admin-section-heading">
+                      <div>
+                        <h3>Controle de impressao</h3>
+                        <p>Status, prioridade e mesa/impressora desta fila. Nota fiscal e expedicao ficam fora desta etapa.</p>
+                      </div>
+                      <span>{formatProductionStage(row.fulfillment.production.status)}</span>
+                    </div>
+                    <PrintQueueForm order={row.order} fulfillment={row.fulfillment} access={access} />
+                  </section>
+                </div>
+              </details>
             </li>
           ))}
         </ol>
       )}
+    </section>
+  );
+}
+
+function PrintQueueForm({ order, fulfillment, access }) {
+  return (
+    <form className="print-queue-form" action={updatePrintQueue}>
+      <input type="hidden" name="orderId" value={order.id} />
+      <input type="hidden" name="token" value={access.token} />
+      <input type="hidden" name="currentProductionStatus" value={fulfillment.production.status} />
+
+      <fieldset className="print-status-group">
+        <legend>Status da impressao</legend>
+        <div className="print-status-options">
+          {SIMPLE_PRODUCTION_OPTIONS.map((status) => (
+            <label className={`print-status-option print-status-option--${status.tone}`} key={status.value}>
+              <input
+                type="radio"
+                name="productionStatus"
+                value={status.value}
+                defaultChecked={toSimpleProductionStatus(fulfillment.production.status) === status.value}
+              />
+              <span className="print-status-card">
+                <strong>{status.label}</strong>
+                <small>{status.description}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <label className="field">
+        <span>Prioridade</span>
+        <select name="productionPriority" defaultValue={fulfillment.production.priority}>
+          {["normal", "high", "urgent", "low"].map((priority) => (
+            <option key={priority} value={priority}>{formatPriorityLabel(priority)}</option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>Data</span>
+        <input name="scheduledDate" type="date" defaultValue={fulfillment.production.scheduledDate} />
+      </label>
+      <label className="field">
+        <span>Mesa/impressora</span>
+        <input name="machine" defaultValue={fulfillment.production.machine} placeholder="Mesa 1 / P2S-04" />
+      </label>
+      <label className="field">
+        <span>Responsavel</span>
+        <input name="operator" defaultValue={fulfillment.production.operator} placeholder="Operador" />
+      </label>
+      <label className="field field-wide">
+        <span>Notas da impressao</span>
+        <textarea name="productionNotes" defaultValue={fulfillment.production.notes} rows={3} />
+      </label>
+
+      <button className="button button-primary" type="submit">
+        Salvar fila
+      </button>
+    </form>
+  );
+}
+
+function PrintModelInputs({ order }) {
+  if (!order.items.length) {
+    return (
+      <section className="admin-order-section">
+        <h3>Inputs do modelo</h3>
+        <p className="admin-note">Pedido especial sem item parametrico.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="admin-order-section">
+      <h3>Inputs Grasshopper/modelo</h3>
+      <div className="admin-model-inputs">
+        {order.items.map((item) => (
+          <article className="admin-model-input-card" key={item.id}>
+            <div className="admin-model-input-card__header">
+              <strong>{formatProductName(item)}</strong>
+              <span>{item.quantity} un.</span>
+            </div>
+            <dl className="cad-input-grid">
+              <div>
+                <dt>SKU</dt>
+                <dd>{item.sku || "N/A"}</dd>
+              </div>
+              <div>
+                <dt>Modelo</dt>
+                <dd>{formatModelKey(item)}</dd>
+              </div>
+              {Object.entries(item.values || {}).map(([key, value]) => (
+                <div key={key}>
+                  <dt>{formatParameterLabel(key)}</dt>
+                  <dd>{formatParameterValue(value)}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
@@ -518,6 +657,39 @@ async function updateOperation(formData) {
   revalidateAdminOrderPaths();
 }
 
+async function updatePrintQueue(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  if (!orderId) return;
+
+  const currentProductionStatus = cleanFormValue(formData.get("currentProductionStatus"));
+  const submittedProductionStatus = cleanFormValue(formData.get("productionStatus")) || PRODUCTION_STATUS.QUEUED;
+
+  await updateOrderFulfillmentState(orderId, {
+    production: {
+      status: resolveSubmittedSimpleStatus({
+        currentStatus: currentProductionStatus,
+        submittedStatus: submittedProductionStatus,
+        simplify: toSimpleProductionStatus
+      }),
+      priority: cleanFormValue(formData.get("productionPriority")) || "normal",
+      scheduledDate: cleanFormValue(formData.get("scheduledDate")),
+      machine: cleanFormValue(formData.get("machine")),
+      operator: cleanFormValue(formData.get("operator")),
+      notes: cleanFormValue(formData.get("productionNotes"))
+    }
+  });
+
+  revalidateAdminOrderPaths();
+}
+
 function buildOrderRows(orders, queue) {
   const queueByOrderId = new Map(queue.map((item) => [item.order.id, item]));
 
@@ -663,17 +835,17 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
     };
   }
 
-  if ([PRODUCTION_STATUS.BLOCKED, PRODUCTION_STATUS.WAITING_CAD].includes(fulfillment.production.status)) {
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK, PRODUCTION_STATUS.BLOCKED].includes(fulfillment.production.status)) {
     return {
       tone: "warning",
-      title: "Aguardando operacao",
-      detail: "Resolver pendencia antes de concluir."
+      title: "Imprimindo",
+      detail: "Acompanhar mesa e marcar como pronto ao concluir."
     };
   }
 
   return {
     tone: "info",
-    title: queuePosition ? `Fila de impressao #${queuePosition}` : "Registrar na fila",
+    title: queuePosition ? `Aguardando #${queuePosition}` : "Aguardando impressao",
     detail: formatProductionStage(fulfillment.production.status)
   };
 }
@@ -687,13 +859,23 @@ function comparePrintQueueRows(left, right) {
 
 function formatProductionStage(status) {
   if (status === PRODUCTION_STATUS.WAITING_PAYMENT) return "Aguardando pagamento";
-  if (status === PRODUCTION_STATUS.WAITING_CAD) return "Aguardando modelo";
-  if (status === PRODUCTION_STATUS.BLOCKED) {
-    return "Aguardando";
+  if (status === PRODUCTION_STATUS.WAITING_CAD) return "Aguardando";
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK, PRODUCTION_STATUS.BLOCKED].includes(status)) {
+    return "Imprimindo";
   }
-  if (status === PRODUCTION_STATUS.READY_TO_SHIP) return "Concluida";
+  if (status === PRODUCTION_STATUS.READY_TO_SHIP) return "Pronto para expedir";
   if (status === PRODUCTION_STATUS.SHIPPED) return "Expedida";
-  return "Registrado na fila";
+  return "Aguardando";
+}
+
+function formatPriorityLabel(priority) {
+  const labels = {
+    urgent: "Urgente",
+    high: "Alta",
+    normal: "Normal",
+    low: "Baixa"
+  };
+  return labels[priority] || priority || "Normal";
 }
 
 function resolveSubmittedSimpleStatus({ currentStatus, submittedStatus, simplify }) {
@@ -712,11 +894,11 @@ function formatOrderStatusForAdmin(status) {
 }
 
 function toSimpleProductionStatus(status) {
-  if ([PRODUCTION_STATUS.BLOCKED, PRODUCTION_STATUS.WAITING_CAD, PRODUCTION_STATUS.WAITING_PAYMENT].includes(status)) {
-    return PRODUCTION_STATUS.BLOCKED;
-  }
   if ([PRODUCTION_STATUS.READY_TO_SHIP, PRODUCTION_STATUS.SHIPPED].includes(status)) {
     return PRODUCTION_STATUS.READY_TO_SHIP;
+  }
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK, PRODUCTION_STATUS.BLOCKED].includes(status)) {
+    return PRODUCTION_STATUS.IN_PRODUCTION;
   }
   return PRODUCTION_STATUS.QUEUED;
 }
@@ -813,6 +995,10 @@ function formatProductName(item) {
   if (productNames[key]) return productNames[key];
 
   return [item.categoryName, item.formatName].filter(Boolean).join(" | ") || item.sku || "Produto sem nome";
+}
+
+function formatModelKey(item) {
+  return [item.categorySlug, item.formatSlug].filter(Boolean).join(" / ") || "modelo-parametrico";
 }
 
 function formatParameterLabel(key) {
