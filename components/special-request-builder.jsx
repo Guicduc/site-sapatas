@@ -12,7 +12,6 @@ export function SpecialRequestBuilder() {
   const [reference, setReference] = useState("");
   const [quantity, setQuantity] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [constraints, setConstraints] = useState("");
   const [project, setProject] = useState("");
 
   const subject = "Projeto especial de sapata";
@@ -26,7 +25,6 @@ export function SpecialRequestBuilder() {
     `Produto ou família de referência: ${reference || "Não informado"}`,
     `Quantidade estimada: ${quantity || "Não informado"}`,
     `Prazo desejado: ${deadline || "Não informado"}`,
-    `Medidas, material ou restrições: ${constraints || "Não informado"}`,
     "",
     "Necessidade da peça:",
     project || "Não informado"
@@ -143,17 +141,6 @@ export function SpecialRequestBuilder() {
             />
           </label>
         </div>
-
-        <label className="field field-wide">
-          <span>
-            Medidas, material ou restrições <small className="optional-label">opcional</small>
-          </span>
-          <textarea
-            value={constraints}
-            placeholder="Inclua medidas importantes, tipo de piso, tubo ou móvel, material esperado, carga, cor, acabamento ou qualquer limite de instalação."
-            onChange={(event) => setConstraints(event.target.value)}
-          />
-        </label>
 
         <label className="field field-wide">
           <span>
