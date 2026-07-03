@@ -21,7 +21,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/configurar/[categoria]`: abre o configurador de uma categoria de produto.
 - `/carrinho`: exibe itens salvos no carrinho local do navegador.
 - `/pedido-confirmado`: mostra o resultado do pedido/pagamento.
-- `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. Pode entrar por codigo de e-mail ou Google OAuth quando configurado.
+- `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. Entra por codigo enviado ao e-mail vinculado ao pedido.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
 - `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
@@ -39,13 +39,12 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/orders`: cria pedido a partir do carrinho usando `buildOrderDraft` e `createOrder`.
 - `GET /api/orders/[id]`: consulta pedido.
 - `POST/DELETE /api/account/session`: inicia ou encerra a sessao da conta.
-- `GET /api/account/google/start` e `GET /api/account/google/callback`: iniciam e concluem login Google opcional da conta do cliente usando OAuth com PKCE.
 - `POST /api/cart-recovery`: salva ou converte lead de recuperacao de carrinho. O endpoint recalcula totais no servidor e aplica rate limit em memoria.
 - `POST /api/shipping/quote`: calcula frete para o checkout. Usa `SHIPPING_PROVIDER=melhor_envio` quando configurado e fallback manual quando nao houver token/CEP de origem.
 - `POST /api/payments/mercado-pago/preference`: cria preferencia de pagamento para pedido pagavel.
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
-- `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes, Google OAuth opcional e nota fiscal manual. Exige cookie admin ou token administrativo.
+- `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal manual. Exige cookie admin ou token administrativo.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
 
 ## Dados de catalogo
@@ -121,7 +120,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - Com `DATABASE_URL`, `lib/order-store.js` cria e usa tabelas Postgres automaticamente.
 - O schema SQL tambem esta documentado em `docs/ops/database.sql`.
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
-- A conta usa OTP por e-mail ou Google OAuth opcional, cookie HttpOnly assinado por `ACCOUNT_SESSION_SECRET` e associacao individual de pedidos confirmados. O acesso temporario pos-checkout e limitado ao pedido recem-criado.
+- A conta usa OTP por e-mail, cookie HttpOnly assinado por `ACCOUNT_SESSION_SECRET` e associacao individual de pedidos confirmados. O acesso temporario pos-checkout e limitado ao pedido recem-criado.
 - Regras de necessidade de CAD ficam em `lib/cad-contract.js`.
 
 ## Pagamento

@@ -17,7 +17,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 
 - Painel de produtos via catalogo configuravel em `lib/configurator-data.js` e rotas `/catalogo` e `/configurar/[categoria]`.
 - Gestao de pedidos em `/admin/pedidos`, com dados persistidos em Postgres quando `DATABASE_URL` existe.
-- Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail e login Google opcional quando OAuth estiver configurado.
+- Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail.
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
 - Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`.
@@ -47,7 +47,6 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Definir `ADMIN_ACCESS_TOKEN` forte e fora do repositorio.
 - Definir `ADMIN_SESSION_SECRET` forte e fora do repositorio.
 - Definir `ACCOUNT_SESSION_SECRET` forte e fora do repositorio.
-- Para login Google na conta do cliente, definir `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` e cadastrar `/api/account/google/callback` como redirect URI no Google Cloud.
 - Definir `RESEND_API_KEY`, `ACCOUNT_EMAIL_FROM`, `TRANSACTIONAL_EMAIL_FROM` e `TRANSACTIONAL_EMAIL_REPLY_TO`.
 - Para frete real, definir `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Homologar dimensoes/peso de envio com pedidos reais antes de trocar `MELHOR_ENVIO_ENV` para `production`.

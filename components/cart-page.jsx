@@ -423,6 +423,16 @@ function CheckoutForm() {
           />
         </label>
       </div>
+      <div className="checkout-account-disclosure">
+        <div>
+          <span className="eyebrow">Conta do cliente</span>
+          <strong>Seu pedido cria uma area de acompanhamento.</strong>
+        </div>
+        <p>
+          Usaremos nome, e-mail, WhatsApp e entrega para vincular seus pedidos. Depois voce acessa
+          a conta com e-mail, numero do pedido e codigo enviado por e-mail, sem senha.
+        </p>
+      </div>
       <fieldset className="checkout-address">
         <legend>Endereço de entrega</legend>
         <div className="field-row">
@@ -509,7 +519,7 @@ function CheckoutForm() {
         </div>
       )}
       <button className="button button-primary button-block" type="submit" disabled={!canSubmit || submitting}>
-        {submitting ? "Gerando pedido..." : "Finalizar e pagar"}
+        {submitting ? "Gerando pedido..." : "Criar pedido e pagar"}
       </button>
     </form>
   );

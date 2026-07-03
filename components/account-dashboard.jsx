@@ -30,19 +30,10 @@ const PAYMENT_ACTION_NEEDED = new Set([
   PAYMENT_STATUS.EXPIRED,
   PAYMENT_STATUS.UNKNOWN
 ]);
+const PRODUCTION_DONE = new Set(["ready_to_ship", "shipped"]);
+const SHIPMENT_DONE = new Set(["shipped", "delivered"]);
 
-const AUTH_ERROR_MESSAGES = {
-  google_login_cancelled: "Login Google cancelado.",
-  google_login_failed: "Nao foi possivel concluir o login Google.",
-  google_login_unavailable: "Login Google indisponivel no momento.",
-  google_state_invalid: "Sessao de login expirada. Tente novamente.",
-  missing_google_oauth_config: "Login Google ainda nao esta configurado.",
-  google_oauth_token_failed: "Nao foi possivel validar o login Google.",
-  google_userinfo_failed: "Nao foi possivel carregar os dados da conta Google.",
-  google_email_not_verified: "A conta Google precisa ter e-mail verificado."
-};
-
-export function AccountAccess({ googleEnabled = false, authError = "" }) {
+export function AccountAccess() {
   const [email, setEmail] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -96,19 +87,8 @@ export function AccountAccess({ googleEnabled = false, authError = "" }) {
         <div>
           <p className="eyebrow">Acesso seguro</p>
           <h2>Entre na sua conta</h2>
-          <p>Use sua conta Google ou receba um codigo no e-mail de qualquer pedido associado a ele.</p>
+          <p>Informe o e-mail e o numero de um pedido para receber um codigo de acesso.</p>
         </div>
-        {googleEnabled && (
-          <>
-            <a className="button button-secondary button-block account-google-button" href="/api/account/google/start?returnTo=/conta">
-              <span aria-hidden="true">G</span>
-              Entrar com Google
-            </a>
-            <div className="account-login__divider" role="separator">
-              <span>ou</span>
-            </div>
-          </>
-        )}
         <label className="field">
           <span>E-mail da compra</span>
           <input
@@ -138,9 +118,6 @@ export function AccountAccess({ googleEnabled = false, authError = "" }) {
           </label>
         )}
         {devCode && <p className="account-alert" role="status">Ambiente local: use o código <strong>{devCode}</strong>.</p>}
-        {authError && AUTH_ERROR_MESSAGES[authError] && (
-          <p className="account-alert account-alert--error" role="alert">{AUTH_ERROR_MESSAGES[authError]}</p>
-        )}
         {error && <p className="account-alert account-alert--error" role="alert">{error}</p>}
         <button className="button button-primary button-block" disabled={submitting}>
           {submitting ? "Validando..." : phase === "verify" ? "Confirmar código" : "Enviar código de acesso"}
@@ -162,7 +139,7 @@ export function AccountDashboard({ email, orders }) {
       .filter((order) => PAID.has(order.paymentStatus))
       .reduce((sum, order) => sum + Number(order.totalBrl || 0), 0),
     paid: orders.filter((order) => PAID.has(order.paymentStatus)).length,
-    progress: orders.filter((order) => !FINISHED.has(order.status)).length
+    progress: orders.filter((order) => !isFinishedOrder(order)).length
   }), [orders]);
   const visibleOrders = orders.filter((order) => matchesFilter(order, filter));
 
@@ -194,7 +171,7 @@ export function AccountDashboard({ email, orders }) {
           <h1>Olá, {firstName(customer?.name) || "cliente"}.</h1>
           <p>Aqui está o registro comercial vinculado a {email}.</p>
         </div>
-        <button className="button button-secondary" type="button" onClick={logout}>Sair com segurança</button>
+        <button className="button button-secondary" type="button" onClick={logout}>Sair</button>
       </header>
 
       <div className="account-layout">
@@ -255,7 +232,7 @@ export function AccountDashboard({ email, orders }) {
           <section id="ajuda" className="account-section" aria-labelledby="help-title">
             <div className="account-section__heading"><div><p className="eyebrow">Suporte</p><h2 id="help-title">Ajuda e privacidade</h2></div></div>
             <div className="account-help">
-              <div><h3>Precisa falar sobre um pedido?</h3><p>Tenha o número do pedido em mãos para agilizar a análise.</p><a href={`https://wa.me/${brand.whatsappNumber}`} target="_blank" rel="noreferrer">Abrir WhatsApp</a></div>
+              <div><h3>Precisa falar sobre um pedido?</h3><p>Envie o número do pedido para agilizar a análise.</p><a href={`mailto:${brand.email}?subject=Ajuda com pedido Baseforma`}>Enviar e-mail</a></div>
               <div><h3>Seus dados</h3><p>Solicite acesso, correção ou exclusão de dados pelo canal oficial.</p><a href={`mailto:${brand.email}?subject=Privacidade e dados pessoais`}>{brand.email}</a></div>
               <div><h3>Dúvidas frequentes</h3><p>Consulte compatibilidade, preço, prazo, material e acabamento.</p><Link href="/faq">Abrir FAQ</Link></div>
             </div>
@@ -275,17 +252,17 @@ function OrderRow({ order, onPay }) {
       <summary>
         <span className={`status-dot status-dot--${statusTone(order)}`} aria-hidden="true" />
         <span><strong>{order.orderNumber}</strong><small>{formatDate(order.createdAt)} · {order.items.length || "Projeto especial"} {order.items.length === 1 ? "item" : "itens"}</small></span>
-        <span className="account-order__status"><strong>{getOrderStatusLabel(order.status)}</strong><small>Pagamento {getPaymentStatusLabel(order.paymentStatus).toLowerCase()}</small></span>
+        <span className="account-order__status"><strong>{getClientOrderStatusLabel(order)}</strong><small>Pagamento {getPaymentStatusLabel(order.paymentStatus).toLowerCase()}</small></span>
         <strong className="account-order__total">{formatCurrency(order.totalBrl)}</strong>
       </summary>
       <div className="account-order__detail">
-        <div className="order-progress" aria-label={`Andamento: ${getOrderStatusLabel(order.status)}`}>
+        <div className="order-progress" aria-label={`Andamento: ${getClientOrderStatusLabel(order)}`}>
           {buildSteps(order).map((step) => <span key={step.label} className={step.done ? "is-done" : ""}><i aria-hidden="true" />{step.label}</span>)}
         </div>
         <dl className="order-facts">
           <div><dt>Pedido</dt><dd>{order.orderNumber}</dd></div>
           <div><dt>Última atualização</dt><dd>{formatDate(order.updatedAt)}</dd></div>
-          <div><dt>Prazo produtivo</dt><dd>{order.leadTimeDays ? `${order.leadTimeDays} dias úteis` : "Após revisão técnica"}</dd></div>
+          <div><dt>Status</dt><dd>{getClientOrderStatusLabel(order)}</dd></div>
           <div><dt>Pagamento</dt><dd>{latestPayment ? `${getPaymentStatusLabel(latestPayment.status)} · ${formatCurrency(latestPayment.amountBrl)}` : getPaymentStatusLabel(order.paymentStatus)}</dd></div>
         </dl>
         <div className="account-address">
@@ -309,7 +286,7 @@ function OrderRow({ order, onPay }) {
         )}
         <div className="account-order__actions">
           {payable && <button className="button button-primary" type="button" onClick={() => onPay(order.id)}>Pagar agora</button>}
-          <a className="button button-secondary" href={`https://wa.me/${brand.whatsappNumber}?text=${encodeURIComponent(`Olá, preciso de ajuda com o pedido ${order.orderNumber}.`)}`} target="_blank" rel="noreferrer">Ajuda com este pedido</a>
+          <a className="button button-secondary" href={`mailto:${brand.email}?subject=${encodeURIComponent(`Ajuda com pedido ${order.orderNumber}`)}`}>Ajuda por e-mail</a>
         </div>
       </div>
     </details>
@@ -317,10 +294,10 @@ function OrderRow({ order, onPay }) {
 }
 
 function matchesFilter(order, filter) {
-  if (filter === "finished") return FINISHED.has(order.status);
+  if (filter === "finished") return isFinishedOrder(order);
   if (filter === "payment") return PAYMENT_ACTION_NEEDED.has(order.paymentStatus);
   if (filter === "paid") return PAID.has(order.paymentStatus);
-  if (filter === "progress") return !FINISHED.has(order.status);
+  if (filter === "progress") return !isFinishedOrder(order);
   return true;
 }
 
@@ -332,14 +309,33 @@ function statusTone(order) {
 
 function buildSteps(order) {
   const paid = PAID.has(order.paymentStatus) || order.paymentStatus === PAYMENT_STATUS.REFUNDED;
-  const production = [ORDER_STATUS.IN_PRODUCTION, ORDER_STATUS.SHIPPED].includes(order.status);
+  const productionStatus = order.fulfillment?.production?.status || "";
+  const shipmentStatus = order.fulfillment?.shipment?.status || "";
+  const validationDone = paid && !["waiting_cad", "blocked"].includes(productionStatus) && order.status !== ORDER_STATUS.PAID_PENDING_REVIEW;
+  const production = PRODUCTION_DONE.has(productionStatus) || SHIPMENT_DONE.has(shipmentStatus);
   return [
     { label: "Pedido recebido", done: true },
     { label: "Pagamento", done: paid },
-    { label: "Validação técnica", done: paid && order.status !== ORDER_STATUS.PAID_PENDING_REVIEW },
+    { label: "Validação técnica", done: validationDone },
     { label: "Produção", done: production },
-    { label: "Envio", done: order.status === ORDER_STATUS.SHIPPED }
+    { label: "Envio", done: SHIPMENT_DONE.has(shipmentStatus) || order.status === ORDER_STATUS.SHIPPED }
   ];
+}
+
+function isFinishedOrder(order) {
+  return FINISHED.has(order.status) || SHIPMENT_DONE.has(order.fulfillment?.shipment?.status);
+}
+
+function getClientOrderStatusLabel(order) {
+  if (order.status === ORDER_STATUS.CANCELLED) return "Cancelado";
+  if (PAYMENT_ACTION_NEEDED.has(order.paymentStatus)) return getOrderStatusLabel(order.status);
+
+  const shipmentStatus = order.fulfillment?.shipment?.status || "";
+
+  if (shipmentStatus === "delivered") return "Concluído";
+  if (["packing", "ready_for_pickup", "shipped"].includes(shipmentStatus)) return "Enviando";
+
+  return "Em produção";
 }
 
 function formatDate(value) {
