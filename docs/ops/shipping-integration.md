@@ -10,6 +10,18 @@ O provedor real implementado e Melhor Envio.
 - Se o provedor estiver sem token ou sem CEP de origem, o site usa fallback manual e registra essa origem no objeto `commerce.shipping`.
 - Quando Melhor Envio esta ativo e configurado, a cotacao registra servico escolhido, alternativas retornadas, origem/destino, quantidade de produtos, peso total, valor segurado e dimensoes maximas do envio.
 
+## Lancamento com Correios manual
+
+O lancamento do e-commerce usa `SHIPPING_PROVIDER=manual`. Nesse modo, o checkout mostra frete estimado por UF para postagem manual via Correios:
+
+- SP: R$ 18, prazo operacional estimado de 5 dias.
+- RJ, MG, ES e PR: R$ 28, prazo operacional estimado de 7 dias.
+- SC e RS: R$ 28, prazo operacional estimado de 8 dias.
+- Demais UFs: R$ 42, prazo operacional estimado de 10 dias.
+- Pedidos acima de R$ 250 continuam com frete gratuito, mas a postagem tambem passa por conferencia humana.
+
+O valor e o prazo sao estimativas comerciais para o MVP. A operacao deve revisar peso, volume, endereco e servico dos Correios antes da postagem. A origem fica registrada em `metadata.commerce.shipping` com `provider: "manual"`, `source: "manual"`, `mode: "estimated_manual"`, `serviceName: "Correios manual"` e `companyName: "Correios"`.
+
 ## Variaveis necessarias
 
 - `SHIPPING_PROVIDER=melhor_envio`

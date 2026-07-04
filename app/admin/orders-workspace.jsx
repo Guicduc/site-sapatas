@@ -442,7 +442,10 @@ function AdminOrderCard({ row, access, activeFilter }) {
                 </div>
                 <div>
                   <dt>Frete</dt>
-                  <dd>{formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}</dd>
+                  <dd>
+                    {formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}
+                    <small>{formatShippingDetail(order.metadata.commerce.shipping)}</small>
+                  </dd>
                 </div>
                 <div className="checkout-totals__total">
                   <dt>Total</dt>
@@ -1119,6 +1122,15 @@ function formatSource(source) {
   };
 
   return labels[source] || source || "Origem nao informada";
+}
+
+function formatShippingDetail(shipping = {}) {
+  const service = [shipping.companyName, shipping.serviceName].filter(Boolean).join(" | ");
+  const delivery = Number(shipping.deliveryTimeDays || 0) > 0
+    ? `${shipping.deliveryTimeDays} dia(s) estimado(s)`
+    : "";
+  const source = shipping.source ? `origem ${shipping.source}` : "";
+  return [service, delivery, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
 }
 
 function formatDateTime(value) {

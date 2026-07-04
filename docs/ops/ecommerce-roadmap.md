@@ -10,7 +10,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Pagamento ativo: Mercado Pago.
 - Plataforma propria: catalogo, configurador, carrinho, checkout, pedido, conta do cliente e administracao rodam no proprio site.
 - Checkout externo de loja nao faz parte da arquitetura atual nem do roadmap futuro.
-- Frete tem adaptador real para Melhor Envio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
+- Frete de lancamento usa estimativa manual por UF para postagem via Correios, com revisao operacional humana antes do envio. O adaptador real para Melhor Envio permanece implementado como proximo estagio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
 - Nota fiscal esta em modo manual/operacional, sem fornecedor externo contratado no codigo.
 
 ## Ja implementado
@@ -19,7 +19,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Gestao de pedidos em `/admin/pedidos`, com dados persistidos em Postgres quando `DATABASE_URL` existe.
 - Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail.
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
-- Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`.
+- Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`; no MVP, o frete e "Correios manual" por UF, com origem registrada em `metadata.commerce.shipping`.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
 - E-mails transacionais via Resend para codigo de conta, pedido criado e pagamento resolvido.
@@ -39,7 +39,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
   - Neon Postgres criado no Vercel (`neon-cordovan-fence`, regiao Sao Paulo) e conectado ao projeto com `DATABASE_URL`; schema de `docs/ops/database.sql` aplicado.
   - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420`, nota manual e capacidade operacional foram adicionadas no Vercel para Production/Preview.
   - Mercado Pago permanece pendente de login/criacao de conta/app pelo titular; configurar token e webhook depois disso.
-  - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao.
+  - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao em sandbox/producao. Compra de etiqueta, impressao e rastreio automaticos nao fazem parte do lancamento.
 - Definir `DATABASE_URL` e confirmar que o banco executa o schema documentado em `docs/ops/database.sql`.
 - Definir `NEXT_PUBLIC_SITE_URL` com a URL publica final.
 - Definir `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_ENV`, `MERCADO_PAGO_STATEMENT_DESCRIPTOR` e configurar o webhook no painel do Mercado Pago.
