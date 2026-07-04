@@ -145,7 +145,6 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               issues={issues}
               activeKey={activeKey}
               fieldsRef={fieldsRef}
-              measurementGuide={measurementGuide}
               onChange={handleValueChange}
               onFocus={setActiveKey}
             />
@@ -153,6 +152,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               format={format}
               values={values}
               activeKey={activeKey}
+              measurementGuide={measurementGuide}
               visualImages={visualImages}
               previewMode={previewMode}
               activeVisualIndex={activeVisualIndex}
@@ -273,6 +273,7 @@ function ParametricPreview({
   format,
   values,
   activeKey,
+  measurementGuide,
   visualImages,
   previewMode,
   activeVisualIndex,
@@ -280,9 +281,14 @@ function ParametricPreview({
   onActiveVisualChange,
   onSelectParameter
 }) {
+  const [guideOpen, setGuideOpen] = useState(false);
   const hasVisualImages = visualImages.length > 0;
   const activeVisual = visualImages[activeVisualIndex] || visualImages[0];
   const shouldShowImage = previewMode === "image" && hasVisualImages;
+
+  useEffect(() => {
+    setGuideOpen(false);
+  }, [format.slug]);
 
   return (
     <div className="preview-panel">
@@ -312,21 +318,38 @@ function ParametricPreview({
         </div>
       </div>
 
-      {shouldShowImage ? (
-        <ProductVisualPreview
-          images={visualImages}
-          activeImage={activeVisual}
-          activeIndex={activeVisualIndex}
-          onChange={onActiveVisualChange}
-        />
-      ) : (
-        <ParametricDrawing
-          format={format}
-          values={values}
-          activeKey={activeKey}
-          onSelectParameter={onSelectParameter}
-        />
-      )}
+      <div className="preview-canvas">
+        {measurementGuide && (
+          <>
+            <button
+              type="button"
+              className="measurement-guide-trigger"
+              aria-expanded={guideOpen}
+              onClick={() => setGuideOpen((current) => !current)}
+            >
+              Como medir?
+            </button>
+            {guideOpen && (
+              <MeasurementGuide guide={measurementGuide} onClose={() => setGuideOpen(false)} />
+            )}
+          </>
+        )}
+        {shouldShowImage ? (
+          <ProductVisualPreview
+            images={visualImages}
+            activeImage={activeVisual}
+            activeIndex={activeVisualIndex}
+            onChange={onActiveVisualChange}
+          />
+        ) : (
+          <ParametricDrawing
+            format={format}
+            values={values}
+            activeKey={activeKey}
+            onSelectParameter={onSelectParameter}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -435,13 +458,21 @@ function FormatIcon({ type }) {
   );
 }
 
-function MeasurementGuide({ guide }) {
+function MeasurementGuide({ guide, onClose }) {
   if (!guide) {
     return null;
   }
 
   return (
-    <div className="measurement-guide">
+    <div className="measurement-guide" role="dialog" aria-label={guide.title}>
+      <button
+        type="button"
+        className="measurement-guide__close"
+        aria-label="Fechar instruções de medição"
+        onClick={onClose}
+      >
+        ×
+      </button>
       <p className="eyebrow">Como medir</p>
       <p className="measurement-guide__title">{guide.title}</p>
       <ol className="measurement-guide__steps">
@@ -454,7 +485,7 @@ function MeasurementGuide({ guide }) {
   );
 }
 
-function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, measurementGuide, onChange, onFocus }) {
+function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onChange, onFocus }) {
   function handleRangePointer(event, parameter) {
     if (event.type === "pointermove" && event.buttons !== 1) {
       return;
@@ -507,7 +538,6 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, meas
         <p className="eyebrow">Medidas</p>
         <h2>{format.name}</h2>
       </div>
-      <MeasurementGuide guide={measurementGuide} />
       {format.parameters.map((parameter) => {
         if (parameter.dependsOn && !values[parameter.dependsOn]) {
           return null;
