@@ -1130,7 +1130,8 @@ function formatShippingDetail(shipping = {}) {
     ? `${shipping.deliveryTimeDays} dia(s) estimado(s)`
     : "";
   const source = shipping.source ? `origem ${shipping.source}` : "";
-  return [service, delivery, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
+  const fulfillment = shipping.fulfillmentLabel || (shipping.fulfillmentMode === "manual_posting" ? "Postagem manual" : "");
+  return [service, delivery, fulfillment, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
 }
 
 function formatDateTime(value) {
