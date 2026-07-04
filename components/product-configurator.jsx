@@ -9,6 +9,7 @@ import { useCart } from "@/components/cart-provider";
 import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
+import { getMeasurementGuide } from "@/lib/measurement-guide";
 import {
   buildConfigurationSku,
   calculateLeadTime,
@@ -60,6 +61,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     () => getConfiguratorVisuals(category.slug, format.slug, values),
     [category.slug, format.slug, values]
   );
+  const measurementGuide = getMeasurementGuide(category.slug, format.slug);
 
   useEffect(() => {
     setActiveVisualIndex(0);
@@ -143,6 +145,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               issues={issues}
               activeKey={activeKey}
               fieldsRef={fieldsRef}
+              measurementGuide={measurementGuide}
               onChange={handleValueChange}
               onFocus={setActiveKey}
             />
@@ -432,7 +435,26 @@ function FormatIcon({ type }) {
   );
 }
 
-function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onChange, onFocus }) {
+function MeasurementGuide({ guide }) {
+  if (!guide) {
+    return null;
+  }
+
+  return (
+    <div className="measurement-guide">
+      <p className="eyebrow">Como medir</p>
+      <p className="measurement-guide__title">{guide.title}</p>
+      <ol className="measurement-guide__steps">
+        {guide.steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      {guide.tip && <p className="measurement-guide__tip">{guide.tip}</p>}
+    </div>
+  );
+}
+
+function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, measurementGuide, onChange, onFocus }) {
   function handleRangePointer(event, parameter) {
     if (event.type === "pointermove" && event.buttons !== 1) {
       return;
@@ -485,6 +507,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
         <p className="eyebrow">Medidas</p>
         <h2>{format.name}</h2>
       </div>
+      <MeasurementGuide guide={measurementGuide} />
       {format.parameters.map((parameter) => {
         if (parameter.dependsOn && !values[parameter.dependsOn]) {
           return null;
