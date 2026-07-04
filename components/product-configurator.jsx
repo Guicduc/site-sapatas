@@ -314,6 +314,7 @@ function ParametricPreview({
           images={visualImages}
           activeImage={activeVisual}
           activeIndex={activeVisualIndex}
+          callouts={getDimensionCallouts(format, values)}
           onChange={onActiveVisualChange}
         />
       ) : (
@@ -328,14 +329,84 @@ function ParametricPreview({
   );
 }
 
-function ProductVisualPreview({ images, activeImage, activeIndex, onChange }) {
+function getDimensionCallouts(format, values) {
+  const callouts = [];
+  const hasNeck = values?.pescoco === true || values?.pescoco === "true";
+
+  function isFilled(value) {
+    return String(value ?? "").trim() !== "" && Number.isFinite(Number(value));
+  }
+
+  function add(label, parts) {
+    if (parts.every(isFilled)) {
+      callouts.push({ label, value: `${parts.join(" × ")} mm` });
+    }
+  }
+
+  function addDiameter(label, value) {
+    if (isFilled(value)) {
+      callouts.push({ label, value: `Ø ${value} mm` });
+    }
+  }
+
+  function addNeckStem() {
+    if (hasNeck && isFilled(values.diametroPescoco) && isFilled(values.alturaPescoco)) {
+      callouts.push({ label: "Haste", value: `Ø ${values.diametroPescoco} × ${values.alturaPescoco} mm` });
+    }
+  }
+
+  switch (format.drawingType) {
+    case "tube-round":
+      addDiameter("Tubo interno", values.diametroBase);
+      add("Base", [values.alturaBase]);
+      add("Pescoço", [values.alturaPescoco]);
+      add("Parede", [values.paredeTubo]);
+      break;
+    case "tube-rect":
+    case "tube-oblong":
+      add("Tubo interno", [values.tamanhoBaseX, values.tamanhoBaseY]);
+      add("Base", [values.alturaBase]);
+      add("Pescoço", [values.alturaPescoco]);
+      add("Parede", [values.paredeTubo]);
+      break;
+    case "base-round":
+      addDiameter("Base", values.diametro ?? values.diametroBase);
+      add("Altura", [values.alturaBase ?? values.altura]);
+      addNeckStem();
+      break;
+    case "base-rect":
+      add("Base", [values.tamanhoBaseX, values.tamanhoBaseY]);
+      add("Altura", [values.alturaBase]);
+      addNeckStem();
+      break;
+    default:
+      break;
+  }
+
+  return callouts;
+}
+
+function ProductVisualPreview({ images, activeImage, activeIndex, callouts, onChange }) {
+  const showCallouts = activeImage.type === "product" && callouts.length > 0;
+
   return (
     <figure className="product-visual">
       <div className="product-visual__stage">
         <img className="product-visual__image" src={activeImage.src} alt={activeImage.alt} />
+        {showCallouts && (
+          <ul className="product-visual__callouts" aria-label="Medidas configuradas">
+            {callouts.map((callout) => (
+              <li key={callout.label}>
+                <span>{callout.label}</span>
+                <strong>{callout.value}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <figcaption>
         <span>{activeImage.label}</span>
+        {showCallouts && <span className="product-visual__caption-note">Foto ilustrativa — medidas conforme configuração</span>}
       </figcaption>
       {images.length > 1 && (
         <div className="product-visual__thumbs" aria-label="Imagens disponíveis">
