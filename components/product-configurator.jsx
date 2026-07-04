@@ -8,6 +8,7 @@ import { ParametricDrawing } from "@/components/parametric-drawing";
 import { useCart } from "@/components/cart-provider";
 import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
+import { getConfiguratorVisuals } from "@/lib/product-visuals";
 import {
   buildConfigurationSku,
   calculateLeadTime,
@@ -28,6 +29,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [finish, setFinish] = useState(category.finishes[0] || "não se aplica");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [previewMode, setPreviewMode] = useState("drawing");
+  const [activeVisualIndex, setActiveVisualIndex] = useState(0);
   const fieldsRef = useRef({});
   const { addItem } = useCart();
 
@@ -53,6 +56,22 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const headingDescription = getConfiguratorDescription(category);
   const hasColorChoices = category.colors.length > 1;
   const hasFinishChoices = category.finishes.length > 0;
+  const visualImages = useMemo(
+    () => getConfiguratorVisuals(category.slug, format.slug, values),
+    [category.slug, format.slug, values]
+  );
+
+  useEffect(() => {
+    setActiveVisualIndex(0);
+  }, [category.slug, format.slug, values.pescoco]);
+
+  useEffect(() => {
+    if (previewMode === "image" && visualImages.length === 0) {
+      setPreviewMode("drawing");
+    }
+
+    setActiveVisualIndex((current) => Math.min(current, Math.max(visualImages.length - 1, 0)));
+  }, [previewMode, visualImages.length]);
 
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
@@ -131,6 +150,11 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               format={format}
               values={values}
               activeKey={activeKey}
+              visualImages={visualImages}
+              previewMode={previewMode}
+              activeVisualIndex={activeVisualIndex}
+              onPreviewModeChange={setPreviewMode}
+              onActiveVisualChange={setActiveVisualIndex}
               onSelectParameter={handleSelectParameter}
             />
           </div>
@@ -246,17 +270,91 @@ function ParametricPreview({
   format,
   values,
   activeKey,
+  visualImages,
+  previewMode,
+  activeVisualIndex,
+  onPreviewModeChange,
+  onActiveVisualChange,
   onSelectParameter
 }) {
+  const hasVisualImages = visualImages.length > 0;
+  const activeVisual = visualImages[activeVisualIndex] || visualImages[0];
+  const shouldShowImage = previewMode === "image" && hasVisualImages;
+
   return (
     <div className="preview-panel">
-      <ParametricDrawing
-        format={format}
-        values={values}
-        activeKey={activeKey}
-        onSelectParameter={onSelectParameter}
-      />
+      <div className="preview-panel__toolbar">
+        <div>
+          <p className="eyebrow">{shouldShowImage ? "Produto final" : "Desenho técnico"}</p>
+          <strong>{format.name}</strong>
+        </div>
+        <div className="preview-toggle" role="tablist" aria-label="Visualização do produto">
+          <button
+            type="button"
+            className={previewMode === "drawing" ? "is-selected" : ""}
+            aria-pressed={previewMode === "drawing"}
+            onClick={() => onPreviewModeChange("drawing")}
+          >
+            Desenho
+          </button>
+          <button
+            type="button"
+            className={previewMode === "image" ? "is-selected" : ""}
+            aria-pressed={previewMode === "image"}
+            disabled={!hasVisualImages}
+            onClick={() => onPreviewModeChange("image")}
+          >
+            Foto
+          </button>
+        </div>
+      </div>
+
+      {shouldShowImage ? (
+        <ProductVisualPreview
+          images={visualImages}
+          activeImage={activeVisual}
+          activeIndex={activeVisualIndex}
+          onChange={onActiveVisualChange}
+        />
+      ) : (
+        <ParametricDrawing
+          format={format}
+          values={values}
+          activeKey={activeKey}
+          onSelectParameter={onSelectParameter}
+        />
+      )}
     </div>
+  );
+}
+
+function ProductVisualPreview({ images, activeImage, activeIndex, onChange }) {
+  return (
+    <figure className="product-visual">
+      <div className="product-visual__stage">
+        <img className="product-visual__image" src={activeImage.src} alt={activeImage.alt} />
+      </div>
+      <figcaption>
+        <span>{activeImage.label}</span>
+      </figcaption>
+      {images.length > 1 && (
+        <div className="product-visual__thumbs" aria-label="Imagens disponíveis">
+          {images.map((image, index) => (
+            <button
+              key={image.src}
+              type="button"
+              className={index === activeIndex ? "is-selected" : ""}
+              aria-label={`Ver ${image.label}`}
+              aria-pressed={index === activeIndex}
+              onClick={() => onChange(index)}
+            >
+              <img src={image.src} alt="" aria-hidden="true" />
+              <span>{image.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </figure>
   );
 }
 

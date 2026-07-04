@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { getCategoryCardImage, homeHeroImages } from "@/lib/product-visuals";
 
 const moodTerms = [
   {
@@ -74,6 +77,20 @@ const moodIcons = {
 };
 
 export function ProductCatalog({ categories }) {
+  const [heroIndex, setHeroIndex] = useState(0);
+
+  useEffect(() => {
+    if (homeHeroImages.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setHeroIndex((current) => (current + 1) % homeHeroImages.length);
+    }, 6500);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <section className="shop-shell">
       <div className="shop-hero">
@@ -83,12 +100,16 @@ export function ProductCatalog({ categories }) {
             Sapatas feitas sob medida para encaixar no seu projeto, proteger melhor e dar um acabamento mais bonito.
           </p>
         </div>
-        <div className="shop-hero__media">
-          <img
-            className="shop-hero__image"
-            src="/brand/traco-base-hero.png"
-            alt="Sapatas e ponteiras Baseforma aplicadas em pés tubulares de mobiliário"
-          />
+        <div className="shop-hero__media" aria-label="Imagens de produtos Baseforma">
+          {homeHeroImages.map((image, index) => (
+            <img
+              className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
+              key={image.src}
+              src={image.src}
+              alt={index === heroIndex ? image.alt : ""}
+              aria-hidden={index === heroIndex ? undefined : "true"}
+            />
+          ))}
         </div>
       </div>
 
@@ -122,27 +143,31 @@ export function ProductCatalog({ categories }) {
       </div>
 
       <div className="category-grid">
-        {categories.map((category) => (
-          <article className="category-card" key={category.slug}>
-            {category.image && (
-              <img className="category-card__image" src={category.image.src} alt={category.image.alt} />
-            )}
-            <div className="category-card__body">
-              <p className="eyebrow">{category.eyebrow}</p>
-              <h2>{category.name}</h2>
-              <p>{category.description}</p>
-              <div className="meta-list">
-                <span>{category.primaryFixation}</span>
-                {category.formats.length > 1 && (
-                  <span>{category.formats.map((format) => format.name).join(" / ")}</span>
-                )}
+        {categories.map((category) => {
+          const cardImage = getCategoryCardImage(category.slug, category.image);
+
+          return (
+            <article className="category-card" key={category.slug}>
+              {cardImage && (
+                <img className="category-card__image" src={cardImage.src} alt={cardImage.alt} />
+              )}
+              <div className="category-card__body">
+                <p className="eyebrow">{category.eyebrow}</p>
+                <h2>{category.name}</h2>
+                <p>{category.description}</p>
+                <div className="meta-list">
+                  <span>{category.primaryFixation}</span>
+                  {category.formats.length > 1 && (
+                    <span>{category.formats.map((format) => format.name).join(" / ")}</span>
+                  )}
+                </div>
               </div>
-            </div>
-            <Link className="button button-primary" href={`/configurar/${category.slug}`}>
-              Configurar
-            </Link>
-          </article>
-        ))}
+              <Link className="button button-primary" href={`/configurar/${category.slug}`}>
+                Configurar
+              </Link>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

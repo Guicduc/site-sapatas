@@ -5,6 +5,9 @@ import { formatCurrency } from "@/lib/format";
 export function FamilyCard({ family }) {
   return (
     <article className="family-card surface-card">
+      {family.image && (
+        <img className="family-card__image" src={family.image.src} alt={family.image.alt} />
+      )}
       <div className="family-card__header">
         <div>
           <p className="eyebrow">{family.eyebrow}</p>
