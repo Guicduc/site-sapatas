@@ -59,4 +59,6 @@ Para sessoes futuras com agentes, leia tambem [docs/ops/agent-runbook.md](docs/o
 
 O estado de prontidao operacional e o backlog futuro do e-commerce ficam em [docs/ops/ecommerce-roadmap.md](docs/ops/ecommerce-roadmap.md).
 
+A checklist de lancamento controlado fica em [docs/ops/launch-readiness.md](docs/ops/launch-readiness.md).
+
 A ativacao e homologacao de frete real ficam em [docs/ops/shipping-integration.md](docs/ops/shipping-integration.md).
