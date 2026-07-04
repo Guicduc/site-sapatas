@@ -16,10 +16,15 @@
     "pricing:audit": "node Produtos/scripts/audit-pricing-workflow.mjs --check"
   },
   "dependencies": {
-    "next": "16.2.3",
+    "next": "16.2.10",
     "pg": "^8.20.0",
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "three": "^0.184.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.10"
+    }
   }
 }
