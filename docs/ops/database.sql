@@ -101,7 +101,9 @@ create index if not exists account_access_codes_email_idx on account_access_code
 --     "number": "000123",
 --     "series": "1",
 --     "accessKey": "chave NF-e se houver",
---     "issuedAt": "ISO datetime"
+--     "issuedAt": "ISO datetime",
+--     "notes": "pendencias ou observacoes fiscais",
+--     "updatedAt": "ISO datetime"
 --   },
 --   "shipment": {
 --     "status": "pending|packing|ready_for_pickup|shipped|delivered|cancelled",

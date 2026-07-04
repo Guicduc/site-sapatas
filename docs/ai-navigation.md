@@ -28,9 +28,9 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 ## Rotas administrativas
 
-- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal manual e expedicao.
+- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal via Mercado Pago Sistema de Gestao e expedicao.
 - `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
-- `/admin/operacao`: fila de producao, capacidade, nota fiscal manual, expedicao e observacoes internas.
+- `/admin/operacao`: fila de producao, capacidade, nota fiscal via Mercado Pago Sistema de Gestao, expedicao e observacoes internas.
 - `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
 - `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`.
 
@@ -44,7 +44,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/payments/mercado-pago/preference`: cria preferencia de pagamento para pedido pagavel.
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
-- `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal manual. Exige cookie admin ou token administrativo.
+- `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
 
 ## Dados de catalogo
@@ -109,12 +109,13 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 
 ## Operacao e relatorios
 
-- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal manual, expedicao e capacidade.
+- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal operacional, expedicao e capacidade.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `docs/ops/invoice-manual.md`: procedimento de emissao fiscal pelo Sistema de Gestao Mercado Pago e pendencias para integracao por API.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
-- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal externa ainda nao possui fornecedor ativo.
+- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal usa Mercado Pago Sistema de Gestao operacionalmente, sem emissao automatica por API no site.
 
 - Sem `DATABASE_URL`, pedidos sao persistidos em `.local-data/orders.dev.json`.
 - O armazenamento JSON e exclusivo de desenvolvimento; producao exige `DATABASE_URL`.

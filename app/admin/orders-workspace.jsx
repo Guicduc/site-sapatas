@@ -17,6 +17,7 @@ import {
   SHIPMENT_STATUS,
 } from "@/lib/fulfillment";
 import { formatCurrency } from "@/lib/format";
+import { getInvoiceConfig } from "@/lib/invoice-config";
 import {
   getOrderById,
   getStoreMode,
@@ -58,8 +59,8 @@ const SIMPLE_PRODUCTION_OPTIONS = [
 
 const SIMPLE_INVOICE_OPTIONS = [
   { value: INVOICE_STATUS.PENDING, label: "NF pendente" },
-  { value: INVOICE_STATUS.MANUAL_PENDING, label: "NF manual pendente" },
-  { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF manual emitida" }
+  { value: INVOICE_STATUS.MANUAL_PENDING, label: "NF pendente no emissor" },
+  { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF emitida no emissor" }
 ];
 
 const SIMPLE_SHIPMENT_OPTIONS = [
@@ -480,11 +481,11 @@ function AdminOrderCard({ row, access, activeFilter }) {
           <div className="admin-section-heading">
             <div>
               <h3>Operacao</h3>
-              <p>{activeFilter === "impressao" ? "Atualize a fila sem sair dos detalhes do pedido." : "Fila, NF manual e expedicao ficam nesta mesma ficha."}</p>
+              <p>{activeFilter === "impressao" ? "Atualize a fila sem sair dos detalhes do pedido." : "Fila, NF e expedicao ficam nesta mesma ficha."}</p>
             </div>
             <span>{productionStage}</span>
           </div>
-          <OperationForm order={order} fulfillment={fulfillment} access={access} />
+          <OperationForm order={order} fulfillment={fulfillment} access={access} invoiceConfig={getInvoiceConfig()} />
         </section>
 
         {payment && (
@@ -511,7 +512,7 @@ function AdminOrderCard({ row, access, activeFilter }) {
   );
 }
 
-function OperationForm({ order, fulfillment, access }) {
+function OperationForm({ order, fulfillment, access, invoiceConfig }) {
   return (
     <form className="cad-form operation-form" action={updateOperation}>
       <input type="hidden" name="orderId" value={order.id} />
@@ -558,8 +559,19 @@ function OperationForm({ order, fulfillment, access }) {
 
       <fieldset className="operation-form__group">
         <legend>Nota fiscal manual</legend>
+        <p className="admin-note">
+          Emissao fora do site em {invoiceConfig.providerLabel}. Confira cadastro fiscal, itens, total pago, CFOP/NCM e ambiente antes de expedir.
+        </p>
+        <ul className="admin-note">
+          <li>Pedido local: {order.orderNumber}</li>
+          <li>Total cobrado: {formatCurrency(order.totalBrl)}</li>
+          <li>Cliente: {order.customer.name || "Sem nome"} | {order.customer.email || order.customer.contact || "Sem contato"}</li>
+          <li>Documento: {invoiceConfig.documentModel.toUpperCase()} | Ambiente: {invoiceConfig.environment}</li>
+          <li>CNPJ emissor: {formatCnpj(invoiceConfig.issuerCnpj)} | NCM: {invoiceConfig.ncm} | Origem: {invoiceConfig.productOrigin}</li>
+          <li>Natureza: {invoiceConfig.operationNature}{invoiceConfig.cfop ? ` | CFOP: ${invoiceConfig.cfop}` : ""}</li>
+        </ul>
         <label className="field">
-          <span>NF manual</span>
+          <span>Nota fiscal</span>
           <select name="invoiceStatus" defaultValue={toSimpleInvoiceStatus(fulfillment.invoice.status)}>
             {SIMPLE_INVOICE_OPTIONS.map((status) => (
               <option key={status.value} value={status.value}>{status.label}</option>
@@ -568,15 +580,21 @@ function OperationForm({ order, fulfillment, access }) {
         </label>
         <label className="field">
           <span>Numero NF</span>
-          <input name="invoiceNumber" defaultValue={fulfillment.invoice.number} placeholder="000123" />
+          <input name="invoiceNumber" defaultValue={fulfillment.invoice.number} placeholder="000123" inputMode="numeric" />
         </label>
         <label className="field">
           <span>Serie NF</span>
-          <input name="invoiceSeries" defaultValue={fulfillment.invoice.series} placeholder="1" />
+          <input name="invoiceSeries" defaultValue={fulfillment.invoice.series} placeholder="1" inputMode="numeric" />
         </label>
         <label className="field">
           <span>Chave de acesso</span>
-          <input name="invoiceAccessKey" defaultValue={fulfillment.invoice.accessKey} placeholder="44 digitos" />
+          <input
+            name="invoiceAccessKey"
+            defaultValue={fulfillment.invoice.accessKey}
+            placeholder="44 digitos"
+            inputMode="numeric"
+            maxLength={54}
+          />
         </label>
         <label className="field">
           <span>Emissao NF</span>
@@ -1131,6 +1149,12 @@ function formatDateTime(value) {
     dateStyle: "short",
     timeStyle: "short"
   }).format(date);
+}
+
+function formatCnpj(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 14) return value || "Nao informado";
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
 }
 
 function toDateTimeLocal(value) {
