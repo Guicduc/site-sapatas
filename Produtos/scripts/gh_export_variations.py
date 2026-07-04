@@ -188,6 +188,10 @@ PRODUCT_CONFIGS = [
         "variant_slug": "haste",
         "has_neck": True,
         "slider_order": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"],
+        "sample_strategy": "product_axis_forced_neck_height_ranges",
+        "sampling": {
+            "force_axis_keys": ["alturaPescoco"],
+        },
         "parameters": {
             "diametro": parameter(3, 150, 28),
             "alturaBase": parameter(1, 10, 6),
@@ -230,6 +234,10 @@ PRODUCT_CONFIGS = [
         "variant_slug": "haste",
         "has_neck": True,
         "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"],
+        "sample_strategy": "product_axis_forced_neck_height_ranges",
+        "sampling": {
+            "force_axis_keys": ["alturaPescoco"],
+        },
         "parameters": {
             "tamanhoBaseX": parameter(3, 150, 50),
             "tamanhoBaseY": parameter(3, 150, 50),
@@ -404,7 +412,8 @@ def product_variation_plan(product_config):
         return []
 
     sampling = product_config.get("sampling", {})
-    if sampling.get("mode") != "dense_xy_axis":
+    force_axis_keys = sampling.get("force_axis_keys", []) or []
+    if sampling.get("mode") != "dense_xy_axis" and not force_axis_keys:
         return []
 
     parameters = product_config.get("parameters", {})
@@ -413,7 +422,19 @@ def product_variation_plan(product_config):
     seen = set()
     add_planned_variation(plan, seen, defaults)
 
-    for key, param in parameters.items():
+    dense_mode = sampling.get("mode") == "dense_xy_axis"
+
+    if dense_mode:
+        for key, param in parameters.items():
+            for value in parameter_range_values(param):
+                values = dict(defaults)
+                values[key] = value
+                add_planned_variation(plan, seen, values)
+
+    for key in force_axis_keys:
+        param = parameters.get(key)
+        if not param:
+            continue
         for value in parameter_range_values(param):
             values = dict(defaults)
             values[key] = value
@@ -438,17 +459,29 @@ def product_variation_plan(product_config):
                 values[xy_keys[1]] = y_value
                 add_planned_variation(plan, seen, values)
 
-    random_count = int(sampling.get("random_count", 0))
+    if dense_mode:
+        random_count = int(sampling.get("random_count", 0))
+        random_total = max(1, random_count + 3)
+        random_offset = 3
+        target_count = None
+    else:
+        target_count = int(sampling.get("target_count", default_sample_count(len(parameters))))
+        random_count = int(sampling.get("random_count", max_attempt_count(target_count)))
+        random_total = max_attempt_count(target_count)
+        random_offset = 0
+
     for index in range(random_count):
+        if target_count is not None and len(plan) >= target_count:
+            break
         values = dict(defaults)
         for slider_index, key in enumerate(product_config.get("slider_order", [])):
             param = parameters.get(key)
             if not param:
                 continue
             values[key] = variation_value(
-                index + 3,
+                index + random_offset,
                 slider_index,
-                max(1, random_count + 3),
+                random_total,
                 float(param.get("min", 0)),
                 float(param.get("max", 0)),
                 float(param.get("default", 0)),
@@ -973,6 +1006,99 @@ def final_export_geometry(geometries, selection_source, sample_id):
     return None
 
 
+def numeric_slider_value(slider_values, key, default_value=0):
+    try:
+        return float(slider_values.get(key, default_value))
+    except:
+        return float(default_value)
+
+
+def add_base_shoe_neck_if_missing(geom, product_config, slider_values, sample_id):
+    if not product_config or not product_config.get("has_neck", False):
+        return geom
+    if product_config.get("category_slug", "") != "sapata-base-lisa":
+        return geom
+
+    base_height = numeric_slider_value(slider_values, "alturaBase", 0)
+    neck_height = numeric_slider_value(slider_values, "alturaPescoco", 0)
+    neck_diameter = numeric_slider_value(slider_values, "diametroPescoco", 0)
+    if base_height <= 0 or neck_height <= 0 or neck_diameter <= 0:
+        return geom
+
+    if isinstance(geom, Rhino.Geometry.Extrusion):
+        geom = geom.ToBrep()
+    if not isinstance(geom, Rhino.Geometry.Brep):
+        return geom
+
+    bbox = geom.GetBoundingBox(True)
+    current_height = bbox.Max.Z - bbox.Min.Z
+    expected_height = base_height + neck_height
+    if current_height >= expected_height - 0.1:
+        return geom
+
+    center = Rhino.Geometry.Point3d(
+        (bbox.Min.X + bbox.Max.X) / 2.0,
+        (bbox.Min.Y + bbox.Max.Y) / 2.0,
+        bbox.Max.Z - 0.02,
+    )
+    plane = Rhino.Geometry.Plane(center, Rhino.Geometry.Vector3d.ZAxis)
+    circle = Rhino.Geometry.Circle(plane, neck_diameter / 2.0)
+    cylinder = Rhino.Geometry.Cylinder(circle, neck_height + 0.02)
+    neck = cylinder.ToBrep(True, True)
+    if not neck or not neck.IsSolid:
+        log("AVISO: haste sintetica invalida em {}".format(sample_id))
+        return geom
+
+    joined = None
+    try:
+        joined = Rhino.Geometry.Brep.CreateBooleanUnion(
+            [geom, neck],
+            Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance
+        )
+    except:
+        joined = None
+
+    if joined and len(joined) == 1 and is_exportable_solid(joined[0]):
+        log("Haste sintetica aplicada em {}: {:.2f} x {:.2f} mm".format(sample_id, neck_diameter, neck_height))
+        return joined[0]
+
+    try:
+        joined_breps = Rhino.Geometry.Brep.JoinBreps(
+            [geom, neck],
+            Rhino.RhinoDoc.ActiveDoc.ModelAbsoluteTolerance * 10
+        )
+    except:
+        joined_breps = None
+
+    if joined_breps and len(joined_breps) == 1 and is_exportable_solid(joined_breps[0]):
+        log("Haste sintetica unida por join em {}: {:.2f} x {:.2f} mm".format(sample_id, neck_diameter, neck_height))
+        return joined_breps[0]
+
+    if product_config.get("format_slug", "") == "redonda":
+        base_diameter = numeric_slider_value(slider_values, "diametro", neck_diameter)
+        if abs(base_diameter - neck_diameter) > 0.1:
+            log("AVISO: fallback cilindrico ignorado em {}; diametro base {:.2f}, haste {:.2f}".format(sample_id, base_diameter, neck_diameter))
+            return geom
+        radius = max(base_diameter, neck_diameter) / 2.0
+        full_center = Rhino.Geometry.Point3d(
+            (bbox.Min.X + bbox.Max.X) / 2.0,
+            (bbox.Min.Y + bbox.Max.Y) / 2.0,
+            bbox.Min.Z,
+        )
+        full_circle = Rhino.Geometry.Circle(
+            Rhino.Geometry.Plane(full_center, Rhino.Geometry.Vector3d.ZAxis),
+            radius
+        )
+        full_cylinder = Rhino.Geometry.Cylinder(full_circle, expected_height)
+        full_geom = full_cylinder.ToBrep(True, True)
+        if full_geom and is_exportable_solid(full_geom):
+            log("Haste sintetica cilindrica aplicada em {}: {:.2f} x {:.2f} mm".format(sample_id, radius * 2.0, expected_height))
+            return full_geom
+
+    log("AVISO: falha ao unir haste sintetica em {}; mantendo solido original".format(sample_id))
+    return geom
+
+
 def add_geometry(geom):
     sc.doc = Rhino.RhinoDoc.ActiveDoc
     if isinstance(geom, Rhino.Geometry.Mesh):
@@ -1245,6 +1371,7 @@ def process_file(Grasshopper, gh_path):
         geom = final_export_geometry(geometries, selection_source, sample_id)
         if geom is None:
             continue
+        geom = add_base_shoe_neck_if_missing(geom, product_config, slider_values, sample_id)
         object_id = add_geometry(geom)
         rhino_object = Rhino.RhinoDoc.ActiveDoc.Objects.Find(object_id)
         if rhino_object is None:
