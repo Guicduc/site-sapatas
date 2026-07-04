@@ -21,6 +21,11 @@ export const metadata = {
   },
   description: brand.description,
   applicationName: brand.name,
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? {
+        google: process.env.GOOGLE_SITE_VERIFICATION
+      }
+    : undefined,
   icons: {
     icon: "/brand/baseforma-mark.png",
     apple: "/brand/baseforma-mark.png"
