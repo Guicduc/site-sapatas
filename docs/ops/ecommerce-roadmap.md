@@ -19,8 +19,8 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Gestao de pedidos em `/admin/pedidos`, com dados persistidos em Postgres quando `DATABASE_URL` existe.
 - Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail.
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
-- Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`.
-- Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`.
+- Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`; no MVP, o frete e "Correios manual" por UF, com origem registrada em `metadata.commerce.shipping`.
+- Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
 - E-mails transacionais via Resend para codigo de conta, pedido criado e pagamento resolvido.
 - Recuperacao de carrinho sem disparo automatico, com leads em `cart_recovery_leads` ou `.local-data/cart-recovery.dev.json`.

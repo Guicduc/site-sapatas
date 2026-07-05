@@ -9,6 +9,25 @@ O provedor real implementado e Melhor Envio.
 - A criacao do pedido recalcula o frete no servidor antes de salvar, sem confiar no valor calculado pelo navegador.
 - Se o provedor estiver sem token ou sem CEP de origem, o site usa fallback manual e registra essa origem no objeto `commerce.shipping`.
 - Quando Melhor Envio esta ativo e configurado, a cotacao registra servico escolhido, alternativas retornadas, origem/destino, quantidade de produtos, peso total, valor segurado e dimensoes maximas do envio.
+- Mesmo com cotacao Melhor Envio ativa, a expedicao do lancamento permanece manual: o objeto de frete registra `fulfillmentMode: "manual_posting"` e nao compra etiqueta nem registra rastreio automaticamente.
+
+## Lancamento com Correios manual
+
+O lancamento do e-commerce usa `SHIPPING_PROVIDER=manual`. Nesse modo, o checkout mostra frete estimado por UF para postagem manual via Correios:
+
+- SP: R$ 18, prazo operacional estimado de 5 dias.
+- RJ, MG, ES e PR: R$ 28, prazo operacional estimado de 7 dias.
+- SC e RS: R$ 28, prazo operacional estimado de 8 dias.
+- Demais UFs: R$ 42, prazo operacional estimado de 10 dias.
+- Pedidos acima de R$ 250 continuam com frete gratuito, mas a postagem tambem passa por conferencia humana.
+
+O valor e o prazo sao estimativas comerciais para o MVP. A operacao deve revisar peso, volume, endereco e servico dos Correios antes da postagem. A origem fica registrada em `metadata.commerce.shipping` com `provider: "manual"`, `source: "manual"`, `mode: "estimated_manual"`, `fulfillmentMode: "manual_posting"`, `serviceName: "Correios manual"` e `companyName: "Correios"`.
+
+## Cotacao Melhor Envio sem etiqueta automatica
+
+Faz sentido integrar Melhor Envio desde ja para homologar preco e prazo, mantendo a postagem manual no Correios. Para isso, configure `SHIPPING_PROVIDER=melhor_envio`, `MELHOR_ENVIO_ENV=sandbox`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`. Com credenciais validas, o checkout usa a cotacao retornada pelo Melhor Envio; sem credenciais ou em caso de erro, volta para a tabela manual.
+
+Essa integracao e somente de cotacao. O pedido salvo deve continuar sendo tratado pela operacao em `/admin/pedidos`: conferir embalagem, emitir NF manual quando aplicavel, postar manualmente e preencher transportadora/rastreio se houver.
 
 ## Variaveis necessarias
 
@@ -41,7 +60,7 @@ Como os produtos sao parametricos, o codigo transforma as medidas da peca em dad
 5. Comparar preco e prazo exibidos no site com a cotacao do painel Melhor Envio.
 6. Ajustar folga e peso de embalagem.
 7. Definir servicos permitidos e preferidos.
-8. So depois disso trocar `MELHOR_ENVIO_ENV=production`.
+8. So depois disso trocar `MELHOR_ENVIO_ENV=production`, ainda sem compra automatica de etiqueta.
 
 ## Proxima fase
 

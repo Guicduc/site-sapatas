@@ -40,6 +40,7 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
 - Ativar frete real exige `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Use sandbox primeiro: `MELHOR_ENVIO_ENV=sandbox`.
 - A cotacao do Melhor Envio usa produtos com dimensoes em cm, peso em kg e valor em reais.
+- A integracao Melhor Envio atual e somente de cotacao; pedidos continuam com postagem manual pela operacao.
 - A compra de etiqueta, impressao e rastreio ainda nao estao implementados.
 - Para testar fallback manual localmente, deixe `SHIPPING_PROVIDER=manual` e chame `POST /api/shipping/quote`.
 

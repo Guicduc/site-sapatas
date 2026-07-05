@@ -472,7 +472,10 @@ function AdminOrderCard({ row, access }) {
                 </div>
                 <div>
                   <dt>Frete</dt>
-                  <dd>{formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}</dd>
+                  <dd>
+                    {formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}
+                    <small>{formatShippingDetail(order.metadata.commerce.shipping)}</small>
+                  </dd>
                 </div>
                 <div className="checkout-totals__total">
                   <dt>Total</dt>
@@ -1236,6 +1239,16 @@ function formatParameterValue(value) {
   if (Number.isFinite(numeric)) return `${value} mm`;
 
   return String(value);
+}
+
+function formatShippingDetail(shipping = {}) {
+  const service = [shipping.companyName, shipping.serviceName].filter(Boolean).join(" | ");
+  const delivery = Number(shipping.deliveryTimeDays || 0) > 0
+    ? `${shipping.deliveryTimeDays} dia(s) estimado(s)`
+    : "";
+  const source = shipping.source ? `origem ${shipping.source}` : "";
+  const fulfillment = shipping.fulfillmentLabel || (shipping.fulfillmentMode === "manual_posting" ? "Postagem manual" : "");
+  return [service, delivery, fulfillment, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
 }
 
 function formatDateTime(value) {
