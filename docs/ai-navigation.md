@@ -93,7 +93,7 @@ As familias atuais publicadas sao:
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
-- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: componentes legados de apoio tecnico, fora do fluxo administrativo principal. O admin simplificado nao possui etapa manual de CAD/Orca.
+- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: registro de STL e precificacao Orca dentro do pedido expandido em `/admin/pedidos` (bloco recolhido "Fluxo CAD"), exibidos quando o pedido exige CAD (`shouldRequireCad`).
 
 ## Pedidos e persistencia
 
@@ -155,10 +155,11 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 
 1. Adicione ou revise o script em `Produtos/Scripts-GH/`.
 2. Atualize `lib/configurator-data.js` com categoria/formato/parametros.
-3. Se houver pagina SEO, atualize `lib/site-data.js`.
-4. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
-5. Rode `npm run export:gh`, `npm run slice:dataset` e `npm run slice:check`.
-6. Valide o configurador e o carrinho.
+3. Registre o modelo em `CAD_MODELS` dentro de `lib/cad-contract.js` (chaves de parametros, script GH, defaults tecnicos e variantes de haste). Passo a passo em `docs/catalog/contracts.md`, secao "Como adicionar um produto ao contrato CAD". Sem esse registro o pedido nasce como `not_required` e nunca entra no fluxo CAD do admin.
+4. Se houver pagina SEO, atualize `lib/site-data.js`.
+5. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
+6. Rode `npm run export:gh`, `npm run slice:dataset` e `npm run slice:check`.
+7. Valide o configurador, o carrinho e o payload CAD no admin (`/admin/pedidos`, secao "Dados para Grasshopper").
 
 ## Cuidados ao alterar
 
