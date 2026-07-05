@@ -32,13 +32,13 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 
 ## Condicoes para operar em producao
 
-- Estado externo em 28/06/2026:
+- Estado externo em 29/06/2026:
   - Dominio `baseforma.com.br` comprado no Registro.br e zona DNS em modo avancado.
   - DNS salvo com `A` do dominio raiz para Vercel, `CNAME www` para Vercel e registros de envio Resend para DKIM/SPF/MX no subdominio `send`.
-  - Dominio no Resend criado em Sao Paulo (`sa-east-1`) e verificacao DNS em estado `Pending` ate propagacao.
+  - Dominio no Resend criado em Sao Paulo (`sa-east-1`); confirmar verificacao antes da abertura real.
   - Neon Postgres criado no Vercel (`neon-cordovan-fence`, regiao Sao Paulo) e conectado ao projeto com `DATABASE_URL`; schema de `docs/ops/database.sql` aplicado.
   - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420`, nota manual e capacidade operacional foram adicionadas no Vercel para Production/Preview.
-  - Mercado Pago permanece pendente de login/criacao de conta/app pelo titular; configurar token e webhook depois disso.
+  - Mercado Pago teve credenciais produtivas e webhook configurados no Vercel; antes da abertura real, ainda e obrigatorio validar pedido teste ponta a ponta, recebimento de webhook e estados no admin/conta.
   - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao.
 - Definir `DATABASE_URL` e confirmar que o banco executa o schema documentado em `docs/ops/database.sql`.
 - Definir `NEXT_PUBLIC_SITE_URL` com a URL publica final.
