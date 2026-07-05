@@ -52,7 +52,7 @@ const faqSections = [
       {
         question: "O pedido já sai com nota fiscal?",
         answer:
-          "A nota fiscal é tratada de forma manual na operação atual. Informe os dados corretos no pedido para que a emissão seja conferida antes da expedição, quando aplicável."
+          "A nota fiscal é acompanhada pelo fluxo operacional via Mercado Pago após a aprovação do pagamento. Informe os dados corretos no pedido para evitar pendência antes da expedição."
       }
     ]
   },

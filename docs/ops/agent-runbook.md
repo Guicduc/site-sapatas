@@ -17,7 +17,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
-- Nota fiscal externa ainda nao tem fornecedor ativo; mantenha `INVOICE_PROVIDER=manual`.
+- Nota fiscal usa provider Mercado Pago (`INVOICE_PROVIDER=mercado_pago`). Enquanto o endpoint fiscal especifico da conta nao estiver liberado/configurado, o pedido deve ficar com NF via API pendente e o health check deve indicar a pendencia.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
 Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
@@ -31,6 +31,7 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 5. `lib/order-store.js` persiste pedido e pagamentos.
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
+8. Pagamento aprovado aciona `lib/invoice-provider.js` para registrar/solicitar NF via provider Mercado Pago.
 
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
 
