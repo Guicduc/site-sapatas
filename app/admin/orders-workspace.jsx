@@ -69,8 +69,7 @@ const SIMPLE_SHIPMENT_OPTIONS = [
 ];
 
 export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todos", nextPath = "/admin/pedidos" }) {
-  const token = searchParams?.token || "";
-  const access = await getAdminAccess(token);
+  const access = await getAdminAccess();
 
   if (!access.allowed) {
     return <AdminAccessRequired nextPath={nextPath} scope="os pedidos" />;
@@ -97,7 +96,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
           </p>
         </div>
         <div className="admin-heading-actions">
-          <Link className="button button-secondary" href={adminHref("/admin/relatorios", access)}>
+          <Link className="button button-secondary" href={adminHref("/admin/relatorios")}>
             Ver relatorios
           </Link>
           <Link className="button button-secondary" href="/">
@@ -134,7 +133,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
         {FILTERS.map((filter) => (
           <Link
             className={`admin-workspace-tab${activeFilter === filter.id ? " is-active" : ""}`}
-            href={adminHref(`/admin/pedidos?fila=${filter.id}`, access)}
+            href={adminHref(`/admin/pedidos?fila=${filter.id}`)}
             aria-current={activeFilter === filter.id ? "page" : undefined}
             key={filter.id}
           >

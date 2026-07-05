@@ -16,10 +16,8 @@ export const metadata = {
   description: "Relatorios comerciais basicos da operacao Baseforma."
 };
 
-export default async function AdminReportsPage({ searchParams }) {
-  const resolvedSearchParams = await searchParams;
-  const token = resolvedSearchParams?.token || "";
-  const access = await getAdminAccess(token);
+export default async function AdminReportsPage() {
+  const access = await getAdminAccess();
 
   if (!access.allowed) {
     return <AdminAccessRequired nextPath="/admin/relatorios" scope="os relatorios" />;
@@ -40,10 +38,10 @@ export default async function AdminReportsPage({ searchParams }) {
           </p>
         </div>
         <div className="admin-heading-actions">
-          <Link className="button button-secondary" href={adminHref("/admin/pedidos", access)}>
+          <Link className="button button-secondary" href={adminHref("/admin/pedidos")}>
             Ver pedidos
           </Link>
-          <Link className="button button-secondary" href={adminHref("/admin/operacao", access)}>
+          <Link className="button button-secondary" href={adminHref("/admin/operacao")}>
             Ver operacao
           </Link>
           <Link className="button button-secondary" href="/">
@@ -168,7 +166,7 @@ export default async function AdminReportsPage({ searchParams }) {
                   {analytics.recentOrders.map((order) => (
                     <tr key={order.id}>
                       <td>
-                        <Link href={`${adminHref("/admin/pedidos", access)}#order-${encodeURIComponent(order.id)}`}>
+                        <Link href={`${adminHref("/admin/pedidos")}#order-${encodeURIComponent(order.id)}`}>
                           {order.orderNumber}
                         </Link>
                       </td>
