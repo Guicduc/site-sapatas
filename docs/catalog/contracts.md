@@ -67,10 +67,10 @@
       "category_slug": "ponteira-interna-tubo",
       "format_slug": "redondo",
       "values": {
-        "diametroInterno": 22,
         "diametroBase": 28,
-        "profundidadeInsercao": 18,
-        "alturaApoio": 8
+        "alturaBase": 6,
+        "alturaPescoco": 18,
+        "paredeTubo": 1.5
       },
       "color": "Grafite",
       "finish": "fosco tecnico",
@@ -86,17 +86,18 @@
 
 ```json
 {
-  "contractVersion": "rhino-gh-v1",
+  "contractVersion": "rhino-gh-v2",
   "status": "cad_pending",
   "modelVersion": "tube-round-gh-v1",
   "fileName": "ORDER-BF-260504-AB12-BF-RD-PI-22X28X18.stl",
   "generatedAt": "2026-05-04T14:20:00.000Z",
   "items": [
     {
-      "contractVersion": "rhino-gh-v1",
+      "contractVersion": "rhino-gh-v2",
       "modelVersion": "tube-round-gh-v1",
       "engine": "rhino_grasshopper",
       "generationMode": "local_manual",
+      "sourceGh": "Produtos/Scripts-GH/Sapata_Interna_Tubo-Redondo.gh",
       "orderNumber": "BF-260504-AB12",
       "sku": "BF-RD-PI-22X28X18",
       "categorySlug": "ponteira-interna-tubo",
@@ -104,10 +105,10 @@
       "quantity": 4,
       "units": "mm",
       "parameters": {
-        "diametroInterno": 22,
         "diametroBase": 28,
-        "profundidadeInsercao": 18,
-        "alturaApoio": 8
+        "alturaBase": 6,
+        "alturaPescoco": 18,
+        "paredeTubo": 1.5
       },
       "technicalDefaults": {
         "fitAllowanceMm": -0.2,
@@ -125,13 +126,34 @@
 }
 ```
 
+Historico de versoes do contrato:
+
+- `rhino-gh-v1`: cobria apenas tubo redondo, com chaves do catalogo legado (`diametroInterno`, `profundidadeInsercao`, `alturaApoio`). Pedidos antigos podem carregar esse formato.
+- `rhino-gh-v2`: cobre os 5 formatos ativos, chaves alinhadas ao catalogo atual, campo `sourceGh` apontando o script Grasshopper e variantes de haste resolvidas pelo toggle `pescoco`.
+
 Estados CAD:
 
 - `pending_payment`: pedido configurado, ainda sem pagamento aprovado;
 - `cad_pending`: pagamento aprovado e STL pendente de geracao local;
 - `cad_generated`: STL gerado;
 - `ready_for_print`: STL registrado e pedido liberado para impressao;
-- `not_required`: pedido sem modelo CAD automatizado no v1.
+- `not_required`: pedido sem modelo CAD registrado no contrato.
+
+### Como adicionar um produto ao contrato CAD
+
+O registro central e o objeto `CAD_MODELS` em `lib/cad-contract.js`, indexado por `"categorySlug:formatSlug"`. Um formato que nao esta nesse registro gera pedidos `not_required`: eles nunca entram na etapa "Aguardando CAD" e o admin nao mostra o bloco de registrar STL/Orca. Ao adicionar uma familia ou formato novo:
+
+1. **Script Grasshopper**: garanta o `.gh` em `Produtos/Scripts-GH/` e anote os sliders que ele espera (ordem e nomes em `Produtos/scripts/gh_export_variations.py`, `PRODUCT_CONFIGS`).
+2. **Catalogo**: cadastre o formato em `lib/configurator-data.js`. As chaves de `parameters` do formato sao a fonte da verdade — o contrato le `item.values` por essas chaves.
+3. **Registro no contrato**: adicione a entrada em `CAD_MODELS` com:
+   - `modelVersion`: novo id em `CAD_MODEL_VERSION` (padrao `<modelo>-gh-v1`);
+   - `sourceGh`: caminho do script Grasshopper;
+   - `parameterKeys`: exatamente as chaves que o script GH consome (subconjunto das chaves do catalogo);
+   - `technicalDefaults`: folgas/chanfros da familia (press-fit usa `fitAllowanceMm`; base lisa nao);
+   - formatos com haste opcional usam `variants: { default, neck }`, resolvidos pelo toggle `pescoco` (normalizado para 0/1 pelo configurador).
+4. **Validacao**: crie um pedido de teste no configurador e confira em `/admin/pedidos` que o pedido nasce `cad_pending` apos pagamento, e que "Dados para Grasshopper" e o JSON copiado trazem os parametros certos (sem zeros inesperados).
+
+Atencao aos erros que ja aconteceram: chave de parametro divergente entre catalogo e contrato produz payload com zeros silenciosos (o contrato faz `Number(values[key] || 0)`); formato esquecido no registro simplesmente nao entra no fluxo CAD.
 
 ### `Order.metadata.pricing`
 
