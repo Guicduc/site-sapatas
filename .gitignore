@@ -1,5 +1,7 @@
 node_modules
 .next
+.next-preview
+.claude/
 out
 npm-debug.log*
 .next-dev-*.log
