@@ -7,7 +7,7 @@ Escopo fixo da operacao:
 - Checkout proprio do site.
 - Pagamento via Mercado Pago.
 - Frete por Melhor Envio quando homologado, com fallback manual preservado.
-- Nota fiscal em modo manual, com `INVOICE_PROVIDER=manual`.
+- Nota fiscal via provider Mercado Pago, com `INVOICE_PROVIDER=mercado_pago`.
 - Admin protegido por sessao e token operacional.
 
 ## 1. Pre-lancamento
@@ -33,7 +33,8 @@ Escopo fixo da operacao:
 - Confirmar frete:
   - Para lancamento manual: `SHIPPING_PROVIDER=manual`.
   - Para Melhor Envio homologado: `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
-- Confirmar `INVOICE_PROVIDER=manual`.
+- Confirmar `INVOICE_PROVIDER=mercado_pago`.
+- Confirmar `MERCADO_PAGO_INVOICE_API_URL` quando o endpoint fiscal Mercado Pago estiver liberado para a conta.
 - Confirmar `PRODUCTION_DAILY_UNIT_CAPACITY` com a capacidade real do dia.
 - Rodar antes do deploy:
 
@@ -129,9 +130,9 @@ GET /api/webhooks/mercado-pago
   - total, desconto e frete;
   - status de pagamento;
   - fila de producao;
-  - nota fiscal manual;
+  - nota fiscal;
   - expedicao.
-- Confirmar que a equipe sabe qual status mover manualmente em caso de pagamento aprovado.
+- Confirmar que a equipe sabe acompanhar NF pendente/emitida apos pagamento aprovado.
 - Confirmar que nenhuma Server Action administrativa foi exposta sem `assertAdminAccess` em alteracoes recentes.
 
 ## 7. Frete manual
@@ -166,13 +167,13 @@ Ative apenas depois da homologacao descrita em `docs/ops/shipping-integration.md
 - Manter compra de etiqueta, impressao e rastreio como processo externo/manual, pois ainda nao estao implementados no site.
 - So trocar para `MELHOR_ENVIO_ENV=production` apos comparacao operacional aprovada.
 
-## 9. Nota fiscal manual
+## 9. Nota fiscal Mercado Pago
 
-- Manter `INVOICE_PROVIDER=manual`.
+- Manter `INVOICE_PROVIDER=mercado_pago`.
 - Em `/admin/operacao`, conferir pedidos pagos que precisam de nota.
-- Emitir a nota no processo externo definido pela empresa.
-- Registrar manualmente no fluxo operacional o estado da nota e qualquer observacao necessaria.
-- Nao adicionar fornecedor, API ou variavel de NF sem decisao explicita.
+- Confirmar se a NF ficou como emitida ou pendente/falha via Mercado Pago.
+- Se `MERCADO_PAGO_INVOICE_API_URL` ainda nao estiver liberado, tratar a pendencia operacionalmente antes da expedicao.
+- Nao voltar para NF manual sem pedido explicito.
 
 ## 10. Go/no-go
 
@@ -187,7 +188,7 @@ Abrir para pedidos reais somente se todos os itens abaixo estiverem verdadeiros:
 - E-mails essenciais testados ou atendimento manual preparado.
 - Admin acessivel e pedido teste visivel.
 - Frete manual validado ou Melhor Envio homologado.
-- NF manual operacionalmente coberta.
+- NF Mercado Pago operacionalmente coberta ou pendencia via API explicitamente acompanhada.
 - Responsavel de atendimento acompanhando a primeira janela.
 
 ## 11. Rollback

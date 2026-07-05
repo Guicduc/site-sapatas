@@ -17,6 +17,7 @@ import {
   SHIPMENT_STATUS,
 } from "@/lib/fulfillment";
 import { formatCurrency } from "@/lib/format";
+import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
 import {
   getOrderById,
   getStoreMode,
@@ -58,8 +59,9 @@ const SIMPLE_PRODUCTION_OPTIONS = [
 
 const SIMPLE_INVOICE_OPTIONS = [
   { value: INVOICE_STATUS.PENDING, label: "NF pendente" },
-  { value: INVOICE_STATUS.MANUAL_PENDING, label: "NF manual pendente" },
-  { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF manual emitida" }
+  { value: INVOICE_STATUS.API_PENDING, label: "NF Mercado Pago pendente" },
+  { value: INVOICE_STATUS.API_ISSUED, label: "NF Mercado Pago emitida" },
+  { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF Mercado Pago" }
 ];
 
 const SIMPLE_SHIPMENT_OPTIONS = [
@@ -373,7 +375,7 @@ function AdminOrderCard({ row, access }) {
           <span className={`admin-status-badge admin-status-badge--${stage.tone}`}>
             {stage.label}
           </span>
-          <small className={fulfillment.invoice.status === INVOICE_STATUS.MANUAL_ISSUED ? "admin-nf-note--issued" : undefined}>
+          <small className={isIssuedInvoice(fulfillment.invoice) ? "admin-nf-note--issued" : undefined}>
             {formatInvoiceShort(fulfillment.invoice)}
           </small>
         </span>
@@ -517,10 +519,13 @@ function AdminOrderCard({ row, access }) {
 
         <details className="admin-order-section">
           <summary>
-            <strong>Operacao: fila, NF manual e expedicao</strong>
+            <strong>Operacao: fila, NF e expedicao</strong>
             <span className="admin-section-note">{productionStage}</span>
           </summary>
           <OperationForm order={order} fulfillment={fulfillment} access={access} />
+          {canRequestInvoice(order, fulfillment) && (
+            <InvoiceRequestForm order={order} access={access} />
+          )}
         </details>
 
         {payment && (
@@ -593,9 +598,9 @@ function OperationForm({ order, fulfillment, access }) {
       </fieldset>
 
       <fieldset className="operation-form__group">
-        <legend>Nota fiscal manual</legend>
+        <legend>Nota fiscal</legend>
         <label className="field">
-          <span>NF manual</span>
+          <span>Status NF</span>
           <select name="invoiceStatus" defaultValue={toSimpleInvoiceStatus(fulfillment.invoice.status)}>
             {SIMPLE_INVOICE_OPTIONS.map((status) => (
               <option key={status.value} value={status.value}>{status.label}</option>
@@ -654,6 +659,18 @@ function OperationForm({ order, fulfillment, access }) {
 
       <button className="button button-primary" type="submit">
         Salvar operacao
+      </button>
+    </form>
+  );
+}
+
+function InvoiceRequestForm({ order, access }) {
+  return (
+    <form className="cad-form invoice-request-form" action={requestMercadoPagoInvoice}>
+      <input type="hidden" name="orderId" value={order.id} />
+      <input type="hidden" name="token" value={access.token} />
+      <button className="button button-secondary" type="submit">
+        Solicitar NF Mercado Pago
       </button>
     </form>
   );
@@ -813,6 +830,25 @@ async function updatePrintQueue(formData) {
   revalidateAdminOrderPaths();
 }
 
+async function requestMercadoPagoInvoice(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  if (!orderId) return;
+
+  const order = await getOrderById(orderId);
+  if (!order || order.paymentStatus !== PAYMENT_STATUS.APPROVED) return;
+
+  await requestInvoiceAfterPayment(order, order.payments?.[0] || {});
+  revalidateAdminOrderPaths();
+}
+
 function buildOrderRows(orders, queue) {
   const queueByOrderId = new Map(queue.map((item) => [item.order.id, item]));
 
@@ -905,6 +941,17 @@ function isCompleted(order, fulfillment) {
     || [SHIPMENT_STATUS.SHIPPED, SHIPMENT_STATUS.DELIVERED].includes(fulfillment.shipment.status);
 }
 
+function canRequestInvoice(order, fulfillment) {
+  if (order.paymentStatus !== PAYMENT_STATUS.APPROVED) return false;
+
+  return ![
+    INVOICE_STATUS.API_ISSUED,
+    INVOICE_STATUS.MANUAL_ISSUED,
+    INVOICE_STATUS.NOT_REQUIRED,
+    INVOICE_STATUS.CANCELLED
+  ].includes(fulfillment.invoice.status);
+}
+
 function buildOrdersOverview(orders, rows, printQueueRows) {
   return {
     total: orders.length,
@@ -952,7 +999,7 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
     return {
       tone: "success",
       title: "Pronto para expedir",
-      detail: "Emitir NF e despachar."
+      detail: "Conferir NF e despachar."
     };
   }
 
@@ -1031,8 +1078,17 @@ function formatInvoiceShort(invoice) {
 
 function formatInvoiceSummary(invoice) {
   const label = getInvoiceStatusLabel(invoice.status);
-  if (!invoice.number) return label;
-  return `${label} | NF ${invoice.number}${invoice.series ? ` serie ${invoice.series}` : ""}`;
+  const details = [
+    invoice.number ? `NF ${invoice.number}${invoice.series ? ` serie ${invoice.series}` : ""}` : "",
+    invoice.providerId ? `ID ${invoice.providerId}` : "",
+    invoice.statusDetail || ""
+  ].filter(Boolean);
+
+  return details.length ? `${label} | ${details.join(" | ")}` : label;
+}
+
+function isIssuedInvoice(invoice) {
+  return [INVOICE_STATUS.MANUAL_ISSUED, INVOICE_STATUS.API_ISSUED].includes(invoice?.status);
 }
 
 function comparePrintQueueRows(left, right) {

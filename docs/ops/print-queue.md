@@ -24,7 +24,7 @@ Use apenas estes estados no trabalho diario:
 
 - `Aguardando`: pedido pago na fila, ainda sem impressao iniciada.
 - `Imprimindo`: producao em andamento na mesa/impressora definida.
-- `Pronto para expedir`: impressao finalizada, pedido pronto para nota fiscal manual e expedicao.
+- `Pronto para expedir`: impressao finalizada, pedido pronto para conferencia de nota fiscal e expedicao.
 
 ## Expedicao
 
@@ -34,7 +34,7 @@ A expedicao tambem deve ficar simples:
 - `Pronto para expedir`: impressao concluida e pacote pronto para saida/coleta.
 - `Expedido`: pedido saiu da operacao e deve ter rastreio ou registro de retirada.
 
-Nota fiscal nao faz parte da fila de impressao. O Mercado Pago resolve pagamento, mas a emissao fiscal continua fora dele no fluxo atual; enquanto nao houver fornecedor fiscal integrado, mantenha `INVOICE_PROVIDER=manual` e trate NF na etapa de expedicao/fechamento operacional.
+Nota fiscal nao faz parte da fila de impressao. O Mercado Pago resolve pagamento e o site registra a NF pelo provider fiscal Mercado Pago (`INVOICE_PROVIDER=mercado_pago`). Enquanto o endpoint fiscal da conta nao estiver configurado, a NF deve permanecer como pendente via API na etapa de expedicao/fechamento operacional.
 
 ## Ordenacao
 

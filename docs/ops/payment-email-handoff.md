@@ -13,7 +13,7 @@ Atualizado em 29/06/2026.
   - Segredos de sessao/admin.
   - Resend e remetentes transacionais.
   - Frete em modo manual, com origem `05713420`.
-  - Nota fiscal em modo manual.
+  - Nota fiscal direcionada para provider Mercado Pago.
 - DNS do Registro.br foi salvo para Vercel e Resend:
   - `A baseforma.com.br -> 216.198.79.1`.
   - `CNAME www.baseforma.com.br -> f81d286f1555399c.vercel-dns-017.com.`
