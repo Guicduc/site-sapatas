@@ -49,3 +49,25 @@ export function FamilyCard({ family }) {
     </article>
   );
 }
+
+export function CompactFamilyCard({ family }) {
+  return (
+    <article className="compact-family-card category-card">
+      {family.image && (
+        <img className="category-card__image" src={family.image.src} alt={family.image.alt} />
+      )}
+      <div className="category-card__body">
+        <p className="eyebrow">{family.eyebrow}</p>
+        <h3>{family.name}</h3>
+        <p>{family.tagline}</p>
+        <div className="meta-list">
+          <span>{family.fixation}</span>
+          <span>A partir de {formatCurrency(family.priceFromBrl)}</span>
+        </div>
+      </div>
+      <Link className="button button-primary" href={family.url}>
+        Ver produto
+      </Link>
+    </article>
+  );
+}

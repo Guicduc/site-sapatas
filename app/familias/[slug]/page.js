@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { FamilyCard } from "@/components/family-card";
+import { CompactFamilyCard } from "@/components/family-card";
 import { StructuredData } from "@/components/structured-data";
 import { buildWhatsAppUrl, formatCurrency } from "@/lib/format";
 import {
@@ -41,7 +41,7 @@ export default async function FamilyPage({ params }) {
     notFound();
   }
 
-  const relatedFamilies = getRelatedFamilies(family.slug);
+  const relatedFamilies = getRelatedFamilies(family.slug).slice(0, 4);
   const whatsappMessage = `Oi, quero comprar a família ${family.name} e confirmar a melhor variante para o meu projeto.`;
 
   return (
@@ -199,14 +199,35 @@ export default async function FamilyPage({ params }) {
         </article>
 
         <article className="surface-card faq-column">
-          <h3>Famílias relacionadas</h3>
-          <div className="related-grid">
-            {relatedFamilies.map((item) => (
-              <FamilyCard key={item.slug} family={item} />
-            ))}
+          <h3>Próximo passo</h3>
+          <p>
+            Se esta família não encaixar no seu caso, compare formatos próximos antes
+            de abrir um projeto especial.
+          </p>
+          <div className="action-row">
+            <Link className="button button-secondary" href="/catalogo">
+              Ver catálogo completo
+            </Link>
+            <Link className="button button-secondary" href={`/projeto-especial?family=${family.slug}`}>
+              Projeto especial
+            </Link>
           </div>
         </article>
       </section>
+
+      {relatedFamilies.length > 0 && (
+        <section className="related-products-section">
+          <div className="related-products-section__heading">
+            <p className="eyebrow">Produtos semelhantes</p>
+            <h2>Outras sapatas para comparar</h2>
+          </div>
+          <div className="related-products-grid">
+            {relatedFamilies.map((item) => (
+              <CompactFamilyCard key={item.slug} family={item} />
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

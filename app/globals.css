@@ -2451,6 +2451,76 @@ dt {
   align-content: start;
 }
 
+.related-products-section {
+  display: grid;
+  gap: clamp(14px, 1.8vw, 22px);
+  border-top: 1px solid var(--line);
+  padding-top: clamp(18px, 2.4vw, 30px);
+}
+
+.related-products-section__heading {
+  display: grid;
+  gap: 6px;
+  max-width: 680px;
+}
+
+.related-products-section__heading h2 {
+  font-size: clamp(1.45rem, 1.5vw, 1.9rem);
+  line-height: 1.12;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: clamp(10px, 1.2vw, 16px);
+}
+
+.compact-family-card {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 0;
+  padding: clamp(10px, 1vw, 14px);
+}
+
+.compact-family-card .category-card__image {
+  aspect-ratio: 2.25 / 1;
+}
+
+.compact-family-card .category-card__body {
+  gap: 6px;
+}
+
+.compact-family-card h3 {
+  max-width: 18ch;
+  font-size: 1.05rem;
+  line-height: 1.16;
+}
+
+.compact-family-card p:not(.eyebrow) {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: none;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.35;
+}
+
+.compact-family-card .meta-list {
+  gap: 6px;
+}
+
+.compact-family-card .meta-list span {
+  min-height: 26px;
+  padding: 3px 7px;
+  font-size: 0.78rem;
+}
+
+.compact-family-card .button {
+  min-height: 38px;
+  padding-inline: 12px;
+  font-size: 0.88rem;
+}
+
 .family-card__image {
   display: block;
   width: 100%;
