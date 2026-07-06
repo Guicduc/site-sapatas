@@ -3833,33 +3833,42 @@ summary {
 
 .checkout-address {
   gap: 6px;
+  grid-template-columns: minmax(0, 1fr);
   margin: 0;
   padding: 8px 10px;
 }
 
+.checkout-address__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.checkout-address .field {
+  min-width: 0;
+}
+
+.checkout-address input {
+  min-width: 0;
+}
+
+.checkout-address__lookup-status {
+  min-height: calc(0.76rem * 1.26 * 2);
+  overflow-wrap: anywhere;
+}
+
+.checkout-address__lookup-status.is-empty {
+  visibility: hidden;
+}
+
 @media (min-width: 1120px) {
   .cart-summary .checkout-address {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .cart-summary .checkout-address .field-row {
-    display: contents;
-  }
-
-  .cart-summary .checkout-field--postal {
-    grid-column: 1;
-  }
-
-  .cart-summary .checkout-field--state {
-    grid-column: 2;
-  }
-
-  .cart-summary .checkout-field--street {
-    grid-column: 3 / -1;
-  }
-
-  .cart-summary .checkout-note {
-    grid-column: 1 / -1;
+  .cart-summary .checkout-address__row--postal {
+    grid-template-columns: minmax(0, 1.4fr) minmax(58px, 0.6fr);
   }
 }
 
