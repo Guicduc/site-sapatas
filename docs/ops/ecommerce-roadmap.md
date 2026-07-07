@@ -11,7 +11,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Plataforma propria: catalogo, configurador, carrinho, checkout, pedido, conta do cliente e administracao rodam no proprio site.
 - Checkout externo de loja nao faz parte da arquitetura atual nem do roadmap futuro.
 - Frete tem adaptador real para Melhor Envio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
-- Nota fiscal esta direcionada para provider Mercado Pago via `lib/invoice-provider.js`; a chamada real depende do endpoint fiscal Mercado Pago estar liberado/configurado para a conta.
+- Nota fiscal esta direcionada para provider Mercado Pago via `lib/invoice-provider.js`; a chamada real depende do endpoint fiscal Mercado Pago estar liberado/configurado para a conta. Enquanto isso, a emissao e operacional pelo Sistema de Gestao Mercado Pago, com registro manual no admin.
 
 ## Ja implementado
 
@@ -27,6 +27,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.
 - Relatorios basicos em `/admin/relatorios`.
 - Operacao de producao, nota fiscal e expedicao em `/admin/operacao`.
+- Procedimento de nota fiscal via Sistema de Gestao Mercado Pago em `docs/ops/invoice-manual.md`, com registro de numero, serie, chave de acesso e emissao nos metadados do pedido.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
 - Login administrativo em `/admin`, com `ADMIN_ACCESS_TOKEN` usado para criar sessao assinada em cookie HttpOnly.
 
@@ -52,12 +53,13 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Homologar dimensoes/peso de envio com pedidos reais antes de trocar `MELHOR_ENVIO_ENV` para `production`.
 - Confirmar `CART_RECOVERY_RETENTION_DAYS` conforme a politica de atendimento e privacidade.
 - Confirmar `INVOICE_PROVIDER=mercado_pago` e configurar `MERCADO_PAGO_INVOICE_API_URL` quando o endpoint fiscal Mercado Pago estiver disponivel para a conta.
+- Enquanto o endpoint fiscal nao estiver liberado, emitir NF-e pelo Sistema de Gestao Mercado Pago e registrar numero, serie, chave e emissao no admin.
 
 ## Backlog futuro
 
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
 - Compra de etiqueta, impressao e rastreio no Melhor Envio, depois da homologacao de cotacao.
-- Completar homologacao do endpoint fiscal Mercado Pago, incluindo emissao, cancelamento e armazenamento de chave/documento.
+- Completar homologacao do endpoint fiscal Mercado Pago, incluindo emissao, cancelamento e armazenamento de chave/documento (XML/PDF).
 - Regras avancadas de cupons: limites por cliente, validade, uso maximo e campanha.
 - Automacao de recuperacao de carrinho por e-mail ou WhatsApp, somente depois de aprovar texto, consentimento e frequencia.
 - Estoque de insumos ou capacidade por maquina, se a operacao deixar de ser apenas sob demanda.
@@ -70,6 +72,6 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 
 1. Implementar usuarios administrativos nominais, papeis e auditoria.
 2. Homologar frete Melhor Envio em sandbox com token, CEP de origem, servicos permitidos e pedidos reais.
-3. Homologar endpoint fiscal Mercado Pago no adaptador isolado.
+3. Homologar endpoint fiscal Mercado Pago no adaptador isolado; enquanto isso, manter emissao operacional pelo Sistema de Gestao Mercado Pago.
 4. Adicionar testes E2E dos fluxos criticos.
 5. Implementar automacao de recuperacao de carrinho com consentimento.

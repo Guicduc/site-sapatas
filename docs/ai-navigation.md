@@ -111,11 +111,13 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 
 - `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal, expedicao e capacidade.
 - `lib/invoice-provider.js`: adaptador de nota fiscal via provider Mercado Pago, acionado apos pagamento aprovado.
+- `lib/invoice-config.js`: dados fiscais de referencia (CNPJ, NCM, CFOP, natureza) exibidos no checklist de NF do admin.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `docs/ops/invoice-manual.md`: procedimento de emissao fiscal pelo Sistema de Gestao Mercado Pago e pendencias para integracao por API.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
-- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal usa provider Mercado Pago e depende do endpoint fiscal configurado em `MERCADO_PAGO_INVOICE_API_URL`.
+- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal usa provider Mercado Pago e depende do endpoint fiscal configurado em `MERCADO_PAGO_INVOICE_API_URL`; sem endpoint, a emissao e operacional via Sistema de Gestao Mercado Pago.
 
 - Sem `DATABASE_URL`, pedidos sao persistidos em `.local-data/orders.dev.json`.
 - O armazenamento JSON e exclusivo de desenvolvimento; producao exige `DATABASE_URL`.
