@@ -103,6 +103,7 @@ function CheckoutForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
+  const [documentNumber, setDocumentNumber] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [address, setAddress] = useState({
     postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
@@ -129,7 +130,9 @@ function CheckoutForm() {
   });
   const commerce = shippingQuoteState.commerce || localCommerce;
   const couponReady = !couponCode || commerce.discount.applied;
+  const documentDigits = documentNumber.replace(/\D/g, "");
   const canSubmit = items.length > 0 && name.trim() && email.trim() && contact.trim()
+    && [11, 14].includes(documentDigits.length)
     && address.postalCode.trim() && address.street.trim() && address.number.trim()
     && address.city.trim() && address.state.trim().length === 2
     && couponReady;
@@ -351,7 +354,7 @@ function CheckoutForm() {
         },
         body: JSON.stringify({
           source: "configurator",
-          customer: { name, email, contact },
+          customer: { name, email, contact, document: documentDigits },
           shippingAddress: address,
           couponCode: normalizeCouponCode(couponCode),
           notes: "",
@@ -422,6 +425,17 @@ function CheckoutForm() {
             onChange={(event) => setContact(event.target.value)}
           />
         </label>
+        <label className="field">
+          <span>CPF ou CNPJ</span>
+          <input
+            inputMode="numeric"
+            required
+            value={documentNumber}
+            placeholder="Somente numeros"
+            maxLength={18}
+            onChange={(event) => setDocumentNumber(event.target.value)}
+          />
+        </label>
       </div>
       <div className="checkout-account-disclosure">
         <div>
@@ -429,8 +443,9 @@ function CheckoutForm() {
           <strong>Seu pedido cria uma area de acompanhamento.</strong>
         </div>
         <p>
-          Usaremos nome, e-mail, WhatsApp e entrega para vincular seus pedidos. Depois voce acessa
-          a conta com e-mail, numero do pedido e codigo enviado por e-mail, sem senha.
+          Usaremos nome, e-mail, WhatsApp e entrega para vincular seus pedidos. O CPF/CNPJ e
+          usado somente para a emissao automatica da nota fiscal. Depois voce acessa a conta com
+          e-mail, numero do pedido e codigo enviado por e-mail, sem senha.
         </p>
       </div>
       <fieldset className="checkout-address">

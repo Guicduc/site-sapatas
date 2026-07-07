@@ -11,7 +11,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Plataforma propria: catalogo, configurador, carrinho, checkout, pedido, conta do cliente e administracao rodam no proprio site.
 - Checkout externo de loja nao faz parte da arquitetura atual nem do roadmap futuro.
 - Frete tem adaptador real para Melhor Envio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
-- Nota fiscal usa Mercado Pago Sistema de Gestao como emissor operacional, com registro manual no admin; `lib/invoice-provider.js` mantem o caminho de emissao por API dormente ate existir endpoint fiscal liberado para a conta.
+- Nota fiscal e automatizada por API via Focus NFe (`lib/invoice-provider.js`): pagamento aprovado emite a NF-e automaticamente. O Mercado Pago nao tem API publica de NF-e; o adaptador de endpoint MP segue dormente.
 
 ## Ja implementado
 
@@ -26,8 +26,9 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Recuperacao de carrinho sem disparo automatico, com leads em `cart_recovery_leads` ou `.local-data/cart-recovery.dev.json`.
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.
 - Relatorios basicos em `/admin/relatorios`.
-- Operacao de producao, nota fiscal Mercado Pago e expedicao em `/admin/operacao`.
-- Procedimento de nota fiscal via Sistema de Gestao Mercado Pago em `docs/ops/invoice-manual.md`, com registro de numero, serie, chave de acesso e emissao nos metadados do pedido.
+- Operacao de producao, nota fiscal automatizada e expedicao em `/admin/operacao`.
+- Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
+- Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
 - Login administrativo em `/admin`, com `ADMIN_ACCESS_TOKEN` usado para criar sessao assinada em cookie HttpOnly.
 
@@ -52,14 +53,14 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Para frete real, definir `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Homologar dimensoes/peso de envio com pedidos reais antes de trocar `MELHOR_ENVIO_ENV` para `production`.
 - Confirmar `CART_RECOVERY_RETENTION_DAYS` conforme a politica de atendimento e privacidade.
-- Emitir NF-e pelo Sistema de Gestao Mercado Pago e registrar numero, serie, chave e emissao no admin (`INVOICE_PROVIDER=mercado_pago_system`).
-- Trocar para `INVOICE_PROVIDER=mercado_pago` e configurar `MERCADO_PAGO_INVOICE_API_URL` somente quando um endpoint fiscal Mercado Pago estiver disponivel para a conta.
+- Criar conta Focus NFe, enviar certificado digital A1 e configurar `FOCUS_NFE_TOKEN` (homologacao primeiro, depois producao).
+- Homologar a emissao automatica com `FOCUS_NFE_ENV=homologacao` e validar CFOP/CSOSN com a contabilidade antes de trocar para `producao`.
 
 ## Backlog futuro
 
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
 - Compra de etiqueta, impressao e rastreio no Melhor Envio, depois da homologacao de cotacao.
-- Integracao real de nota fiscal por API, caso o Mercado Pago disponibilize endpoint fiscal oficial para esta conta, incluindo emissao, cancelamento e armazenamento de XML/PDF.
+- Cancelamento e carta de correcao de NF-e por API na Focus NFe, alem de armazenamento proprio de XML/PDF e webhook de status.
 - Regras avancadas de cupons: limites por cliente, validade, uso maximo e campanha.
 - Automacao de recuperacao de carrinho por e-mail ou WhatsApp, somente depois de aprovar texto, consentimento e frequencia.
 - Estoque de insumos ou capacidade por maquina, se a operacao deixar de ser apenas sob demanda.
@@ -72,6 +73,6 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 
 1. Implementar usuarios administrativos nominais, papeis e auditoria.
 2. Homologar frete Melhor Envio em sandbox com token, CEP de origem, servicos permitidos e pedidos reais.
-3. Homologar emissao NF-e no Sistema de Gestao Mercado Pago e confirmar se existe API fiscal oficial para automatizacao via `lib/invoice-provider.js`.
+3. Homologar a emissao automatica de NF-e na Focus NFe (token de homologacao, certificado A1, notas de teste) e virar para producao.
 4. Adicionar testes E2E dos fluxos criticos.
 5. Implementar automacao de recuperacao de carrinho com consentimento.

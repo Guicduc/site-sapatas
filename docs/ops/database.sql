@@ -97,8 +97,8 @@ create index if not exists account_access_codes_email_idx on account_access_code
 --   },
 --   "invoice": {
 --     "status": "pending|manual_pending|manual_issued|api_pending|api_issued|api_failed|not_required|cancelled",
---     "mode": "manual|mercado_pago",
---     "provider": "mercado_pago",
+--     "mode": "manual|focus_nfe|mercado_pago",
+--     "provider": "focus_nfe|mercado_pago",
 --     "providerId": "id externo da NF",
 --     "number": "000123",
 --     "series": "1",
