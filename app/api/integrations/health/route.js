@@ -7,8 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
-  const requestUrl = new URL(request.url);
-  const token = request.headers.get("x-admin-token") || requestUrl.searchParams.get("token") || "";
+  const token = request.headers.get("x-admin-token") || "";
   const access = await getAdminAccess(token);
 
   if (!access.allowed) {

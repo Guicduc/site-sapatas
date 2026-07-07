@@ -28,9 +28,9 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 ## Rotas administrativas
 
-- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal via Mercado Pago Sistema de Gestao e expedicao.
+- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal e expedicao.
 - `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
-- `/admin/operacao`: fila de producao, capacidade, nota fiscal via Mercado Pago Sistema de Gestao, expedicao e observacoes internas.
+- `/admin/operacao`: fila de producao, capacidade, nota fiscal, expedicao e observacoes internas.
 - `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
 - `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`.
 
@@ -93,7 +93,7 @@ As familias atuais publicadas sao:
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
-- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: componentes legados de apoio tecnico, fora do fluxo administrativo principal. O admin simplificado nao possui etapa manual de CAD/Orca.
+- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: registro de STL e precificacao Orca dentro do pedido expandido em `/admin/pedidos` (bloco recolhido "Fluxo CAD"), exibidos quando o pedido exige CAD (`shouldRequireCad`).
 
 ## Pedidos e persistencia
 
@@ -109,13 +109,15 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 
 ## Operacao e relatorios
 
-- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal operacional, expedicao e capacidade.
+- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal, expedicao e capacidade.
+- `lib/invoice-provider.js`: adaptador de nota fiscal via provider Mercado Pago, acionado apos pagamento aprovado.
+- `lib/invoice-config.js`: dados fiscais de referencia (CNPJ, NCM, CFOP, natureza) exibidos no checklist de NF do admin.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
 - `docs/ops/invoice-manual.md`: procedimento de emissao fiscal pelo Sistema de Gestao Mercado Pago e pendencias para integracao por API.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
-- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal usa Mercado Pago Sistema de Gestao operacionalmente, sem emissao automatica por API no site.
+- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal usa provider Mercado Pago e depende do endpoint fiscal configurado em `MERCADO_PAGO_INVOICE_API_URL`; sem endpoint, a emissao e operacional via Sistema de Gestao Mercado Pago.
 
 - Sem `DATABASE_URL`, pedidos sao persistidos em `.local-data/orders.dev.json`.
 - O armazenamento JSON e exclusivo de desenvolvimento; producao exige `DATABASE_URL`.
@@ -156,10 +158,11 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 
 1. Adicione ou revise o script em `Produtos/Scripts-GH/`.
 2. Atualize `lib/configurator-data.js` com categoria/formato/parametros.
-3. Se houver pagina SEO, atualize `lib/site-data.js`.
-4. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
-5. Rode `npm run export:gh`, `npm run slice:dataset` e `npm run slice:check`.
-6. Valide o configurador e o carrinho.
+3. Registre o modelo em `CAD_MODELS` dentro de `lib/cad-contract.js` (chaves de parametros, script GH, defaults tecnicos e variantes de haste). Passo a passo em `docs/catalog/contracts.md`, secao "Como adicionar um produto ao contrato CAD". Sem esse registro o pedido nasce como `not_required` e nunca entra no fluxo CAD do admin.
+4. Se houver pagina SEO, atualize `lib/site-data.js`.
+5. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
+6. Rode `npm run export:gh`, `npm run slice:dataset` e `npm run slice:check`.
+7. Valide o configurador, o carrinho e o payload CAD no admin (`/admin/pedidos`, secao "Dados para Grasshopper").
 
 ## Cuidados ao alterar
 

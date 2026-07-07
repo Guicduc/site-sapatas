@@ -96,11 +96,14 @@ create index if not exists account_access_codes_email_idx on account_access_code
 --     "notes": "observacoes"
 --   },
 --   "invoice": {
---     "status": "pending|manual_pending|manual_issued|not_required|cancelled",
---     "mode": "manual",
+--     "status": "pending|manual_pending|manual_issued|api_pending|api_issued|api_failed|not_required|cancelled",
+--     "mode": "manual|mercado_pago",
+--     "provider": "mercado_pago",
+--     "providerId": "id externo da NF",
 --     "number": "000123",
 --     "series": "1",
 --     "accessKey": "chave NF-e se houver",
+--     "documentUrl": "URL do documento/DANFE se houver",
 --     "issuedAt": "ISO datetime",
 --     "notes": "pendencias ou observacoes fiscais",
 --     "updatedAt": "ISO datetime"

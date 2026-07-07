@@ -5,12 +5,12 @@ import { AdminAccessRequired } from "@/components/admin-access-required";
 import { AdminCadPanel } from "@/components/admin-cad-panel";
 import { AdminLogoutForm } from "@/components/admin-logout-form";
 import { AdminPricingPanel } from "@/components/admin-pricing-panel";
+import { CopyJsonButton } from "@/components/copy-json-button";
 import { adminHref, assertAdminAccess, getAdminAccess } from "@/lib/admin-session";
 import { CAD_STATUS, getGrasshopperPayload, shouldRequireCad } from "@/lib/cad-contract";
 import {
   buildProductionQueue,
   getInvoiceStatusLabel,
-  getShipmentStatusLabel,
   INVOICE_STATUS,
   normalizeFulfillment,
   PRODUCTION_STATUS,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/fulfillment";
 import { formatCurrency } from "@/lib/format";
 import { getInvoiceConfig } from "@/lib/invoice-config";
+import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
 import {
   getOrderById,
   getStoreMode,
@@ -26,7 +27,7 @@ import {
   updateOrderFulfillmentState,
   updateOrderPricingState
 } from "@/lib/order-store";
-import { ORDER_STATUS, PAYMENT_STATUS, getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
+import { ORDER_STATUS, PAYMENT_STATUS, getPaymentStatusLabel } from "@/lib/order-status";
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
@@ -59,8 +60,9 @@ const SIMPLE_PRODUCTION_OPTIONS = [
 
 const SIMPLE_INVOICE_OPTIONS = [
   { value: INVOICE_STATUS.PENDING, label: "NF pendente" },
-  { value: INVOICE_STATUS.MANUAL_PENDING, label: "NF pendente no emissor" },
-  { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF emitida no emissor" }
+  { value: INVOICE_STATUS.API_PENDING, label: "NF Mercado Pago pendente" },
+  { value: INVOICE_STATUS.API_ISSUED, label: "NF Mercado Pago emitida" },
+  { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF Mercado Pago" }
 ];
 
 const SIMPLE_SHIPMENT_OPTIONS = [
@@ -70,8 +72,7 @@ const SIMPLE_SHIPMENT_OPTIONS = [
 ];
 
 export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todos", nextPath = "/admin/pedidos" }) {
-  const token = searchParams?.token || "";
-  const access = await getAdminAccess(token);
+  const access = await getAdminAccess();
 
   if (!access.allowed) {
     return <AdminAccessRequired nextPath={nextPath} scope="os pedidos" />;
@@ -98,7 +99,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
           </p>
         </div>
         <div className="admin-heading-actions">
-          <Link className="button button-secondary" href={adminHref("/admin/relatorios", access)}>
+          <Link className="button button-secondary" href={adminHref("/admin/relatorios")}>
             Ver relatorios
           </Link>
           <Link className="button button-secondary" href="/">
@@ -135,7 +136,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
         {FILTERS.map((filter) => (
           <Link
             className={`admin-workspace-tab${activeFilter === filter.id ? " is-active" : ""}`}
-            href={adminHref(`/admin/pedidos?fila=${filter.id}`, access)}
+            href={adminHref(`/admin/pedidos?fila=${filter.id}`)}
             aria-current={activeFilter === filter.id ? "page" : undefined}
             key={filter.id}
           >
@@ -157,7 +158,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
       ) : (
         <div className="admin-order-list">
           {filteredRows.map((row) => (
-            <AdminOrderCard row={row} access={access} activeFilter={activeFilter} key={row.order.id} />
+            <AdminOrderCard row={row} access={access} key={row.order.id} />
           ))}
         </div>
       )}
@@ -198,7 +199,7 @@ function PrintQueuePanel({ rows, queueSummary, access }) {
                 </summary>
 
                 <div className="admin-print-queue__expanded">
-                  <PrintModelInputs order={row.order} />
+                  <GrasshopperSection order={row.order} />
                   <section className="admin-order-section">
                     <div className="admin-section-heading">
                       <div>
@@ -277,19 +278,31 @@ function PrintQueueForm({ order, fulfillment, access }) {
   );
 }
 
-function PrintModelInputs({ order }) {
+function GrasshopperSection({ order }) {
   if (!order.items.length) {
     return (
       <section className="admin-order-section">
-        <h3>Inputs do modelo</h3>
+        <h3>Dados para Grasshopper</h3>
         <p className="admin-note">Pedido especial sem item parametrico.</p>
       </section>
     );
   }
 
+  const payloadText = JSON.stringify(
+    shouldRequireCad(order) ? getGrasshopperPayload(order) : buildMachinePayload(order),
+    null,
+    2
+  );
+
   return (
     <section className="admin-order-section">
-      <h3>Inputs Grasshopper/modelo</h3>
+      <div className="admin-section-heading">
+        <div>
+          <h3>Dados para Grasshopper</h3>
+          <p>Parametros em mm por item, prontos para o modelo parametrico.</p>
+        </div>
+        <CopyJsonButton text={payloadText} label="Copiar JSON do pedido" />
+      </div>
       <div className="admin-model-inputs">
         {order.items.map((item) => (
           <article className="admin-model-input-card" key={item.id}>
@@ -320,20 +333,38 @@ function PrintModelInputs({ order }) {
   );
 }
 
-function AdminOrderCard({ row, access, activeFilter }) {
-  const { order, fulfillment, queuePosition, capacity, nextAction } = row;
+function buildMachinePayload(order) {
+  return {
+    contractVersion: order.metadata?.cad?.contractVersion || "admin-order-v1",
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    units: "mm",
+    items: order.items.map((item) => ({
+      itemId: item.id,
+      sku: item.sku || null,
+      model: formatModelKey(item),
+      quantity: item.quantity,
+      color: item.color || null,
+      finish: item.finish || null,
+      parameters: item.values || {}
+    }))
+  };
+}
+
+function AdminOrderCard({ row, access }) {
+  const { order, fulfillment, nextAction } = row;
   const payment = order.payments?.[0];
   const requiresCad = shouldRequireCad(order);
-  const itemCount = order.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const stage = getOrderStage(row);
   const productSummary = formatOrderProducts(order);
   const productionStage = formatProductionStage(fulfillment.production.status);
+  const shippingAddress = formatShippingAddress(order);
 
   return (
-    <details className={`surface-card admin-order-card admin-order-row admin-order-row--${nextAction.tone}`} id={`order-${order.id}`}>
+    <details className={`surface-card admin-order-card admin-order-row admin-order-row--${stage.tone}`} id={`order-${order.id}`}>
       <summary className="admin-order-summary">
-        <span className={`admin-status-dot admin-status-dot--${nextAction.tone}`} aria-hidden="true" />
+        <span className={`admin-status-dot admin-status-dot--${stage.tone}`} aria-hidden="true" />
         <span className="admin-order-summary__main">
-          <span className="eyebrow">{formatSource(order.source)}</span>
           <strong>{order.orderNumber}</strong>
           <small>{productSummary}</small>
         </span>
@@ -342,24 +373,15 @@ function AdminOrderCard({ row, access, activeFilter }) {
           <small>{formatDateTime(order.createdAt)}</small>
         </span>
         <span className="admin-order-summary__status">
-          <span className={`admin-status-badge admin-status-badge--${nextAction.tone}`}>
-            {formatOrderStatusForAdmin(order.status)}
+          <span className={`admin-status-badge admin-status-badge--${stage.tone}`}>
+            {stage.label}
           </span>
-          <small>{getPaymentStatusLabel(order.paymentStatus)}</small>
-        </span>
-        <span className="admin-order-summary__action">
-          <span>{nextAction.title}</span>
-          <small>{nextAction.detail}</small>
-        </span>
-        <span className="admin-order-summary__status">
-          <span className="admin-status-badge admin-status-badge--info">
-            {productionStage}
-          </span>
-          <small>{getShipmentStatusLabel(fulfillment.shipment.status)}</small>
+          <small className={isIssuedInvoice(fulfillment.invoice) ? "admin-nf-note--issued" : undefined}>
+            {formatInvoiceShort(fulfillment.invoice)}
+          </small>
         </span>
         <span className="admin-order-summary__total">
           <strong>{formatCurrency(order.totalBrl)}</strong>
-          <small>{formatCapacitySummary(capacity, fulfillment, itemCount || order.items.length)}</small>
         </span>
       </summary>
 
@@ -383,12 +405,12 @@ function AdminOrderCard({ row, access, activeFilter }) {
             <dd>{order.customer.contact || "Sem contato"}</dd>
           </div>
           <div>
-            <dt>Nota fiscal</dt>
-            <dd>{getInvoiceStatusLabel(fulfillment.invoice.status)}</dd>
+            <dt>Endereco de entrega</dt>
+            <dd>{shippingAddress || "Sem endereco cadastrado"}</dd>
           </div>
           <div>
-            <dt>Fila</dt>
-            <dd>{queuePosition ? `#${queuePosition}` : "Fora da fila ativa"}</dd>
+            <dt>Nota fiscal</dt>
+            <dd>{formatInvoiceSummary(fulfillment.invoice)}</dd>
           </div>
         </dl>
 
@@ -412,7 +434,15 @@ function AdminOrderCard({ row, access, activeFilter }) {
                       <tr key={item.id}>
                         <td>{item.sku}</td>
                         <td>{formatProductName(item)}</td>
-                        <td>{formatValues(item.values)}</td>
+                        <td>
+                          <span className="admin-measure-list">
+                            {Object.entries(item.values || {}).map(([key, value]) => (
+                              <span key={key}>{formatParameterLabel(key)}: {formatParameterValue(value)}</span>
+                            ))}
+                            {item.color && <span>Cor: {item.color}</span>}
+                            {item.finish && <span>Acabamento: {item.finish}</span>}
+                          </span>
+                        </td>
                         <td>{item.quantity}</td>
                         <td>{formatCurrency(item.totalPriceBrl)}</td>
                       </tr>
@@ -443,7 +473,10 @@ function AdminOrderCard({ row, access, activeFilter }) {
                 </div>
                 <div>
                   <dt>Frete</dt>
-                  <dd>{formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}</dd>
+                  <dd>
+                    {formatCurrency(order.metadata.commerce.shipping?.amountBrl || 0)}
+                    <small>{formatShippingDetail(order.metadata.commerce.shipping)}</small>
+                  </dd>
                 </div>
                 <div className="checkout-totals__total">
                   <dt>Total</dt>
@@ -454,6 +487,30 @@ function AdminOrderCard({ row, access, activeFilter }) {
           )}
         </div>
 
+        {order.items.length > 0 && <GrasshopperSection order={order} />}
+
+        {requiresCad && (
+          <details className="admin-order-section">
+            <summary>
+              <strong>Fluxo CAD: registrar STL e precificar com Orca</strong>
+              <span className="admin-section-note">{order.metadata?.cad?.fileName ? "STL registrado" : "STL pendente"}</span>
+            </summary>
+            <section className="admin-workflow-panels" aria-label="CAD e precificacao">
+              <AdminCadPanel
+                order={{
+                  id: order.id,
+                  orderNumber: order.orderNumber,
+                  cad: order.metadata?.cad || {}
+                }}
+                payload={getGrasshopperPayload(order)}
+                action={registerCadFile}
+                token={access.token}
+              />
+              <AdminPricingPanel order={order} action={calculateOrcaPricing} token={access.token} />
+            </section>
+          </details>
+        )}
+
         {order.technicalReviews?.length > 0 && (
           <details className="admin-order-section">
             <summary>Revisao tecnica</summary>
@@ -461,32 +518,16 @@ function AdminOrderCard({ row, access, activeFilter }) {
           </details>
         )}
 
-        {requiresCad && (
-          <section className="admin-workflow-panels" aria-label="CAD e precificacao">
-            <AdminCadPanel
-              order={{
-                id: order.id,
-                orderNumber: order.orderNumber,
-                cad: order.metadata?.cad || {}
-              }}
-              payload={getGrasshopperPayload(order)}
-              action={registerCadFile}
-              token={access.token}
-            />
-            <AdminPricingPanel order={order} action={calculateOrcaPricing} token={access.token} />
-          </section>
-        )}
-
-        <section className="admin-order-section">
-          <div className="admin-section-heading">
-            <div>
-              <h3>Operacao</h3>
-              <p>{activeFilter === "impressao" ? "Atualize a fila sem sair dos detalhes do pedido." : "Fila, NF e expedicao ficam nesta mesma ficha."}</p>
-            </div>
-            <span>{productionStage}</span>
-          </div>
+        <details className="admin-order-section">
+          <summary>
+            <strong>Operacao: fila, NF e expedicao</strong>
+            <span className="admin-section-note">{productionStage}</span>
+          </summary>
           <OperationForm order={order} fulfillment={fulfillment} access={access} invoiceConfig={getInvoiceConfig()} />
-        </section>
+          {canRequestInvoice(order, fulfillment) && (
+            <InvoiceRequestForm order={order} access={access} />
+          )}
+        </details>
 
         {payment && (
           <details className="admin-order-section">
@@ -558,9 +599,9 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
       </fieldset>
 
       <fieldset className="operation-form__group">
-        <legend>Nota fiscal manual</legend>
+        <legend>Nota fiscal</legend>
         <p className="admin-note">
-          Emissao fora do site em {invoiceConfig.providerLabel}. Confira cadastro fiscal, itens, total pago, CFOP/NCM e ambiente antes de expedir.
+          Confira cadastro fiscal, itens, total pago e CFOP/NCM antes de expedir.
         </p>
         <ul className="admin-note">
           <li>Pedido local: {order.orderNumber}</li>
@@ -571,7 +612,7 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
           <li>Natureza: {invoiceConfig.operationNature}{invoiceConfig.cfop ? ` | CFOP: ${invoiceConfig.cfop}` : ""}</li>
         </ul>
         <label className="field">
-          <span>Nota fiscal</span>
+          <span>Status NF</span>
           <select name="invoiceStatus" defaultValue={toSimpleInvoiceStatus(fulfillment.invoice.status)}>
             {SIMPLE_INVOICE_OPTIONS.map((status) => (
               <option key={status.value} value={status.value}>{status.label}</option>
@@ -636,6 +677,18 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
 
       <button className="button button-primary" type="submit">
         Salvar operacao
+      </button>
+    </form>
+  );
+}
+
+function InvoiceRequestForm({ order, access }) {
+  return (
+    <form className="cad-form invoice-request-form" action={requestMercadoPagoInvoice}>
+      <input type="hidden" name="orderId" value={order.id} />
+      <input type="hidden" name="token" value={access.token} />
+      <button className="button button-secondary" type="submit">
+        Solicitar NF Mercado Pago
       </button>
     </form>
   );
@@ -795,6 +848,25 @@ async function updatePrintQueue(formData) {
   revalidateAdminOrderPaths();
 }
 
+async function requestMercadoPagoInvoice(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  if (!orderId) return;
+
+  const order = await getOrderById(orderId);
+  if (!order || order.paymentStatus !== PAYMENT_STATUS.APPROVED) return;
+
+  await requestInvoiceAfterPayment(order, order.payments?.[0] || {});
+  revalidateAdminOrderPaths();
+}
+
 function buildOrderRows(orders, queue) {
   const queueByOrderId = new Map(queue.map((item) => [item.order.id, item]));
 
@@ -887,6 +959,17 @@ function isCompleted(order, fulfillment) {
     || [SHIPMENT_STATUS.SHIPPED, SHIPMENT_STATUS.DELIVERED].includes(fulfillment.shipment.status);
 }
 
+function canRequestInvoice(order, fulfillment) {
+  if (order.paymentStatus !== PAYMENT_STATUS.APPROVED) return false;
+
+  return ![
+    INVOICE_STATUS.API_ISSUED,
+    INVOICE_STATUS.MANUAL_ISSUED,
+    INVOICE_STATUS.NOT_REQUIRED,
+    INVOICE_STATUS.CANCELLED
+  ].includes(fulfillment.invoice.status);
+}
+
 function buildOrdersOverview(orders, rows, printQueueRows) {
   return {
     total: orders.length,
@@ -934,7 +1017,7 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
     return {
       tone: "success",
       title: "Pronto para expedir",
-      detail: "Emitir NF e despachar."
+      detail: "Conferir NF e despachar."
     };
   }
 
@@ -959,6 +1042,71 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
     title: queuePosition ? `Aguardando #${queuePosition}` : "Aguardando impressao",
     detail: formatProductionStage(fulfillment.production.status)
   };
+}
+
+function getOrderStage({ order, fulfillment, queuePosition }) {
+  if (order.status === ORDER_STATUS.CANCELLED || order.paymentStatus === PAYMENT_STATUS.CANCELLED) {
+    return { label: "Cancelado", tone: "danger" };
+  }
+
+  if ([PAYMENT_STATUS.REJECTED, PAYMENT_STATUS.EXPIRED, PAYMENT_STATUS.REFUNDED].includes(order.paymentStatus)) {
+    return { label: "Pagamento nao aprovado", tone: "danger" };
+  }
+
+  if (order.paymentStatus !== PAYMENT_STATUS.APPROVED) {
+    return { label: "Aguardando pagamento", tone: "warning" };
+  }
+
+  if (isCompleted(order, fulfillment)) {
+    return { label: "Expedido", tone: "success" };
+  }
+
+  if (fulfillment.production.status === PRODUCTION_STATUS.READY_TO_SHIP) {
+    return { label: "Pronto para expedir", tone: "success" };
+  }
+
+  if (fulfillment.production.status === PRODUCTION_STATUS.BLOCKED) {
+    return { label: "Revisao tecnica", tone: "warning" };
+  }
+
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK].includes(fulfillment.production.status)) {
+    return { label: "Imprimindo", tone: "info" };
+  }
+
+  return { label: queuePosition ? `Na fila #${queuePosition}` : "Na fila", tone: "info" };
+}
+
+function formatShippingAddress(order) {
+  const address = order.metadata?.shippingAddress || {};
+  if (!address.street && !address.postalCode && !address.city) return "";
+
+  const streetLine = [address.street, address.number].filter(Boolean).join(", ")
+    + (address.complement ? ` (${address.complement})` : "");
+  const cityLine = [address.district, [address.city, address.state].filter(Boolean).join("/")]
+    .filter(Boolean)
+    .join(" - ");
+  const postalLine = address.postalCode ? `CEP ${address.postalCode}` : "";
+
+  return [streetLine, cityLine, postalLine].filter(Boolean).join(" | ");
+}
+
+function formatInvoiceShort(invoice) {
+  return invoice.number ? `NF ${invoice.number}` : getInvoiceStatusLabel(invoice.status);
+}
+
+function formatInvoiceSummary(invoice) {
+  const label = getInvoiceStatusLabel(invoice.status);
+  const details = [
+    invoice.number ? `NF ${invoice.number}${invoice.series ? ` serie ${invoice.series}` : ""}` : "",
+    invoice.providerId ? `ID ${invoice.providerId}` : "",
+    invoice.statusDetail || ""
+  ].filter(Boolean);
+
+  return details.length ? `${label} | ${details.join(" | ")}` : label;
+}
+
+function isIssuedInvoice(invoice) {
+  return [INVOICE_STATUS.MANUAL_ISSUED, INVOICE_STATUS.API_ISSUED].includes(invoice?.status);
 }
 
 function comparePrintQueueRows(left, right) {
@@ -993,19 +1141,6 @@ function formatPriorityLabel(priority) {
 function resolveSubmittedSimpleStatus({ currentStatus, submittedStatus, simplify }) {
   if (!currentStatus) return submittedStatus;
   return submittedStatus === simplify(currentStatus) ? currentStatus : submittedStatus;
-}
-
-function formatOrderStatusForAdmin(status) {
-  if (status === ORDER_STATUS.CAD_PENDING) {
-    return "Pago, aguardando CAD";
-  }
-  if ([ORDER_STATUS.CAD_GENERATED, ORDER_STATUS.READY_FOR_PRINT].includes(status)) {
-    return "Pago, na fila de impressao";
-  }
-  if (status === ORDER_STATUS.PAID_PENDING_REVIEW) {
-    return "Pago, aguardando operacao";
-  }
-  return getOrderStatusLabel(status);
 }
 
 function toSimpleProductionStatus(status) {
@@ -1070,12 +1205,6 @@ function formatCapacitySummary(capacity, fulfillment, fallbackUnits) {
   return `${fulfillment.capacity.workUnits || fallbackUnits || 0} un. trab.`;
 }
 
-function formatValues(values = {}) {
-  return Object.entries(values)
-    .map(([key, value]) => `${formatParameterLabel(key)}: ${formatParameterValue(value)}`)
-    .join(" | ");
-}
-
 function formatOrderProducts(order) {
   if (!order.items.length) return "Pedido especial";
 
@@ -1130,13 +1259,14 @@ function formatParameterValue(value) {
   return String(value);
 }
 
-function formatSource(source) {
-  const labels = {
-    checkout: "Checkout",
-    special_request: "Pedido especial"
-  };
-
-  return labels[source] || source || "Origem nao informada";
+function formatShippingDetail(shipping = {}) {
+  const service = [shipping.companyName, shipping.serviceName].filter(Boolean).join(" | ");
+  const delivery = Number(shipping.deliveryTimeDays || 0) > 0
+    ? `${shipping.deliveryTimeDays} dia(s) estimado(s)`
+    : "";
+  const source = shipping.source ? `origem ${shipping.source}` : "";
+  const fulfillment = shipping.fulfillmentLabel || (shipping.fulfillmentMode === "manual_posting" ? "Postagem manual" : "");
+  return [service, delivery, fulfillment, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
 }
 
 function formatDateTime(value) {

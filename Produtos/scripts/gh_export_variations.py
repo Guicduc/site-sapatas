@@ -191,6 +191,7 @@ PRODUCT_CONFIGS = [
         "sample_strategy": "product_axis_forced_neck_height_ranges",
         "sampling": {
             "force_axis_keys": ["alturaPescoco"],
+            "target_count": 400,
         },
         "parameters": {
             "diametro": parameter(3, 150, 28),
@@ -237,6 +238,7 @@ PRODUCT_CONFIGS = [
         "sample_strategy": "product_axis_forced_neck_height_ranges",
         "sampling": {
             "force_axis_keys": ["alturaPescoco"],
+            "target_count": 480,
         },
         "parameters": {
             "tamanhoBaseX": parameter(3, 150, 50),

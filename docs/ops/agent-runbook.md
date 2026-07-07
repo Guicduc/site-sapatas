@@ -18,8 +18,8 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
-- Nota fiscal usa o Sistema de Gestao Mercado Pago como emissor operacional, com registro manual no admin.
-- Para operar NF no MVP, use o checklist de `docs/ops/invoice-manual.md` e registre numero, serie, chave e emissao no admin.
+- Nota fiscal usa provider Mercado Pago (`INVOICE_PROVIDER=mercado_pago`). Enquanto o endpoint fiscal especifico da conta nao estiver liberado/configurado, o pedido deve ficar com NF via API pendente e o health check deve indicar a pendencia.
+- Para operar NF no MVP, emita pelo Sistema de Gestao Mercado Pago seguindo o checklist de `docs/ops/invoice-manual.md` e registre numero, serie, chave e emissao no admin.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
 Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
@@ -33,6 +33,7 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 5. `lib/order-store.js` persiste pedido e pagamentos.
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
+8. Pagamento aprovado aciona `lib/invoice-provider.js` para registrar/solicitar NF via provider Mercado Pago.
 
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
 
@@ -41,6 +42,7 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
 - Ativar frete real exige `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Use sandbox primeiro: `MELHOR_ENVIO_ENV=sandbox`.
 - A cotacao do Melhor Envio usa produtos com dimensoes em cm, peso em kg e valor em reais.
+- A integracao Melhor Envio atual e somente de cotacao; pedidos continuam com postagem manual pela operacao.
 - A compra de etiqueta, impressao e rastreio ainda nao estao implementados.
 - Para testar fallback manual localmente, deixe `SHIPPING_PROVIDER=manual` e chame `POST /api/shipping/quote`.
 

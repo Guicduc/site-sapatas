@@ -5,6 +5,17 @@ import { createMercadoPagoPreference, getMercadoPagoCheckoutUrl } from "@/lib/me
 import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForEmail } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
 
+const PENDING_PAYMENT_REUSE_MINUTES = 120;
+
+function isReusablePendingPayment(payment) {
+  if (!payment?.checkoutUrl || payment.status !== PAYMENT_STATUS.PENDING) return false;
+
+  const createdAt = Date.parse(payment.createdAt || payment.updatedAt || "");
+  if (!Number.isFinite(createdAt)) return false;
+
+  return Date.now() - createdAt <= PENDING_PAYMENT_REUSE_MINUTES * 60 * 1000;
+}
+
 export async function POST(request) {
   try {
     const { orderId } = await request.json();
@@ -44,7 +55,7 @@ export async function POST(request) {
 
     const existingPayment = await getLatestPaymentForOrder(order.id);
 
-    if (existingPayment?.checkoutUrl && existingPayment.status === PAYMENT_STATUS.PENDING) {
+    if (isReusablePendingPayment(existingPayment)) {
       return NextResponse.json({
         payment: { status: existingPayment.status, amountBrl: existingPayment.amountBrl },
         checkoutUrl: existingPayment.checkoutUrl

@@ -5,6 +5,7 @@ import {
   mapMercadoPagoPaymentStatus,
   verifyMercadoPagoSignature
 } from "@/lib/mercado-pago";
+import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
 import { recordMercadoPagoUpdate } from "@/lib/order-store";
 import { notifyPaymentResolved } from "@/lib/transactional-email";
 
@@ -29,6 +30,10 @@ export async function POST(request) {
       raw: payload
     });
     await notifyPaymentResolved(order, order?.paymentStatus || status);
+    await requestInvoiceAfterPayment(order, {
+      providerPaymentId: payload.paymentId,
+      raw: payload
+    });
 
     return NextResponse.json({
       received: true,
@@ -71,6 +76,7 @@ export async function POST(request) {
       raw: payment
     });
     await notifyPaymentResolved(order, order?.paymentStatus || status);
+    await requestInvoiceAfterPayment(order, payment);
 
     return NextResponse.json({
       received: true,
