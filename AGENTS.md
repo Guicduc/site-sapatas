@@ -19,7 +19,7 @@ Antes de alterar checkout, pedidos, pagamento, frete, admin, deploy ou documenta
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio deve criar pedido local antes de gerar pagamento.
 - Frete real usa Melhor Envio via `lib/shipping.js`; sem credenciais, preserve fallback manual.
-- Nota fiscal externa ainda nao tem fornecedor ativo; mantenha `INVOICE_PROVIDER=manual`.
+- Nota fiscal usa Mercado Pago Sistema de Gestao como emissor operacional, com registro manual no admin.
 - Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
 ## Validacao minima

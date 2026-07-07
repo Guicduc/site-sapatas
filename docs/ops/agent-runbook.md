@@ -7,6 +7,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Estrutura do projeto: `docs/ai-navigation.md`.
 - Estado operacional e backlog: `docs/ops/ecommerce-roadmap.md`.
 - Frete real: `docs/ops/shipping-integration.md`.
+- Nota fiscal Mercado Pago Sistema de Gestao: `docs/ops/invoice-manual.md`.
 - Banco de dados: `docs/ops/database.sql`.
 - Variaveis de ambiente: `.env.example`.
 - Contexto de produto/design para UI: `PRODUCT.md`.
@@ -17,7 +18,9 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
-- Nota fiscal usa provider Mercado Pago (`INVOICE_PROVIDER=mercado_pago`). Enquanto o endpoint fiscal especifico da conta nao estiver liberado/configurado, o pedido deve ficar com NF via API pendente e o health check deve indicar a pendencia.
+- Nota fiscal usa o Sistema de Gestao Mercado Pago como emissor operacional (`INVOICE_PROVIDER=mercado_pago_system`), com registro manual no admin.
+- Para operar NF no MVP, use o checklist de `docs/ops/invoice-manual.md` e registre numero, serie, chave e emissao no admin.
+- O adaptador de API fiscal (`INVOICE_PROVIDER=mercado_pago` + `MERCADO_PAGO_INVOICE_API_URL`) fica dormente ate existir endpoint fiscal real liberado para a conta; sem endpoint, a NF fica pendente via API e o health check indica a pendencia.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
 Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
