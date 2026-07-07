@@ -582,6 +582,74 @@ section {
   align-items: start;
 }
 
+.configurator-related {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.configurator-related__heading {
+  display: grid;
+  gap: 6px;
+  max-width: 680px;
+}
+
+.configurator-related__heading h2 {
+  font-size: 1.2rem;
+  line-height: 1.12;
+}
+
+.configurator-related__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 420px));
+  justify-content: start;
+  gap: 10px;
+}
+
+.configurator-related-card {
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 12px;
+}
+
+.configurator-related-card .category-card__image {
+  grid-row: auto;
+  width: 84px;
+  height: 84px;
+  aspect-ratio: 1;
+}
+
+.configurator-related-card .category-card__body {
+  gap: 4px;
+}
+
+.configurator-related-card h3 {
+  max-width: 18ch;
+  font-size: 1.05rem;
+  line-height: 1.16;
+}
+
+.configurator-related-card p:not(.eyebrow) {
+  display: none;
+  line-height: 1.35;
+}
+
+.configurator-related-card .meta-list {
+  display: none;
+}
+
+.configurator-related-card .button {
+  align-self: center;
+  justify-self: end;
+  min-height: 36px;
+  padding-inline: 12px;
+  font-size: 0.84rem;
+}
+
 .configurator-main,
 .configurator-side,
 .cart-list {

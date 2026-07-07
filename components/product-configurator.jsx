@@ -15,6 +15,7 @@ import {
   calculatePriceBreakdown,
   getFormat,
   getInitialValues,
+  productCategories,
   validateConfiguration
 } from "@/lib/configurator-data";
 
@@ -56,6 +57,10 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const headingDescription = getConfiguratorDescription(category);
   const hasColorChoices = category.colors.length > 1;
   const hasFinishChoices = category.finishes.length > 0;
+  const relatedCategories = useMemo(
+    () => productCategories.filter((item) => item.slug !== category.slug).slice(0, 3),
+    [category.slug]
+  );
   const visualImages = useMemo(
     () => getConfiguratorVisuals(category.slug, format.slug, values),
     [category.slug, format.slug, values]
@@ -224,6 +229,44 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
             onAddToCart={handleAddToCart}
           />
         </aside>
+      </div>
+
+      {relatedCategories.length > 0 && (
+        <RelatedProducts categories={relatedCategories} />
+      )}
+    </section>
+  );
+}
+
+function RelatedProducts({ categories }) {
+  return (
+    <section className="configurator-related" aria-labelledby="configurator-related-title">
+      <div className="configurator-related__heading">
+        <p className="eyebrow">Produtos semelhantes</p>
+        <h2 id="configurator-related-title">Outras sapatas para comparar</h2>
+      </div>
+      <div className="configurator-related__grid">
+        {categories.map((item) => (
+          <article className="category-card configurator-related-card" key={item.slug}>
+            {item.image && (
+              <img className="category-card__image" src={item.image.src} alt={item.image.alt} />
+            )}
+            <div className="category-card__body">
+              <p className="eyebrow">{item.eyebrow}</p>
+              <h3>{item.name}</h3>
+              <p>{item.description}</p>
+              <div className="meta-list">
+                <span>{item.primaryFixation}</span>
+                {item.formats.length > 1 && (
+                  <span>{item.formats.map((format) => format.name).join(" / ")}</span>
+                )}
+              </div>
+            </div>
+            <Link className="button button-primary" href={`/configurar/${item.slug}`}>
+              Configurar
+            </Link>
+          </article>
+        ))}
       </div>
     </section>
   );
