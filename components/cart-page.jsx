@@ -391,7 +391,6 @@ function CheckoutForm() {
         );
       }
 
-      clearCart();
       window.location.assign(paymentPayload.checkoutUrl);
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível finalizar o pedido.");

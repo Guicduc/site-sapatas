@@ -3,14 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 
-export function OrderConfirmation({ initialOrderId = "" }) {
+export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
+  const { clearCart } = useCart();
   const [orderId, setOrderId] = useState(initialOrderId);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(Boolean(initialOrderId));
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (initialPaymentResult === "success") {
+      clearCart();
+    }
+  }, [clearCart, initialPaymentResult]);
 
   useEffect(() => {
     if (orderId) {
