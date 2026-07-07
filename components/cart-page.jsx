@@ -435,26 +435,25 @@ function CheckoutForm() {
       </div>
       <fieldset className="checkout-address">
         <legend>Endereço de entrega</legend>
-        <div className="field-row">
-          <label className="field checkout-field--postal"><span>CEP</span><input inputMode="numeric" autoComplete="postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
-          <label className="field checkout-field--state"><span>UF</span><input maxLength="2" autoComplete="address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
+        <div className="checkout-address__row checkout-address__row--postal">
+          <label className="field checkout-field--postal"><span>CEP</span><input inputMode="numeric" autoComplete="shipping postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
+          <label className="field checkout-field--state"><span>UF</span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
         </div>
-        {postalCodeLookupState.status !== "idle" && (
-          <p
-            className={`checkout-note${postalCodeLookupState.status === "not_found" || postalCodeLookupState.status === "error" ? " checkout-note--warning" : ""}`}
-            aria-live="polite"
-          >
-            {postalCodeLookupState.message}
-          </p>
-        )}
-        <label className="field checkout-field--street"><span>Rua ou avenida</span><input autoComplete="address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
-        <div className="field-row">
-          <label className="field checkout-field--number"><span>Número</span><input autoComplete="address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
-          <label className="field checkout-field--complement"><span>Complemento</span><input value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
+        <p
+          className={`checkout-note checkout-address__lookup-status${postalCodeLookupState.status === "idle" ? " is-empty" : ""}${postalCodeLookupState.status === "not_found" || postalCodeLookupState.status === "error" ? " checkout-note--warning" : ""}`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {postalCodeLookupState.message}
+        </p>
+        <label className="field checkout-field--street"><span>Rua ou avenida</span><input autoComplete="shipping address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
+        <div className="checkout-address__row">
+          <label className="field checkout-field--number"><span>Número</span><input autoComplete="shipping address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
+          <label className="field checkout-field--complement"><span>Complemento</span><input autoComplete="shipping address-line3" value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
         </div>
-        <div className="field-row">
-          <label className="field checkout-field--district"><span>Bairro</span><input autoComplete="address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
-          <label className="field checkout-field--city"><span>Cidade</span><input autoComplete="address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
+        <div className="checkout-address__row">
+          <label className="field checkout-field--district"><span>Bairro</span><input autoComplete="shipping address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
+          <label className="field checkout-field--city"><span>Cidade</span><input autoComplete="shipping address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
         </div>
       </fieldset>
       <label className="field">
