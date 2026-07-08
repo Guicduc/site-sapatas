@@ -532,7 +532,7 @@ function CheckoutForm() {
 }
 
 function RequiredMark() {
-  return <small className="required-mark" aria-label="obrigatorio">*</small>;
+  return <small className="required-mark" aria-hidden="true">*</small>;
 }
 
 function formatKey(key) {
