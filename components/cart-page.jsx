@@ -36,8 +36,7 @@ export function CartPage() {
           <p className="eyebrow">Pagamento não concluído</p>
           <p>
             Não foi possível concluir o pagamento. Seus itens continuam no carrinho — revise os dados
-            e tente finalizar novamente. Nenhum novo pedido é criado ao repetir o pagamento deste
-            carrinho.
+            e tente finalizar novamente.
           </p>
         </article>
       )}
