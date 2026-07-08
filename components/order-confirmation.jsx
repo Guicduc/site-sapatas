@@ -17,6 +17,7 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
   useEffect(() => {
     if (initialPaymentResult === "success") {
       clearCart();
+      window.sessionStorage.removeItem("baseforma-pending-checkout");
     }
   }, [clearCart, initialPaymentResult]);
 
