@@ -12,6 +12,12 @@ const recoveryStorageKey = "baseforma-cart-recovery";
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
+  const [paymentResult, setPaymentResult] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setPaymentResult(params.get("payment") || "");
+  }, []);
 
   return (
     <section className="cart-shell">
@@ -24,6 +30,16 @@ export function CartPage() {
           Adicionar outro item
         </Link>
       </div>
+
+      {paymentResult === "failure" && (
+        <article className="payment-notice payment-notice--failure" role="alert">
+          <p className="eyebrow">Pagamento não concluído</p>
+          <p>
+            Não foi possível concluir o pagamento. Seus itens continuam no carrinho — revise os dados
+            e tente finalizar novamente.
+          </p>
+        </article>
+      )}
 
       {items.length === 0 ? (
         <article className="empty-cart">
@@ -101,6 +117,7 @@ export function CartPage() {
 function CheckoutForm() {
   const { items, clearCart, loaded } = useCart();
   const [name, setName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [documentNumber, setDocumentNumber] = useState("");
@@ -131,7 +148,8 @@ function CheckoutForm() {
   const commerce = shippingQuoteState.commerce || localCommerce;
   const couponReady = !couponCode || commerce.discount.applied;
   const documentDigits = documentNumber.replace(/\D/g, "");
-  const canSubmit = items.length > 0 && name.trim() && email.trim() && contact.trim()
+  const customerName = [name, lastName].map((part) => part.trim()).filter(Boolean).join(" ");
+  const canSubmit = items.length > 0 && name.trim() && lastName.trim() && email.trim() && contact.trim()
     && [11, 14].includes(documentDigits.length)
     && address.postalCode.trim() && address.street.trim() && address.number.trim()
     && address.city.trim() && address.state.trim().length === 2
@@ -139,6 +157,7 @@ function CheckoutForm() {
   const recoverySnapshotKey = JSON.stringify({
     items,
     name,
+    lastName,
     email,
     contact,
     address,
@@ -280,7 +299,7 @@ function CheckoutForm() {
         setRecoveryState((current) => ({ ...current, status: "saving" }));
         const recovery = await persistCartRecoveryLead({
           status: "active",
-          name,
+          name: customerName,
           email,
           contact,
           address,
@@ -323,7 +342,7 @@ function CheckoutForm() {
       await persistCartRecoveryLead({
         status: "converted",
         orderId,
-        name,
+        name: customerName,
         email,
         contact,
         address,
@@ -354,7 +373,7 @@ function CheckoutForm() {
         },
         body: JSON.stringify({
           source: "configurator",
-          customer: { name, email, contact, document: documentDigits },
+          customer: { name: customerName, email, contact, document: documentDigits },
           shippingAddress: address,
           couponCode: normalizeCouponCode(couponCode),
           notes: "",
@@ -394,7 +413,6 @@ function CheckoutForm() {
         );
       }
 
-      clearCart();
       window.location.assign(paymentPayload.checkoutUrl);
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível finalizar o pedido.");
@@ -407,15 +425,19 @@ function CheckoutForm() {
     <form className="checkout-form" onSubmit={handleSubmit}>
       <div className="checkout-contact-grid">
         <label className="field">
-          <span>Nome</span>
+          <span>Nome <RequiredMark /></span>
           <input autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="field">
-          <span>E-mail</span>
+          <span>Sobrenome <RequiredMark /></span>
+          <input autoComplete="family-name" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
+        </label>
+        <label className="field">
+          <span>E-mail <RequiredMark /></span>
           <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
         </label>
         <label className="field">
-          <span>WhatsApp</span>
+          <span>WhatsApp <RequiredMark /></span>
           <input
             type="tel"
             autoComplete="tel"
@@ -451,8 +473,8 @@ function CheckoutForm() {
       <fieldset className="checkout-address">
         <legend>Endereço de entrega</legend>
         <div className="checkout-address__row checkout-address__row--postal">
-          <label className="field checkout-field--postal"><span>CEP</span><input inputMode="numeric" autoComplete="shipping postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
-          <label className="field checkout-field--state"><span>UF</span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
+          <label className="field checkout-field--postal"><span>CEP <RequiredMark /></span><input inputMode="numeric" autoComplete="shipping postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
+          <label className="field checkout-field--state"><span>UF <RequiredMark /></span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
         </div>
         <p
           className={`checkout-note checkout-address__lookup-status${postalCodeLookupState.status === "idle" ? " is-empty" : ""}${postalCodeLookupState.status === "not_found" || postalCodeLookupState.status === "error" ? " checkout-note--warning" : ""}`}
@@ -461,14 +483,14 @@ function CheckoutForm() {
         >
           {postalCodeLookupState.message}
         </p>
-        <label className="field checkout-field--street"><span>Rua ou avenida</span><input autoComplete="shipping address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
+        <label className="field checkout-field--street"><span>Rua ou avenida <RequiredMark /></span><input autoComplete="shipping address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
         <div className="checkout-address__row">
-          <label className="field checkout-field--number"><span>Número</span><input autoComplete="shipping address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
+          <label className="field checkout-field--number"><span>Número <RequiredMark /></span><input autoComplete="shipping address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
           <label className="field checkout-field--complement"><span>Complemento</span><input autoComplete="shipping address-line3" value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
         </div>
         <div className="checkout-address__row">
           <label className="field checkout-field--district"><span>Bairro</span><input autoComplete="shipping address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
-          <label className="field checkout-field--city"><span>Cidade</span><input autoComplete="shipping address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
+          <label className="field checkout-field--city"><span>Cidade <RequiredMark /></span><input autoComplete="shipping address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
         </div>
       </fieldset>
       <label className="field">
@@ -533,10 +555,14 @@ function CheckoutForm() {
         </div>
       )}
       <button className="button button-primary button-block" type="submit" disabled={!canSubmit || submitting}>
-        {submitting ? "Gerando pedido..." : "Criar pedido e pagar"}
+        {submitting ? "Gerando pedido..." : "Seguir para pagamento"}
       </button>
     </form>
   );
+}
+
+function RequiredMark() {
+  return <small className="required-mark" aria-hidden="true">*</small>;
 }
 
 function formatKey(key) {

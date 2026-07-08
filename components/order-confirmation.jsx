@@ -3,14 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 
-export function OrderConfirmation({ initialOrderId = "" }) {
+export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
+  const { clearCart } = useCart();
   const [orderId, setOrderId] = useState(initialOrderId);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(Boolean(initialOrderId));
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (initialPaymentResult === "success") {
+      clearCart();
+    }
+  }, [clearCart, initialPaymentResult]);
 
   useEffect(() => {
     if (orderId) {
@@ -90,9 +98,16 @@ export function OrderConfirmation({ initialOrderId = "" }) {
       <div className="confirmation-card">
         <p className="eyebrow">Pedido recebido</p>
         <h1>{order.orderNumber}</h1>
+        {initialPaymentResult === "pending" && (
+          <p className="payment-notice payment-notice--pending" role="status">
+            Seu pagamento ainda está sendo processado. Assim que for confirmado (por exemplo, após a
+            compensação do Pix ou boleto), o status abaixo será atualizado. Não é necessário refazer o
+            pedido.
+          </p>
+        )}
         <p>
-          O pedido agora está salvo no sistema. O status abaixo reflete a validação tecnica e o
-          retorno de pagamento recebido até o momento.
+          Este é o resumo do pedido registrado na Baseforma. Para acompanhar produção, pagamento
+          e envio, acesse sua conta.
         </p>
         <div className="summary-stats">
           <article>
@@ -125,8 +140,8 @@ export function OrderConfirmation({ initialOrderId = "" }) {
       {order.technicalReviews?.length > 0 && (
         <article className="surface-card">
           <p className="eyebrow">Revisão técnica</p>
-          <h2>Este pedido precisa de avaliação antes de produção.</h2>
-          <pre className="brief-preview">{order.technicalReviews[0].notes}</pre>
+          <h2>Este pedido precisa de conferência antes de produção.</h2>
+          <p>Nossa equipe vai revisar as medidas e entrar em contato se precisar de algum ajuste.</p>
         </article>
       )}
 
@@ -185,14 +200,11 @@ export function OrderConfirmation({ initialOrderId = "" }) {
       )}
 
       <div className="action-row">
-        <button className="button button-secondary" type="button" onClick={() => window.location.reload()}>
-          Atualizar status
-        </button>
-        <Link className="button button-primary" href="/">
-          Configurar novo pedido
-        </Link>
-        <Link className="button button-secondary" href="/conta">
+        <Link className="button button-primary" href="/conta">
           Ver minha conta
+        </Link>
+        <Link className="button button-secondary" href="/">
+          Fazer novo pedido
         </Link>
       </div>
     </section>
