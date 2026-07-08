@@ -10,6 +10,9 @@ import { ORDER_STATUS } from "@/lib/order-status";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
 const pendingCheckoutStorageKey = "baseforma-pending-checkout";
+// Mesma janela de reuso de preferência do servidor (getPreferenceReuseWindowMinutes):
+// depois disso o link pendente não é mais reaproveitado, então o pedido guardado expira junto.
+const pendingCheckoutTtlMinutes = 120;
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -385,6 +388,10 @@ function CheckoutForm() {
         reusedOrder = true;
       }
 
+      // Carrinho mudou desde o pedido guardado: o novo pedido substitui o
+      // anterior e o servidor cancela o pedido superado.
+      const supersededOrderId = pendingCheckout?.orderId && !reusedOrder ? pendingCheckout.orderId : null;
+
       async function createNewOrder() {
         const orderResponse = await fetch("/api/orders", {
           method: "POST",
@@ -397,7 +404,8 @@ function CheckoutForm() {
             shippingAddress: address,
             couponCode: normalizeCouponCode(couponCode),
             notes: "",
-            items
+            items,
+            replacesOrderId: supersededOrderId
           })
         });
         const orderPayload = await orderResponse.json();
@@ -688,10 +696,22 @@ function buildCheckoutFingerprint({ items, name, email, contact, document: docum
   });
 }
 
+// Vive em localStorage (não sessionStorage) para sobreviver ao retorno do
+// Mercado Pago em outra aba/janela; expira junto com a janela de reuso da preferência.
 function readPendingCheckout() {
   try {
-    const saved = window.sessionStorage.getItem(pendingCheckoutStorageKey);
-    return saved ? JSON.parse(saved) : null;
+    const saved = window.localStorage.getItem(pendingCheckoutStorageKey);
+    const pending = saved ? JSON.parse(saved) : null;
+
+    if (pending && Number(pending.expiresAt) > Date.now()) {
+      return pending;
+    }
+
+    if (pending) {
+      window.localStorage.removeItem(pendingCheckoutStorageKey);
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -699,7 +719,10 @@ function readPendingCheckout() {
 
 function savePendingCheckout(pending) {
   try {
-    window.sessionStorage.setItem(pendingCheckoutStorageKey, JSON.stringify(pending));
+    window.localStorage.setItem(
+      pendingCheckoutStorageKey,
+      JSON.stringify({ ...pending, expiresAt: Date.now() + pendingCheckoutTtlMinutes * 60 * 1000 })
+    );
   } catch {
     // Storage indisponível não deve bloquear o checkout.
   }
@@ -707,6 +730,8 @@ function savePendingCheckout(pending) {
 
 function clearPendingCheckout() {
   try {
+    window.localStorage.removeItem(pendingCheckoutStorageKey);
+    // Chave usada antes da migração para localStorage.
     window.sessionStorage.removeItem(pendingCheckoutStorageKey);
   } catch {
     // Storage indisponível não deve bloquear o checkout.

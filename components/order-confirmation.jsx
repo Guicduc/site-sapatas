@@ -12,12 +12,13 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
   const [orderId, setOrderId] = useState(initialOrderId);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(Boolean(initialOrderId));
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (initialPaymentResult === "success") {
       clearCart();
-      window.sessionStorage.removeItem("baseforma-pending-checkout");
+      clearStoredPendingCheckout();
     }
   }, [clearCart, initialPaymentResult]);
 
@@ -42,16 +43,14 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
     setLoading(true);
     setError("");
 
-    fetch(`/api/orders/${orderId}`)
-      .then(async (response) => {
-        const payload = await response.json();
+    // No retorno do checkout o webhook pode ainda não ter chegado: reconcilia
+    // direto com o Mercado Pago antes de exibir o status ao cliente.
+    const shouldReconcile = initialPaymentResult === "success" || initialPaymentResult === "pending";
 
-        if (!response.ok) {
-          throw new Error(payload.message || "Pedido não encontrado.");
-        }
-
-        return payload.order;
-      })
+    (async () => {
+      const reconciledOrder = shouldReconcile ? await reconcilePayment(orderId) : null;
+      return reconciledOrder || fetchOrderById(orderId);
+    })()
       .then((nextOrder) => {
         if (!cancelled) {
           setOrder(nextOrder);
@@ -71,7 +70,24 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, initialPaymentResult]);
+
+  async function handleRefreshStatus() {
+    if (!orderId || refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    try {
+      const nextOrder = (await reconcilePayment(orderId)) || (await fetchOrderById(orderId));
+      setOrder(nextOrder);
+    } catch (caughtError) {
+      setError(caughtError.message || "Não foi possível atualizar o status do pedido.");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -136,6 +152,18 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
             <span>{formatCurrency(order.totalBrl)}</span>
           </article>
         </div>
+        {["pending", "unknown"].includes(order.paymentStatus) && (
+          <div className="action-row">
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={handleRefreshStatus}
+              disabled={refreshing}
+            >
+              {refreshing ? "Consultando pagamento..." : "Atualizar status"}
+            </button>
+          </div>
+        )}
       </div>
 
       {order.technicalReviews?.length > 0 && (
@@ -210,6 +238,50 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
       </div>
     </section>
   );
+}
+
+async function fetchOrderById(orderId) {
+  const response = await fetch(`/api/orders/${orderId}`);
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.message || "Pedido não encontrado.");
+  }
+
+  return payload.order;
+}
+
+// Consulta o status real do pagamento no Mercado Pago e devolve o pedido já
+// atualizado. Falhas aqui não podem esconder o pedido do cliente: retorna null
+// e o chamador cai no fetch normal.
+async function reconcilePayment(orderId) {
+  try {
+    const response = await fetch("/api/payments/mercado-pago/reconcile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ orderId })
+    });
+    const payload = await response.json();
+
+    if (response.ok && payload.order) {
+      return payload.order;
+    }
+  } catch {
+    // Sem rede ou sem token MP: segue com o status registrado localmente.
+  }
+
+  return null;
+}
+
+function clearStoredPendingCheckout() {
+  try {
+    window.localStorage.removeItem("baseforma-pending-checkout");
+    window.sessionStorage.removeItem("baseforma-pending-checkout");
+  } catch {
+    // Storage indisponível não deve quebrar a confirmação.
+  }
 }
 
 function formatKey(key) {
