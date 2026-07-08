@@ -115,7 +115,7 @@ export function ProductCatalog({ categories }) {
 
       <div className="brand-mood" aria-label="Pilares da identidade Baseforma">
         {moodTerms.map((term, index) => (
-          <article key={term.label}>
+          <article key={term.label} className={term.cta ? "is-cta" : undefined}>
             <span className="brand-mood__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 {moodIcons[term.icon]}
