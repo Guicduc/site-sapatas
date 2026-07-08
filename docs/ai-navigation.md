@@ -28,9 +28,9 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 ## Rotas administrativas
 
-- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal e expedicao.
+- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal automatizada (Focus NFe) e expedicao.
 - `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
-- `/admin/operacao`: fila de producao, capacidade, nota fiscal, expedicao e observacoes internas.
+- `/admin/operacao`: fila de producao, capacidade, nota fiscal automatizada (Focus NFe), expedicao e observacoes internas.
 - `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
 - `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`.
 
@@ -109,15 +109,15 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 
 ## Operacao e relatorios
 
-- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal, expedicao e capacidade.
-- `lib/invoice-provider.js`: adaptador de nota fiscal via provider Mercado Pago, acionado apos pagamento aprovado.
-- `lib/invoice-config.js`: dados fiscais de referencia (CNPJ, NCM, CFOP, natureza) exibidos no checklist de NF do admin.
+- `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal operacional, expedicao e capacidade.
+- `lib/invoice-config.js`: configuracao fiscal (provider, CNPJ, NCM, CFOP, ambiente) compartilhada por admin e health check.
+- `lib/invoice-provider.js`: emissao automatica de NF-e via Focus NFe apos pagamento aprovado (emissao, consulta de status); mantem adaptador `mercado_pago` dormente.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
-- `docs/ops/invoice-manual.md`: procedimento de emissao fiscal pelo Sistema de Gestao Mercado Pago e pendencias para integracao por API.
+- `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
-- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal usa provider Mercado Pago e depende do endpoint fiscal configurado em `MERCADO_PAGO_INVOICE_API_URL`; sem endpoint, a emissao e operacional via Sistema de Gestao Mercado Pago.
+- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal e automatizada via Focus NFe com `INVOICE_PROVIDER=focus_nfe` e `FOCUS_NFE_TOKEN`; sem token, as NFs ficam pendentes.
 
 - Sem `DATABASE_URL`, pedidos sao persistidos em `.local-data/orders.dev.json`.
 - O armazenamento JSON e exclusivo de desenvolvimento; producao exige `DATABASE_URL`.

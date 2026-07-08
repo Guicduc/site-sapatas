@@ -7,7 +7,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Estrutura do projeto: `docs/ai-navigation.md`.
 - Estado operacional e backlog: `docs/ops/ecommerce-roadmap.md`.
 - Frete real: `docs/ops/shipping-integration.md`.
-- Nota fiscal Mercado Pago Sistema de Gestao: `docs/ops/invoice-manual.md`.
+- Nota fiscal automatizada (Focus NFe): `docs/ops/invoice-manual.md`.
 - Banco de dados: `docs/ops/database.sql`.
 - Variaveis de ambiente: `.env.example`.
 - Contexto de produto/design para UI: `PRODUCT.md`.
@@ -18,8 +18,10 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
-- Nota fiscal usa provider Mercado Pago (`INVOICE_PROVIDER=mercado_pago`). Enquanto o endpoint fiscal especifico da conta nao estiver liberado/configurado, o pedido deve ficar com NF via API pendente e o health check deve indicar a pendencia.
-- Para operar NF no MVP, emita pelo Sistema de Gestao Mercado Pago seguindo o checklist de `docs/ops/invoice-manual.md` e registre numero, serie, chave e emissao no admin.
+- Nota fiscal e automatizada por API via Focus NFe (`INVOICE_PROVIDER=focus_nfe` + `FOCUS_NFE_TOKEN`); pagamento aprovado emite a NF-e automaticamente. Fluxo e pre-requisitos em `docs/ops/invoice-manual.md`.
+- O checkout exige CPF/CNPJ do cliente (validado no servidor) porque a NF-e exige documento do destinatario.
+- Sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
+- O adaptador `INVOICE_PROVIDER=mercado_pago` (endpoint fiscal MP) permanece dormente; o Mercado Pago nao tem API publica de NF-e.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
 Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
@@ -33,7 +35,7 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 5. `lib/order-store.js` persiste pedido e pagamentos.
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
-8. Pagamento aprovado aciona `lib/invoice-provider.js` para registrar/solicitar NF via provider Mercado Pago.
+8. Pagamento aprovado aciona `lib/invoice-provider.js` para emitir a NF-e automaticamente via Focus NFe.
 
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
 

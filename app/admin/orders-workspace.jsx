@@ -17,8 +17,8 @@ import {
   SHIPMENT_STATUS,
 } from "@/lib/fulfillment";
 import { formatCurrency } from "@/lib/format";
-import { getInvoiceConfig } from "@/lib/invoice-config";
-import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
+import { getInvoiceConfig, isAutomatedInvoiceProvider } from "@/lib/invoice-config";
+import { refreshInvoiceStatus, requestInvoiceAfterPayment } from "@/lib/invoice-provider";
 import {
   getOrderById,
   getStoreMode,
@@ -60,6 +60,8 @@ const SIMPLE_PRODUCTION_OPTIONS = [
 
 const SIMPLE_INVOICE_OPTIONS = [
   { value: INVOICE_STATUS.PENDING, label: "NF pendente" },
+  { value: INVOICE_STATUS.MANUAL_PENDING, label: "NF pendente no emissor" },
+  { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF emitida no emissor" },
   { value: INVOICE_STATUS.API_PENDING, label: "NF Mercado Pago pendente" },
   { value: INVOICE_STATUS.API_ISSUED, label: "NF Mercado Pago emitida" },
   { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF Mercado Pago" }
@@ -524,8 +526,12 @@ function AdminOrderCard({ row, access }) {
             <span className="admin-section-note">{productionStage}</span>
           </summary>
           <OperationForm order={order} fulfillment={fulfillment} access={access} invoiceConfig={getInvoiceConfig()} />
-          {canRequestInvoice(order, fulfillment) && (
-            <InvoiceRequestForm order={order} access={access} />
+          {isAutomatedInvoiceProvider(getInvoiceConfig().provider) && canRequestInvoice(order, fulfillment) && (
+            <InvoiceRequestForm order={order} access={access} providerLabel={getInvoiceConfig().providerLabel} />
+          )}
+          {isAutomatedInvoiceProvider(getInvoiceConfig().provider)
+            && fulfillment.invoice.status === INVOICE_STATUS.API_PENDING && (
+            <InvoiceRefreshForm order={order} access={access} />
           )}
         </details>
 
@@ -601,7 +607,9 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
       <fieldset className="operation-form__group">
         <legend>Nota fiscal</legend>
         <p className="admin-note">
-          Confira cadastro fiscal, itens, total pago e CFOP/NCM antes de expedir.
+          {isAutomatedInvoiceProvider(invoiceConfig.provider)
+            ? `Emissao automatica de NF-e via ${invoiceConfig.providerLabel} apos pagamento aprovado. Use este formulario apenas para conferencia e ajustes.`
+            : `Emissao fora do site em ${invoiceConfig.providerLabel}. Confira cadastro fiscal, itens, total pago, CFOP/NCM e ambiente antes de expedir.`}
         </p>
         <ul className="admin-note">
           <li>Pedido local: {order.orderNumber}</li>
@@ -682,13 +690,25 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
   );
 }
 
-function InvoiceRequestForm({ order, access }) {
+function InvoiceRequestForm({ order, access, providerLabel }) {
   return (
-    <form className="cad-form invoice-request-form" action={requestMercadoPagoInvoice}>
+    <form className="cad-form invoice-request-form" action={requestAutomatedInvoice}>
       <input type="hidden" name="orderId" value={order.id} />
       <input type="hidden" name="token" value={access.token} />
       <button className="button button-secondary" type="submit">
-        Solicitar NF Mercado Pago
+        Emitir NF via {providerLabel}
+      </button>
+    </form>
+  );
+}
+
+function InvoiceRefreshForm({ order, access }) {
+  return (
+    <form className="cad-form invoice-request-form" action={refreshAutomatedInvoiceStatus}>
+      <input type="hidden" name="orderId" value={order.id} />
+      <input type="hidden" name="token" value={access.token} />
+      <button className="button button-secondary" type="submit">
+        Atualizar status da NF
       </button>
     </form>
   );
@@ -848,7 +868,7 @@ async function updatePrintQueue(formData) {
   revalidateAdminOrderPaths();
 }
 
-async function requestMercadoPagoInvoice(formData) {
+async function requestAutomatedInvoice(formData) {
   "use server";
 
   try {
@@ -864,6 +884,25 @@ async function requestMercadoPagoInvoice(formData) {
   if (!order || order.paymentStatus !== PAYMENT_STATUS.APPROVED) return;
 
   await requestInvoiceAfterPayment(order, order.payments?.[0] || {});
+  revalidateAdminOrderPaths();
+}
+
+async function refreshAutomatedInvoiceStatus(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  if (!orderId) return;
+
+  const order = await getOrderById(orderId);
+  if (!order) return;
+
+  await refreshInvoiceStatus(order);
   revalidateAdminOrderPaths();
 }
 
