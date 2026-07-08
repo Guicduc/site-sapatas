@@ -8,5 +8,10 @@ export const metadata = {
 export default async function OrderConfirmedPage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
 
-  return <OrderConfirmation initialOrderId={resolvedSearchParams?.orderId || ""} />;
+  return (
+    <OrderConfirmation
+      initialOrderId={resolvedSearchParams?.orderId || ""}
+      initialPaymentResult={resolvedSearchParams?.payment || ""}
+    />
+  );
 }

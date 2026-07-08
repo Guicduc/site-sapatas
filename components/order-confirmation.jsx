@@ -3,14 +3,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 
-export function OrderConfirmation({ initialOrderId = "" }) {
+export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
+  const { clearCart } = useCart();
   const [orderId, setOrderId] = useState(initialOrderId);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(Boolean(initialOrderId));
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (initialPaymentResult === "success") {
+      clearCart();
+    }
+  }, [clearCart, initialPaymentResult]);
 
   useEffect(() => {
     if (orderId) {
@@ -90,6 +98,13 @@ export function OrderConfirmation({ initialOrderId = "" }) {
       <div className="confirmation-card">
         <p className="eyebrow">Pedido recebido</p>
         <h1>{order.orderNumber}</h1>
+        {initialPaymentResult === "pending" && (
+          <p className="payment-notice payment-notice--pending" role="status">
+            Seu pagamento ainda está sendo processado. Assim que for confirmado (por exemplo, após a
+            compensação do Pix ou boleto), o status abaixo será atualizado. Não é necessário refazer o
+            pedido.
+          </p>
+        )}
         <p>
           Este é o resumo do pedido registrado na Baseforma. Para acompanhar produção, pagamento
           e envio, acesse sua conta.

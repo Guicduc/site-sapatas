@@ -12,6 +12,12 @@ const recoveryStorageKey = "baseforma-cart-recovery";
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
+  const [paymentResult, setPaymentResult] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setPaymentResult(params.get("payment") || "");
+  }, []);
 
   return (
     <section className="cart-shell">
@@ -24,6 +30,16 @@ export function CartPage() {
           Adicionar outro item
         </Link>
       </div>
+
+      {paymentResult === "failure" && (
+        <article className="payment-notice payment-notice--failure" role="alert">
+          <p className="eyebrow">Pagamento não concluído</p>
+          <p>
+            Não foi possível concluir o pagamento. Seus itens continuam no carrinho — revise os dados
+            e tente finalizar novamente.
+          </p>
+        </article>
+      )}
 
       {items.length === 0 ? (
         <article className="empty-cart">
@@ -394,7 +410,6 @@ function CheckoutForm() {
         );
       }
 
-      clearCart();
       window.location.assign(paymentPayload.checkoutUrl);
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível finalizar o pedido.");
