@@ -98,6 +98,13 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
       <div className="confirmation-card">
         <p className="eyebrow">Pedido recebido</p>
         <h1>{order.orderNumber}</h1>
+        {initialPaymentResult === "pending" && (
+          <p className="payment-notice payment-notice--pending" role="status">
+            Seu pagamento ainda está sendo processado. Assim que for confirmado (por exemplo, após a
+            compensação do Pix ou boleto), o status abaixo será atualizado. Não é necessário refazer o
+            pedido.
+          </p>
+        )}
         <p>
           O pedido agora está salvo no sistema. O status abaixo reflete a validação tecnica e o
           retorno de pagamento recebido até o momento.
