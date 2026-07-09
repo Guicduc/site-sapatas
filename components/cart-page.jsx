@@ -9,6 +9,10 @@ import { formatCurrency } from "@/lib/format";
 import { ORDER_STATUS } from "@/lib/order-status";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
+const pendingCheckoutStorageKey = "baseforma-pending-checkout";
+// Mesma janela de reuso de preferência do servidor (getPreferenceReuseWindowMinutes):
+// depois disso o link pendente não é mais reaproveitado, então o pedido guardado expira junto.
+const pendingCheckoutTtlMinutes = 120;
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -366,54 +370,109 @@ function CheckoutForm() {
     setError("");
 
     try {
-      const orderResponse = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          source: "configurator",
-          customer: { name: customerName, email, contact, document: documentDigits },
-          shippingAddress: address,
-          couponCode: normalizeCouponCode(couponCode),
-          notes: "",
-          items
-        })
+      const fingerprint = buildCheckoutFingerprint({
+        items,
+        name: customerName,
+        email,
+        contact,
+        document: documentDigits,
+        address,
+        couponCode
       });
-      const orderPayload = await orderResponse.json();
+      const pendingCheckout = readPendingCheckout();
+      let order = null;
+      let reusedOrder = false;
 
-      if (!orderResponse.ok) {
-        throw new Error(orderPayload.message || "Não foi possível criar o pedido.");
+      if (pendingCheckout?.orderId && pendingCheckout.fingerprint === fingerprint) {
+        order = pendingCheckout.order;
+        reusedOrder = true;
       }
 
-      const order = orderPayload.order;
+      // Carrinho mudou desde o pedido guardado: o novo pedido substitui o
+      // anterior e o servidor cancela o pedido superado.
+      const supersededOrderId = pendingCheckout?.orderId && !reusedOrder ? pendingCheckout.orderId : null;
+
+      async function createNewOrder() {
+        const orderResponse = await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            source: "configurator",
+            customer: { name: customerName, email, contact, document: documentDigits },
+            shippingAddress: address,
+            couponCode: normalizeCouponCode(couponCode),
+            notes: "",
+            items,
+            replacesOrderId: supersededOrderId
+          })
+        });
+        const orderPayload = await orderResponse.json();
+
+        if (!orderResponse.ok) {
+          throw new Error(orderPayload.message || "Não foi possível criar o pedido.");
+        }
+
+        const newOrder = orderPayload.order;
+        savePendingCheckout({ orderId: newOrder.id, fingerprint, order: newOrder });
+        await markRecoveryLeadConverted(newOrder.id);
+        return newOrder;
+      }
+
+      if (!order) {
+        order = await createNewOrder();
+      }
+
       setCreatedOrder(order);
       window.sessionStorage.setItem("baseforma-last-order-id", order.id);
-      await markRecoveryLeadConverted(order.id);
 
       if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
+        clearPendingCheckout();
         clearCart();
         window.location.assign(`/pedido-confirmado?orderId=${order.id}`);
         return;
       }
 
-      const paymentResponse = await fetch("/api/payments/mercado-pago/preference", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ orderId: order.id })
-      });
-      const paymentPayload = await paymentResponse.json();
+      async function requestPreference(orderId) {
+        const paymentResponse = await fetch("/api/payments/mercado-pago/preference", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ orderId })
+        });
+        const paymentPayload = await paymentResponse.json();
+        return { ok: paymentResponse.ok, status: paymentResponse.status, payload: paymentPayload };
+      }
 
-      if (!paymentResponse.ok) {
+      let payment = await requestPreference(order.id);
+
+      if (!payment.ok && reusedOrder && (payment.status === 404 || payment.status === 409)) {
+        // Pedido guardado não é mais pagável (expirado, pago ou em revisão): cria um novo.
+        clearPendingCheckout();
+        order = await createNewOrder();
+        setCreatedOrder(order);
+        window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+
+        if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
+          clearPendingCheckout();
+          clearCart();
+          window.location.assign(`/pedido-confirmado?orderId=${order.id}`);
+          return;
+        }
+
+        payment = await requestPreference(order.id);
+      }
+
+      if (!payment.ok) {
         throw new Error(
-          paymentPayload.message ||
+          payment.payload.message ||
             "Pedido criado, mas o pagamento Mercado Pago ainda não foi gerado."
         );
       }
 
-      window.location.assign(paymentPayload.checkoutUrl);
+      window.location.assign(payment.payload.checkoutUrl);
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível finalizar o pedido.");
     } finally {
@@ -616,6 +675,67 @@ async function persistCartRecoveryLead({ status, orderId, name, email, contact, 
   }
 
   return payload.recovery;
+}
+
+function buildCheckoutFingerprint({ items, name, email, contact, document: documentDigits, address, couponCode }) {
+  return JSON.stringify({
+    items: items.map((item) => ({
+      id: item.id,
+      sku: item.sku,
+      values: item.values,
+      color: item.color,
+      finish: item.finish,
+      quantity: item.quantity
+    })),
+    name: String(name || "").trim(),
+    email: String(email || "").trim().toLowerCase(),
+    contact: String(contact || "").trim(),
+    document: String(documentDigits || ""),
+    address,
+    couponCode: normalizeCouponCode(couponCode)
+  });
+}
+
+// Vive em localStorage (não sessionStorage) para sobreviver ao retorno do
+// Mercado Pago em outra aba/janela; expira junto com a janela de reuso da preferência.
+function readPendingCheckout() {
+  try {
+    const saved = window.localStorage.getItem(pendingCheckoutStorageKey);
+    const pending = saved ? JSON.parse(saved) : null;
+
+    if (pending && Number(pending.expiresAt) > Date.now()) {
+      return pending;
+    }
+
+    if (pending) {
+      window.localStorage.removeItem(pendingCheckoutStorageKey);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingCheckout(pending) {
+  try {
+    window.localStorage.setItem(
+      pendingCheckoutStorageKey,
+      JSON.stringify({ ...pending, expiresAt: Date.now() + pendingCheckoutTtlMinutes * 60 * 1000 })
+    );
+  } catch {
+    // Storage indisponível não deve bloquear o checkout.
+  }
+}
+
+function clearPendingCheckout() {
+  try {
+    window.localStorage.removeItem(pendingCheckoutStorageKey);
+    // Chave usada antes da migração para localStorage.
+    window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+  } catch {
+    // Storage indisponível não deve bloquear o checkout.
+  }
 }
 
 function readSavedRecoveryLead() {
