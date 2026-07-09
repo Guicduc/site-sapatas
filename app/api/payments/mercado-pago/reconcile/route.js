@@ -9,6 +9,7 @@ import {
   searchMercadoPagoPaymentsByReference
 } from "@/lib/mercado-pago";
 import { getOrderById, getOrderForEmail, recordMercadoPagoUpdate } from "@/lib/order-store";
+import { ORDER_STATUS } from "@/lib/order-status";
 import { notifyPaymentResolved } from "@/lib/transactional-email";
 
 // Reconciliação ativa com o Mercado Pago: consulta os pagamentos do pedido por
@@ -57,8 +58,13 @@ export async function POST(request) {
       amountBrl: payment.transaction_amount,
       raw: payment
     });
-    await notifyPaymentResolved(updatedOrder, updatedOrder?.paymentStatus || status);
-    await requestInvoiceAfterPayment(updatedOrder, payment);
+    // Um pagamento tardio pode chegar depois de o checkout ter substituido e
+    // cancelado o pedido. Registre e alerte esse caso, mas jamais envie e-mail
+    // de confirmacao ou emita NF-e para ele.
+    if (updatedOrder?.status !== ORDER_STATUS.CANCELLED && !updatedOrder?.metadata?.paymentReview) {
+      await notifyPaymentResolved(updatedOrder, updatedOrder?.paymentStatus || status);
+      await requestInvoiceAfterPayment(updatedOrder, payment);
+    }
 
     return NextResponse.json({
       reconciled: true,

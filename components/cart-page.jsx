@@ -6,13 +6,10 @@ import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
-import { ORDER_STATUS } from "@/lib/order-status";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
 const pendingCheckoutStorageKey = "baseforma-pending-checkout";
-// Mesma janela de reuso de preferência do servidor (getPreferenceReuseWindowMinutes):
-// depois disso o link pendente não é mais reaproveitado, então o pedido guardado expira junto.
-const pendingCheckoutTtlMinutes = 120;
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -370,7 +367,7 @@ function CheckoutForm() {
     setError("");
 
     try {
-      const fingerprint = buildCheckoutFingerprint({
+      const fingerprint = await buildCheckoutFingerprint({
         items,
         name: customerName,
         email,
@@ -379,13 +376,19 @@ function CheckoutForm() {
         address,
         couponCode
       });
-      const pendingCheckout = readPendingCheckout();
+      let pendingCheckout = readPendingCheckout();
       let order = null;
       let reusedOrder = false;
 
       if (pendingCheckout?.orderId && pendingCheckout.fingerprint === fingerprint) {
-        order = pendingCheckout.order;
-        reusedOrder = true;
+        order = await fetchOrderById(pendingCheckout.orderId).catch(() => null);
+
+        if (order) {
+          reusedOrder = true;
+        } else {
+          clearPendingCheckout();
+          pendingCheckout = null;
+        }
       }
 
       // Carrinho mudou desde o pedido guardado: o novo pedido substitui o
@@ -415,7 +418,7 @@ function CheckoutForm() {
         }
 
         const newOrder = orderPayload.order;
-        savePendingCheckout({ orderId: newOrder.id, fingerprint, order: newOrder });
+        savePendingCheckout({ orderId: newOrder.id, fingerprint });
         await markRecoveryLeadConverted(newOrder.id);
         return newOrder;
       }
@@ -448,8 +451,32 @@ function CheckoutForm() {
 
       let payment = await requestPreference(order.id);
 
-      if (!payment.ok && reusedOrder && (payment.status === 404 || payment.status === 409)) {
-        // Pedido guardado não é mais pagável (expirado, pago ou em revisão): cria um novo.
+      if (!payment.ok && reusedOrder && payment.status === 404) {
+        // O pedido guardado nao esta mais acessivel: descarte a referencia local
+        // e refaca a criacao no mesmo envio.
+        clearPendingCheckout();
+        order = await createNewOrder();
+        setCreatedOrder(order);
+        window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+
+        if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
+          clearPendingCheckout();
+          clearCart();
+          window.location.assign(`/pedido-confirmado?orderId=${order.id}`);
+          return;
+        }
+
+        payment = await requestPreference(order.id);
+      }
+
+      if (!payment.ok && reusedOrder && payment.status === 409 && order.paymentStatus === PAYMENT_STATUS.APPROVED) {
+        clearPendingCheckout();
+        clearCart();
+        window.location.assign(`/pedido-confirmado?orderId=${order.id}&payment=success`);
+        return;
+      }
+
+      if (!payment.ok && reusedOrder && payment.status === 409 && order.status === ORDER_STATUS.CANCELLED) {
         clearPendingCheckout();
         order = await createNewOrder();
         setCreatedOrder(order);
@@ -677,8 +704,8 @@ async function persistCartRecoveryLead({ status, orderId, name, email, contact, 
   return payload.recovery;
 }
 
-function buildCheckoutFingerprint({ items, name, email, contact, document: documentDigits, address, couponCode }) {
-  return JSON.stringify({
+async function buildCheckoutFingerprint({ items, name, email, contact, document: documentDigits, address, couponCode }) {
+  const snapshot = JSON.stringify({
     items: items.map((item) => ({
       id: item.id,
       sku: item.sku,
@@ -694,16 +721,48 @@ function buildCheckoutFingerprint({ items, name, email, contact, document: docum
     address,
     couponCode: normalizeCouponCode(couponCode)
   });
+
+  if (!window.crypto?.subtle || typeof TextEncoder === "undefined") {
+    // Sem Web Crypto nao persistimos o pedido pendente: e preferivel recriar o
+    // pedido a manter CPF, endereco e contato em armazenamento do navegador.
+    return "";
+  }
+
+  try {
+    const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(snapshot));
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return "";
+  }
+}
+
+async function fetchOrderById(orderId) {
+  const response = await fetch(`/api/orders/${orderId}`);
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.message || "Pedido não encontrado.");
+  }
+
+  return payload.order;
 }
 
 // Vive em localStorage (não sessionStorage) para sobreviver ao retorno do
-// Mercado Pago em outra aba/janela; expira junto com a janela de reuso da preferência.
+// Mercado Pago em outra aba/janela. A API continua sendo a fonte de verdade
+// para decidir se a preferencia e o pedido ainda podem ser reutilizados.
 function readPendingCheckout() {
   try {
     const saved = window.localStorage.getItem(pendingCheckoutStorageKey);
     const pending = saved ? JSON.parse(saved) : null;
 
-    if (pending && Number(pending.expiresAt) > Date.now()) {
+    // Remove o formato anterior, que persistia um objeto de pedido completo
+    // (incluindo dados pessoais) junto ao identificador.
+    if (pending?.order) {
+      window.localStorage.removeItem(pendingCheckoutStorageKey);
+      return null;
+    }
+
+    if (pending?.orderId && pending?.fingerprint) {
       return pending;
     }
 
@@ -719,10 +778,7 @@ function readPendingCheckout() {
 
 function savePendingCheckout(pending) {
   try {
-    window.localStorage.setItem(
-      pendingCheckoutStorageKey,
-      JSON.stringify({ ...pending, expiresAt: Date.now() + pendingCheckoutTtlMinutes * 60 * 1000 })
-    );
+    window.localStorage.setItem(pendingCheckoutStorageKey, JSON.stringify(pending));
   } catch {
     // Storage indisponível não deve bloquear o checkout.
   }

@@ -49,4 +49,4 @@ Se a API estiver indisponivel ou a nota falhar, o formulario de NF do admin cont
 
 ## Cancelamento
 
-Janela operacional de `INVOICE_CANCEL_WINDOW_DAYS` (7 dias), respeitando o prazo legal da SEFAZ. Para notas `api_issued` dentro da janela, o admin tem o botao "Cancelar NF-e na SEFAZ" (exige justificativa de 15 a 255 caracteres, enviada via `DELETE /v2/nfe/{ref}`); o pedido e atualizado para `NF cancelada` automaticamente. Fora da janela ou em caso de falha, use o painel Focus NFe e marque `NF cancelada` manualmente no admin.
+Por padrao, `INVOICE_CANCEL_WINDOW_DAYS=1`, o limite conservador usual para NF-e. Alguns estados podem admitir regras diferentes: aumente essa janela somente apos validacao com a contabilidade para a UF emissora. Para notas `api_issued` dentro da janela, o admin tem o botao "Cancelar NF-e na SEFAZ" (exige justificativa de 15 a 255 caracteres, enviada via `DELETE /v2/nfe/{ref}`); o pedido e atualizado para `NF cancelada` automaticamente. Fora da janela ou em caso de falha, use o painel Focus NFe e marque `NF cancelada` manualmente no admin.

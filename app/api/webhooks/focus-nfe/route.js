@@ -41,13 +41,17 @@ export async function POST(request) {
   // Consulta o estado autoritativo na API em vez de confiar no corpo da notificacao.
   const result = await refreshInvoiceStatus(order);
 
-  return NextResponse.json({
+  const response = {
     received: true,
     ref: reference,
     refreshed: Boolean(result.refreshed),
     ...(result.skipped ? { skipped: result.skipped } : {}),
     ...(result.error ? { error: result.error } : {})
-  });
+  };
+
+  // A Focus reenvia notificacoes que nao recebem 2xx. Isso evita perder uma
+  // atualizacao quando a consulta autoritativa falha temporariamente.
+  return NextResponse.json(response, { status: result.error ? 502 : 200 });
 }
 
 export async function GET() {
