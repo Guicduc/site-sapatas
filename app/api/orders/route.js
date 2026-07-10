@@ -30,7 +30,11 @@ export async function POST(request) {
           demo: true,
           account: { emailVerifiedAt: now },
           fulfillment: buildFulfillmentMetadata(
-            { ...orderDraft, status: ORDER_STATUS.PAID_READY_FOR_PRODUCTION },
+            {
+              ...orderDraft,
+              status: ORDER_STATUS.PAID_READY_FOR_PRODUCTION,
+              paymentStatus: PAYMENT_STATUS.APPROVED
+            },
             { eventType: "demo_payment_approved" },
             now
           )
