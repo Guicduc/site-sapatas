@@ -1,0 +1,82 @@
+{
+  "productId": "sapata-lisa-quadrada",
+  "status": "active",
+  "name": "Lisa quadrada",
+  "description": "Para bases planas com área de contato quadrada.",
+  "category": { "slug": "sapata-base-lisa", "formatSlug": "quadrada" },
+  "seo": { "familySlug": "sapata-lisa-quadrada" },
+  "skuPrefix": "BF-BL-QD",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"],
+    "parameterCodes": {
+      "tamanhoBaseX": "BX",
+      "tamanhoBaseY": "BY",
+      "alturaBase": "AB",
+      "alturaPescoco": "AP",
+      "diametroPescoco": "DP"
+    },
+    "colorCodes": { "Preta": "PR" }
+  },
+  "material": "TPU",
+  "colors": ["Preta"],
+  "finishes": [],
+  "leadTimeBaseDays": 5,
+  "generationMode": "local_manual",
+  "drawingType": "base-rect",
+  "notes": ["Modelo paramétrico disponível para configuração."],
+  "parameters": [
+    { "key": "tamanhoBaseX", "label": "Tamanho base X", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 50, "role": "primary-width" },
+    { "key": "tamanhoBaseY", "label": "Tamanho base Y", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 50, "role": "secondary-width" },
+    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 7, "role": "base-height" },
+    { "key": "pescoco", "label": "Haste", "type": "boolean", "default": false, "role": "toggle" },
+    { "key": "alturaPescoco", "label": "Altura da haste", "type": "dimension", "unit": "mm", "min": 5, "max": 35, "step": 1, "default": 12, "role": "neck-height", "dependsOn": "pescoco" },
+    { "key": "diametroPescoco", "label": "Diâmetro da haste", "type": "dimension", "unit": "mm", "min": 3, "max": 15, "step": 1, "default": 8, "role": "neck-width", "dependsOn": "pescoco" }
+  ],
+  "variants": [
+    {
+      "id": "sem-haste",
+      "code": "SH",
+      "public": true,
+      "condition": { "pescoco": false },
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada.gh",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"]
+      },
+      "pricing": {
+        "surfaceId": "sapata-base-lisa:quadrada:sem-haste",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 4
+      }
+    },
+    {
+      "id": "haste",
+      "code": "HA",
+      "public": true,
+      "condition": { "pescoco": true },
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com haste.gh",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"]
+      },
+      "pricing": {
+        "surfaceId": "sapata-base-lisa:quadrada:haste",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 4
+      }
+    },
+    {
+      "id": "com-parafuso",
+      "code": "CP",
+      "public": false,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com parafuso.gh",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"]
+      },
+      "pricing": {
+        "surfaceId": "sapata-base-lisa:quadrada:com-parafuso",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 4
+      }
+    }
+  ]
+}

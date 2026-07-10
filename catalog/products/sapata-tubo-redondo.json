@@ -1,0 +1,50 @@
+{
+  "productId": "sapata-tubo-redondo",
+  "status": "active",
+  "name": "Tubo redondo",
+  "description": "Para tubo redondo medido pelo diâmetro interno real.",
+  "category": { "slug": "ponteira-interna-tubo", "formatSlug": "redondo" },
+  "seo": { "familySlug": "sapata-tubo-redondo" },
+  "skuPrefix": "BF-RD-PI",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametroBase", "alturaBase", "alturaPescoco", "paredeTubo"],
+    "parameterCodes": {
+      "diametroBase": "DB",
+      "alturaBase": "AB",
+      "alturaPescoco": "AP",
+      "paredeTubo": "PT"
+    },
+    "colorCodes": { "Preta": "PR" }
+  },
+  "material": "TPU",
+  "colors": ["Preta"],
+  "finishes": [],
+  "leadTimeBaseDays": 5,
+  "generationMode": "local_manual",
+  "drawingType": "tube-round",
+  "notes": ["Meça o tubo por dentro, depois da pintura ou cromagem."],
+  "parameters": [
+    { "key": "diametroBase", "label": "Tamanho base (Ø)", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
+    { "key": "alturaBase", "label": "Altura base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
+    { "key": "alturaPescoco", "label": "Altura pescoço", "type": "dimension", "unit": "mm", "min": 5, "max": 35, "step": 1, "default": 18, "role": "neck-height" },
+    { "key": "paredeTubo", "label": "Parede tubo", "type": "dimension", "unit": "mm", "min": 0.8, "max": 8, "step": 0.1, "default": 1.5, "role": "wall-thickness" }
+  ],
+  "variants": [
+    {
+      "id": "sem-haste",
+      "code": "SH",
+      "public": true,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Interna_Tubo-Redondo.gh",
+        "sliderOrder": ["diametroBase", "alturaBase", "alturaPescoco", "paredeTubo"],
+        "sliderTransforms": { "diametroBase": { "offset": 10 } }
+      },
+      "pricing": {
+        "surfaceId": "ponteira-interna-tubo:redondo:sem-haste",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 1.7
+      }
+    }
+  ]
+}
