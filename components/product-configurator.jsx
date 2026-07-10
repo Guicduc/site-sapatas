@@ -54,7 +54,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
-  const sku = useMemo(() => buildConfigurationSku(format, values), [format, values]);
+  const sku = useMemo(() => buildConfigurationSku(format, values, { color }), [format, values, color]);
   const headingDescription = getConfiguratorDescription(category);
   const hasColorChoices = category.colors.length > 1;
   const hasFinishChoices = category.finishes.length > 0;
