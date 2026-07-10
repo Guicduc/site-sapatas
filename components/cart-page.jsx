@@ -623,19 +623,14 @@ function CheckoutForm() {
           <dd>{formatCurrency(commerce.totalBrl)}</dd>
         </div>
       </dl>
-      {(couponCode || commerce.shipping.message) && (
+      {couponCode && (
         <p className={`checkout-note${commerce.discount.status === "invalid" || commerce.discount.status === "not_eligible" ? " checkout-note--warning" : ""}`}>
-          {couponCode ? commerce.discount.message : commerce.shipping.message}
+          {commerce.discount.message}
         </p>
       )}
       {shippingQuoteState.status === "loading" && (
         <p className="checkout-note">
           Consultando frete para o CEP informado.
-        </p>
-      )}
-      {recoveryState.status === "saved" && !createdOrder && (
-        <p className="checkout-note">
-          Carrinho salvo para retomada pelo atendimento. Nenhuma mensagem automatica sera enviada.
         </p>
       )}
       {createdOrder && (
