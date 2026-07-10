@@ -311,14 +311,12 @@ function buildSteps(order) {
   const paid = PAID.has(order.paymentStatus) || order.paymentStatus === PAYMENT_STATUS.REFUNDED;
   const productionStatus = order.fulfillment?.production?.status || "";
   const shipmentStatus = order.fulfillment?.shipment?.status || "";
-  const validationDone = paid && !["waiting_cad", "blocked"].includes(productionStatus) && order.status !== ORDER_STATUS.PAID_PENDING_REVIEW;
   const production = PRODUCTION_DONE.has(productionStatus) || SHIPMENT_DONE.has(shipmentStatus);
   return [
     { label: "Pedido recebido", done: true },
     { label: "Pagamento", done: paid },
-    { label: "Validação técnica", done: validationDone },
     { label: "Produção", done: production },
-    { label: "Envio", done: SHIPMENT_DONE.has(shipmentStatus) || order.status === ORDER_STATUS.SHIPPED }
+    { label: "Expedição", done: SHIPMENT_DONE.has(shipmentStatus) || order.status === ORDER_STATUS.SHIPPED }
   ];
 }
 
@@ -335,11 +333,10 @@ function getClientOrderStatusLabel(order) {
 
   if (shipmentStatus === "delivered") return "Concluído";
   if (["packing", "ready_for_pickup", "shipped"].includes(shipmentStatus)) return "Enviando";
-  if (["waiting_cad", "blocked"].includes(productionStatus) || order.status === ORDER_STATUS.PAID_PENDING_REVIEW) return "Validação técnica";
-  if (productionStatus === "ready_to_ship") return "Pronto para expedir";
-  if (["queued", "scheduled"].includes(productionStatus)) return "Na fila de produção";
+  if (productionStatus === "blocked" || order.status === ORDER_STATUS.PAID_PENDING_REVIEW) return "Revisão técnica";
+  if (productionStatus === "ready_to_ship") return "Produzido";
 
-  return "Em produção";
+  return "Aguardando produção";
 }
 
 function formatDate(value) {

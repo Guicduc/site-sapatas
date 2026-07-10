@@ -37,6 +37,8 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
 8. Pagamento aprovado aciona `lib/invoice-provider.js` para emitir a NF-e automaticamente via Focus NFe.
 
+Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` -> `Produzido` -> expedicao. A preparacao CAD e manual e nao cria status, gate ou bloqueio no pedido.
+
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
 
 ## Frete
@@ -44,6 +46,7 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
 - Ativar frete real exige `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Use sandbox primeiro: `MELHOR_ENVIO_ENV=sandbox`.
 - A cotacao do Melhor Envio usa produtos com dimensoes em cm, peso em kg e valor em reais.
+- O peso de envio e calculado apenas no payload efemero da cotacao e nao deve ser exibido nem persistido como estado operacional do pedido.
 - A integracao Melhor Envio atual e somente de cotacao; pedidos continuam com postagem manual pela operacao.
 - A compra de etiqueta, impressao e rastreio ainda nao estao implementados.
 - Para testar fallback manual localmente, deixe `SHIPPING_PROVIDER=manual` e chame `POST /api/shipping/quote`.

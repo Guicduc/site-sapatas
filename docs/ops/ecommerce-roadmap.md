@@ -27,6 +27,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.
 - Relatorios basicos em `/admin/relatorios`.
 - Operacao de producao, nota fiscal automatizada e expedicao em `/admin/operacao`.
+- Fluxo pos-pagamento simplificado em `Aguardando producao` -> `Produzido` -> expedicao; CAD permanece manual e fora dos estados do pedido.
 - Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
