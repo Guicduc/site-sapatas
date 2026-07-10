@@ -7,6 +7,7 @@ import { useCart } from "@/components/cart-provider";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
+import { saveDemoOrder } from "@/components/demo-account";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
 const pendingCheckoutStorageKey = "baseforma-pending-checkout";
@@ -429,6 +430,14 @@ function CheckoutForm() {
 
       setCreatedOrder(order);
       window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+
+      if (order.demo) {
+        saveDemoOrder(order);
+        clearPendingCheckout();
+        clearCart();
+        window.location.assign(`/pedido-confirmado?orderId=${order.id}&payment=success&demo=1`);
+        return;
+      }
 
       if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
         clearPendingCheckout();

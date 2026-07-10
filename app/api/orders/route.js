@@ -10,11 +10,49 @@ import { toAccountOrder } from "@/lib/account-view";
 import { cancelSupersededOrder, createOrder } from "@/lib/order-store";
 import { buildOrderDraft } from "@/lib/order-validation";
 import { notifyOrderCreated } from "@/lib/transactional-email";
+import { isDemoSession } from "@/lib/demo-session";
+import { buildFulfillmentMetadata } from "@/lib/fulfillment";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
 
 export async function POST(request) {
   try {
     const payload = await request.json();
     const orderDraft = await buildOrderDraft(payload);
+    if (await isDemoSession()) {
+      const now = new Date().toISOString();
+      const demoOrder = {
+        ...orderDraft,
+        demo: true,
+        status: orderDraft.technicalReview ? orderDraft.status : ORDER_STATUS.PAID_READY_FOR_PRODUCTION,
+        paymentStatus: orderDraft.technicalReview ? PAYMENT_STATUS.PENDING : PAYMENT_STATUS.APPROVED,
+        metadata: {
+          ...orderDraft.metadata,
+          demo: true,
+          account: { emailVerifiedAt: now },
+          fulfillment: buildFulfillmentMetadata(
+            { ...orderDraft, status: ORDER_STATUS.PAID_READY_FOR_PRODUCTION },
+            { eventType: "demo_payment_approved" },
+            now
+          )
+        },
+        payments: orderDraft.technicalReview ? [] : [{
+          id: crypto.randomUUID(),
+          provider: "demo",
+          status: PAYMENT_STATUS.APPROVED,
+          amountBrl: orderDraft.totalBrl,
+          checkoutUrl: null,
+          createdAt: now,
+          updatedAt: now
+        }],
+        technicalReviews: orderDraft.technicalReview ? [{
+          id: crypto.randomUUID(),
+          ...orderDraft.technicalReview,
+          createdAt: now,
+          updatedAt: now
+        }] : []
+      };
+      return NextResponse.json({ order: toAccountOrder(demoOrder), demo: true }, { status: 201 });
+    }
     const order = await createOrder(orderDraft);
     await notifyOrderCreated(order);
     await cancelReplacedOrder(payload.replacesOrderId, order.id);

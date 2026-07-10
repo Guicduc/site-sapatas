@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
+import { readDemoOrders } from "@/components/demo-account";
 
 export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
   const { clearCart } = useCart();
@@ -48,6 +49,8 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
     const shouldReconcile = initialPaymentResult === "success" || initialPaymentResult === "pending";
 
     (async () => {
+      const demoOrder = readDemoOrders().find((item) => item.id === orderId);
+      if (demoOrder) return demoOrder;
       const reconciledOrder = shouldReconcile ? await reconcilePayment(orderId) : null;
       return reconciledOrder || fetchOrderById(orderId);
     })()
@@ -115,6 +118,11 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
       <div className="confirmation-card">
         <p className="eyebrow">Pedido recebido</p>
         <h1>{order.orderNumber}</h1>
+        {order.demo && (
+          <p className="payment-notice payment-notice--pending" role="status">
+            Simulação concluída: este pedido não foi cobrado, gravado ou enviado à produção.
+          </p>
+        )}
         {initialPaymentResult === "pending" && (
           <p className="payment-notice payment-notice--pending" role="status">
             Seu pagamento ainda está sendo processado. Assim que for confirmado (por exemplo, após a

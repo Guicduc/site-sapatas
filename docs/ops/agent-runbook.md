@@ -69,6 +69,14 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
 
 Nao use `git reset --hard` para resolver divergencia remota. Preserve mudancas locais e resolva conflitos arquivo a arquivo.
 
+## Demonstracao para testadores
+
+- O link `/demonstracao/[token]` ativa uma sessao isolada quando o token coincide com `DEMO_ACCESS_TOKEN`.
+- Pedidos de demonstracao sao recalculados no servidor, mas ficam apenas no `localStorage` do navegador do testador.
+- O modo nao grava pedidos ou leads, nao chama o Mercado Pago, nao envia e-mails e nao aciona nota fiscal ou producao.
+- A faixa amarela identifica a sessao; `/conta` mostra somente os pedidos simulados daquele dispositivo.
+- Nunca use esse modo para liberar as rotas administrativas reais.
+
 ## Validacao minima
 
 Rode sempre:

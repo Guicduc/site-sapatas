@@ -21,6 +21,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/configurar/[categoria]`: abre o configurador de uma categoria de produto.
 - `/carrinho`: exibe itens salvos no carrinho local do navegador.
 - `/pedido-confirmado`: mostra o resultado do pedido/pagamento.
+- `/demonstracao/[token]`: ativa por cookie o ambiente de testes isolado, sem persistencia operacional.
 - `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. Entra por codigo enviado ao e-mail vinculado ao pedido.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
