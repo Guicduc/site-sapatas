@@ -509,42 +509,49 @@ function CheckoutForm() {
 
   return (
     <form className="checkout-form" onSubmit={handleSubmit}>
-      <div className="checkout-contact-grid">
-        <label className="field">
-          <span>Nome <RequiredMark /></span>
-          <input autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>Sobrenome <RequiredMark /></span>
-          <input autoComplete="family-name" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>E-mail <RequiredMark /></span>
-          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>WhatsApp <RequiredMark /></span>
-          <input
-            type="tel"
-            autoComplete="tel"
-            required
-            value={contact}
-            placeholder="(11) 99999-0000"
-            onChange={(event) => setContact(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>CPF ou CNPJ</span>
-          <input
-            inputMode="numeric"
-            required
-            value={documentNumber}
-            placeholder="Somente numeros"
-            maxLength={18}
-            onChange={(event) => setDocumentNumber(event.target.value)}
-          />
-        </label>
-      </div>
+      <section className="checkout-section checkout-section--customer" aria-labelledby="checkout-customer-title">
+        <div className="checkout-section__heading">
+          <span className="eyebrow">Etapa 1</span>
+          <h3 id="checkout-customer-title">Seus dados</h3>
+          <p>Informe os dados de contato para identificarmos o seu pedido.</p>
+        </div>
+        <div className="checkout-contact-grid">
+          <label className="field">
+            <span>Nome <RequiredMark /></span>
+            <input autoComplete="given-name" required value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Sobrenome <RequiredMark /></span>
+            <input autoComplete="family-name" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
+          </label>
+          <label className="field checkout-field--wide">
+            <span>E-mail <RequiredMark /></span>
+            <input type="email" autoComplete="email" required value={email} placeholder="voce@empresa.com" onChange={(event) => setEmail(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>WhatsApp <RequiredMark /></span>
+            <input
+              type="tel"
+              autoComplete="tel"
+              required
+              value={contact}
+              placeholder="(11) 99999-0000"
+              onChange={(event) => setContact(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>CPF ou CNPJ <RequiredMark /></span>
+            <input
+              inputMode="numeric"
+              required
+              value={documentNumber}
+              placeholder="Somente números"
+              maxLength={18}
+              onChange={(event) => setDocumentNumber(event.target.value)}
+            />
+          </label>
+        </div>
+      </section>
       <div className="checkout-account-disclosure">
         <div>
           <span className="eyebrow">Conta do cliente</span>
@@ -557,7 +564,11 @@ function CheckoutForm() {
         </p>
       </div>
       <fieldset className="checkout-address">
-        <legend>Endereço de entrega</legend>
+        <legend>
+          <span className="eyebrow">Etapa 2</span>
+          <strong>Endereço de entrega</strong>
+        </legend>
+        <p className="checkout-section__description">Usaremos este endereço para calcular o frete e enviar seu pedido.</p>
         <div className="checkout-address__row checkout-address__row--postal">
           <label className="field checkout-field--postal"><span>CEP <RequiredMark /></span><input inputMode="numeric" autoComplete="shipping postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
           <label className="field checkout-field--state"><span>UF <RequiredMark /></span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
