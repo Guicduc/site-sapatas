@@ -23,7 +23,7 @@ const faqSections = [
       {
         question: "Qual é o limite de medida?",
         answer:
-          "As famílias atuais trabalham com medidas customizáveis até 100 x 100 mm. Pedidos fora desse envelope devem entrar como projeto especial."
+          "As famílias atuais trabalham com medidas customizáveis até 150 x 150 mm. Pedidos fora desse envelope devem entrar como projeto especial."
       },
       {
         question: "Preciso enviar desenho técnico?",

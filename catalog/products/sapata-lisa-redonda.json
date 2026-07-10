@@ -1,0 +1,80 @@
+{
+  "productId": "sapata-lisa-redonda",
+  "status": "active",
+  "name": "Lisa redonda",
+  "description": "Para pés e bases com área circular de contato.",
+  "category": { "slug": "sapata-base-lisa", "formatSlug": "redonda" },
+  "seo": { "familySlug": "sapata-lisa-redonda" },
+  "skuPrefix": "BF-BL-RD",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"],
+    "parameterCodes": {
+      "diametro": "DI",
+      "alturaBase": "AB",
+      "alturaPescoco": "AP",
+      "diametroPescoco": "DP"
+    },
+    "colorCodes": { "Preta": "PR" }
+  },
+  "material": "TPU",
+  "colors": ["Preta"],
+  "finishes": [],
+  "leadTimeBaseDays": 4,
+  "generationMode": "local_manual",
+  "drawingType": "base-round",
+  "notes": ["Modelo paramétrico disponível para configuração."],
+  "parameters": [
+    { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
+    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
+    { "key": "pescoco", "label": "Haste", "type": "boolean", "default": false, "role": "toggle" },
+    { "key": "alturaPescoco", "label": "Altura da haste", "type": "dimension", "unit": "mm", "min": 5, "max": 35, "step": 1, "default": 12, "role": "neck-height", "dependsOn": "pescoco" },
+    { "key": "diametroPescoco", "label": "Diâmetro da haste", "type": "dimension", "unit": "mm", "min": 3, "max": 15, "step": 1, "default": 8, "role": "neck-width", "dependsOn": "pescoco" }
+  ],
+  "variants": [
+    {
+      "id": "sem-haste",
+      "code": "SH",
+      "public": true,
+      "condition": { "pescoco": false },
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda.gh",
+        "sliderOrder": ["diametro", "alturaBase"]
+      },
+      "pricing": {
+        "surfaceId": "sapata-base-lisa:redonda:sem-haste",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 4
+      }
+    },
+    {
+      "id": "haste",
+      "code": "HA",
+      "public": true,
+      "condition": { "pescoco": true },
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com Haste.gh",
+        "sliderOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"]
+      },
+      "pricing": {
+        "surfaceId": "sapata-base-lisa:redonda:haste",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 4
+      }
+    },
+    {
+      "id": "com-parafuso",
+      "code": "CP",
+      "public": false,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
+        "sliderOrder": ["diametro", "alturaBase"]
+      },
+      "pricing": {
+        "surfaceId": "sapata-base-lisa:redonda:com-parafuso",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 4
+      }
+    }
+  ]
+}

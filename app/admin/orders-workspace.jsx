@@ -16,7 +16,12 @@ import {
 } from "@/lib/fulfillment";
 import { formatCurrency } from "@/lib/format";
 import { getInvoiceConfig, isAutomatedInvoiceProvider } from "@/lib/invoice-config";
-import { refreshInvoiceStatus, requestInvoiceAfterPayment } from "@/lib/invoice-provider";
+import {
+  canCancelInvoice,
+  cancelInvoice,
+  refreshInvoiceStatus,
+  requestInvoiceAfterPayment
+} from "@/lib/invoice-provider";
 import {
   getOrderById,
   getStoreMode,
@@ -52,9 +57,9 @@ const SIMPLE_INVOICE_OPTIONS = [
   { value: INVOICE_STATUS.PENDING, label: "NF pendente" },
   { value: INVOICE_STATUS.MANUAL_PENDING, label: "NF pendente no emissor" },
   { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF emitida no emissor" },
-  { value: INVOICE_STATUS.API_PENDING, label: "NF Mercado Pago pendente" },
-  { value: INVOICE_STATUS.API_ISSUED, label: "NF Mercado Pago emitida" },
-  { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF Mercado Pago" }
+  { value: INVOICE_STATUS.API_PENDING, label: "NF automatica pendente" },
+  { value: INVOICE_STATUS.API_ISSUED, label: "NF emitida via API" },
+  { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF automatica" }
 ];
 
 const SIMPLE_SHIPMENT_OPTIONS = [
@@ -478,6 +483,9 @@ function AdminOrderCard({ row, access }) {
             && fulfillment.invoice.status === INVOICE_STATUS.API_PENDING && (
             <InvoiceRefreshForm order={order} access={access} />
           )}
+          {canCancelInvoice(order) && (
+            <InvoiceCancelForm order={order} access={access} />
+          )}
         </details>
 
         {payment && (
@@ -659,6 +667,29 @@ function InvoiceRefreshForm({ order, access }) {
   );
 }
 
+function InvoiceCancelForm({ order, access }) {
+  return (
+    <form className="cad-form invoice-request-form" action={cancelAutomatedInvoice}>
+      <input type="hidden" name="orderId" value={order.id} />
+      <input type="hidden" name="token" value={access.token} />
+      <label className="field field-wide">
+        <span>Justificativa do cancelamento (minimo 15 caracteres)</span>
+        <textarea
+          name="cancelJustification"
+          rows={2}
+          minLength={15}
+          maxLength={255}
+          required
+          placeholder="Ex.: Pedido cancelado pelo cliente antes da expedicao."
+        />
+      </label>
+      <button className="button button-secondary" type="submit">
+        Cancelar NF-e na SEFAZ
+      </button>
+    </form>
+  );
+}
+
 async function updateOperation(formData) {
   "use server";
 
@@ -788,6 +819,26 @@ async function refreshAutomatedInvoiceStatus(formData) {
   if (!order) return;
 
   await refreshInvoiceStatus(order);
+  revalidateAdminOrderPaths();
+}
+
+async function cancelAutomatedInvoice(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orderId = cleanFormValue(formData.get("orderId"));
+  const justification = cleanFormValue(formData.get("cancelJustification"));
+  if (!orderId || !justification) return;
+
+  const order = await getOrderById(orderId);
+  if (!order) return;
+
+  await cancelInvoice(order, justification);
   revalidateAdminOrderPaths();
 }
 

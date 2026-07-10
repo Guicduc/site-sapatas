@@ -1,0 +1,31 @@
+{
+  "$comment": "Categorias do catálogo. Os slugs definem as rotas /configurar/{slug} e são preservados do catálogo legado.",
+  "categories": [
+    {
+      "slug": "ponteira-interna-tubo",
+      "name": "Sapata interna tubos",
+      "eyebrow": "Encaixe por medida real",
+      "description": "Sapatas sob medida para tubos redondos, quadrados e oblongos, com encaixe por medida real.",
+      "baseType": "tubo",
+      "primaryFixation": "press-fit interno",
+      "image": {
+        "src": "/brand/categoria-ponteira-interna-tubo.png",
+        "alt": "Sapatas Baseforma para tubos redondos, quadrados e oblongos"
+      },
+      "applications": ["cadeiras", "mesas", "serralheria", "mobiliário autoral"]
+    },
+    {
+      "slug": "sapata-base-lisa",
+      "name": "Sapata lisa",
+      "eyebrow": "Apoio plano customizável",
+      "description": "Sapatas lisas customizáveis em formatos redondo e quadrado, com ou sem pescoço.",
+      "baseType": "base lisa",
+      "primaryFixation": "apoio plano",
+      "image": {
+        "src": "/brand/categoria-sapata-base-lisa.png",
+        "alt": "Sapatas Baseforma para bases lisas redondas e quadradas"
+      },
+      "applications": ["poltronas", "banquinhos", "bases metálicas", "móveis autorais"]
+    }
+  ]
+}
