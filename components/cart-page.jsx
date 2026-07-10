@@ -127,6 +127,7 @@ function CheckoutForm() {
   const [address, setAddress] = useState({
     postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
   });
+  const demoPrefillAttemptedRef = useRef(false);
   const lastPostalCodeLookupRef = useRef("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -172,6 +173,38 @@ function CheckoutForm() {
     state: address.state,
     couponCode
   });
+
+  useEffect(() => {
+    if (demoPrefillAttemptedRef.current) return undefined;
+    demoPrefillAttemptedRef.current = true;
+    let cancelled = false;
+
+    fetch("/api/demo-session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (cancelled || payload.active !== true) return;
+
+        setName((current) => current || "Cliente");
+        setLastName((current) => current || "Demonstração");
+        setEmail((current) => current || "cliente.teste@example.com");
+        setContact((current) => current || "(11) 99999-9999");
+        setDocumentNumber((current) => current || "529.982.247-25");
+        setAddress((current) => ({
+          postalCode: current.postalCode || "01001-000",
+          street: current.street || "Praça da Sé",
+          number: current.number || "100",
+          complement: current.complement || "Conjunto de teste",
+          district: current.district || "Sé",
+          city: current.city || "São Paulo",
+          state: current.state || "SP"
+        }));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const postalCode = String(address.postalCode || "").replace(/\D/g, "");
