@@ -1914,6 +1914,38 @@ small {
   gap: 10px;
 }
 
+.checkout-section {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: oklch(0.985 0.003 170);
+}
+
+.checkout-section__heading {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.checkout-section__heading h3,
+.checkout-address legend strong {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.checkout-section__heading p,
+.checkout-section__description {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 .checkout-account-disclosure {
   display: grid;
   gap: 8px;
@@ -1941,12 +1973,6 @@ small {
   color: var(--ink-soft);
   font-size: 0.84rem;
   line-height: 1.45;
-}
-
-@media (min-width: 1120px) {
-  .cart-summary .checkout-contact-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 .checkout-totals {
@@ -3928,8 +3954,13 @@ summary {
 }
 
 .checkout-address legend {
+  display: grid;
+  gap: 2px;
   padding: 0 6px;
-  font-weight: 700;
+}
+
+.checkout-address > .checkout-section__description {
+  margin-top: -2px;
 }
 
 .cart-summary .field {
@@ -3988,6 +4019,14 @@ summary {
 @media (min-width: 1120px) {
   .cart-summary .checkout-address {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cart-summary .checkout-contact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cart-summary .checkout-field--wide {
+    grid-column: 1 / -1;
   }
 
   .cart-summary .checkout-address__row--postal {
@@ -5598,5 +5637,43 @@ summary {
 
   .summary-panel .summary-stats span {
     font-size: 0.78rem;
+  }
+}
+
+.demo-banner {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #fff0bf;
+  border-bottom: 1px solid #d7b44b;
+  color: #332700;
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.demo-banner strong {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.demo-banner a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+  .demo-banner {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 8px 12px;
+  }
+
+  .demo-banner span {
+    flex-basis: 100%;
   }
 }

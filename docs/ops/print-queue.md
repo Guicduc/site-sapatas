@@ -1,10 +1,10 @@
-# Fila de impressao
+# Fila de producao
 
-Este documento registra a regra operacional da fila de impressao usada no admin.
+Este documento registra a regra operacional da fila de producao usada no admin.
 
 ## Objetivo
 
-Manter uma lista simples de pedidos pagos e liberados tecnicamente que precisam ser impressos. Pedidos que ainda dependem de CAD, revisao tecnica ou correcao de precificacao continuam visiveis no admin, mas nao ocupam posicao nem capacidade na fila de impressao.
+Manter uma lista simples de pedidos pagos que aguardam producao. A preparacao de arquivos e feita manualmente pela operacao e nao bloqueia a fila.
 
 ## Entrada na fila
 
@@ -12,19 +12,17 @@ Um pedido entra na fila quando:
 
 - foi criado no checkout proprio;
 - tem pagamento aprovado pelo Mercado Pago;
-- ja passou pelo gate de CAD/revisao tecnica quando `shouldRequireCad` exigir modelo;
 - nao esta cancelado;
 - ainda nao foi expedido.
 
-Pedidos criados sem pagamento continuam visiveis no filtro `Pagamento`, mas nao devem ocupar posicao na fila de impressao. Pedidos em `waiting_cad` ou `blocked` devem ser resolvidos na ficha do pedido antes de entrar na fila.
+Pedidos criados sem pagamento continuam visiveis no filtro `Pagamento`, mas nao devem ocupar posicao na fila. Revisoes tecnicas excepcionais continuam como bloqueio separado quando a configuracao do pedido for invalida.
 
 ## Estados operacionais
 
 Use apenas estes estados no trabalho diario:
 
-- `Aguardando`: pedido pago na fila, ainda sem impressao iniciada.
-- `Imprimindo`: producao em andamento na mesa/impressora definida.
-- `Pronto para expedir`: impressao finalizada, pedido pronto para conferencia da nota fiscal e expedicao.
+- `Aguardando producao`: pedido pago aguardando o trabalho manual da operacao.
+- `Produzido`: producao concluida, pedido pronto para seguir para expedicao.
 
 ## Expedicao
 
@@ -34,7 +32,7 @@ A expedicao tambem deve ficar simples:
 - `Pronto para expedir`: impressao concluida e pacote pronto para saida/coleta.
 - `Expedido`: pedido saiu da operacao e deve ter rastreio ou registro de retirada.
 
-Nota fiscal nao faz parte da fila de impressao. O Mercado Pago resolve pagamento e a NF-e e emitida automaticamente via Focus NFe apos a aprovacao; a expedicao apenas confere numero, chave e DANFE registrados no pedido.
+Nota fiscal nao faz parte da fila de producao. O Mercado Pago resolve pagamento e a NF-e e emitida automaticamente via Focus NFe apos a aprovacao; a expedicao apenas confere numero, chave e DANFE registrados no pedido.
 
 ## Ordenacao
 

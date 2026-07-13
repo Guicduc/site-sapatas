@@ -3,9 +3,12 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import {
+  buildConfigurationSku,
+  calculateLeadTime,
   calculatePriceBreakdown,
   getCategoryBySlug,
-  getFormat
+  getFormat,
+  isLegacySku
 } from "@/lib/configurator-data";
 
 const CartContext = createContext(null);
@@ -20,7 +23,7 @@ export function CartProvider({ children }) {
       const saved = window.localStorage.getItem(storageKey);
 
       if (saved) {
-        setItems(JSON.parse(saved));
+        setItems(JSON.parse(saved).map(migrateLegacyItem));
       }
     } catch {
       setItems([]);
@@ -81,6 +84,32 @@ export function useCart() {
   }
 
   return value;
+}
+
+function migrateLegacyItem(item) {
+  if (!isLegacySku(item?.sku)) {
+    return item;
+  }
+
+  const category = getCategoryBySlug(item.categorySlug);
+  const format = category ? getFormat(category, item.formatSlug) : null;
+
+  if (!format) {
+    return item;
+  }
+
+  const quantity = Math.max(1, Number(item.quantity || 1));
+  const priceBreakdown = calculatePriceBreakdown(format, item.values || {}, quantity);
+
+  return {
+    ...item,
+    sku: buildConfigurationSku(format, item.values || {}, { color: item.color }),
+    quantity,
+    unitPriceBrl: priceBreakdown.unitPriceBrl,
+    priceBrl: priceBreakdown.totalPriceBrl,
+    priceBreakdown,
+    leadTimeDays: calculateLeadTime(format, quantity)
+  };
 }
 
 function buildUpdatedQuantityItem(item, quantity) {

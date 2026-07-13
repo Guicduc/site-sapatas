@@ -8,7 +8,7 @@ O provedor real implementado e Melhor Envio.
 - O checkout chama a rota interna `POST /api/shipping/quote`.
 - A criacao do pedido recalcula o frete no servidor antes de salvar, sem confiar no valor calculado pelo navegador.
 - Se o provedor estiver sem token ou sem CEP de origem, o site usa fallback manual e registra essa origem no objeto `commerce.shipping`.
-- Quando Melhor Envio esta ativo e configurado, a cotacao registra servico escolhido, alternativas retornadas, origem/destino, quantidade de produtos, peso total, valor segurado e dimensoes maximas do envio.
+- Quando Melhor Envio esta ativo e configurado, a cotacao registra servico escolhido, alternativas retornadas, origem/destino e valor segurado. Dimensoes e peso existem somente no payload enviado ao provedor para calcular o frete.
 - Mesmo com cotacao Melhor Envio ativa, a expedicao do lancamento permanece manual: o objeto de frete registra `fulfillmentMode: "manual_posting"` e nao compra etiqueta nem registra rastreio automaticamente.
 
 ## Lancamento com Correios manual
@@ -21,7 +21,7 @@ O lancamento do e-commerce usa `SHIPPING_PROVIDER=manual`. Nesse modo, o checkou
 - Demais UFs: R$ 42, prazo operacional estimado de 10 dias.
 - Pedidos acima de R$ 250 continuam com frete gratuito, mas a postagem tambem passa por conferencia humana.
 
-O valor e o prazo sao estimativas comerciais para o MVP. A operacao deve revisar peso, volume, endereco e servico dos Correios antes da postagem. A origem fica registrada em `metadata.commerce.shipping` com `provider: "manual"`, `source: "manual"`, `mode: "estimated_manual"`, `fulfillmentMode: "manual_posting"`, `serviceName: "Correios manual"` e `companyName: "Correios"`.
+O valor e o prazo sao estimativas comerciais para o MVP. A operacao deve revisar embalagem, endereco e servico dos Correios antes da postagem. A origem fica registrada em `metadata.commerce.shipping` com `provider: "manual"`, `source: "manual"`, `mode: "estimated_manual"`, `fulfillmentMode: "manual_posting"`, `serviceName: "Correios manual"` e `companyName: "Correios"`.
 
 ## Cotacao Melhor Envio sem etiqueta automatica
 
@@ -50,6 +50,8 @@ Como os produtos sao parametricos, o codigo transforma as medidas da peca em dad
 - `SHIPPING_PACKAGING_WEIGHT_GRAMS` adiciona peso de embalagem por unidade;
 - `SHIPPING_PRODUCT_PADDING_CM` adiciona folga dimensional;
 - `SHIPPING_MIN_PRODUCT_DIMENSION_CM` e `SHIPPING_MIN_PRODUCT_WEIGHT_KG` impedem valores zerados ou pequenos demais.
+
+Esses valores sao usados apenas durante a chamada de cotacao. O resumo comercial salvo no pedido nao inclui peso, pacotes ou dimensoes retornadas pelo provedor.
 
 ## Homologacao antes de producao
 
