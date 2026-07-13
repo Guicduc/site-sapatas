@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useCart } from "@/components/cart-provider";
+import {
+  formatBrTaxDocument,
+  getBrTaxDocumentValidationMessage,
+  isValidBrTaxDocument,
+  normalizeBrTaxDocument
+} from "@/lib/br-tax-document";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
 import { ORDER_STATUS } from "@/lib/order-status";
@@ -121,6 +127,7 @@ function CheckoutForm() {
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [documentNumber, setDocumentNumber] = useState("");
+  const [documentTouched, setDocumentTouched] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [address, setAddress] = useState({
     postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
@@ -147,10 +154,15 @@ function CheckoutForm() {
   });
   const commerce = shippingQuoteState.commerce || localCommerce;
   const couponReady = !couponCode || commerce.discount.applied;
-  const documentDigits = documentNumber.replace(/\D/g, "");
+  const documentDigits = normalizeBrTaxDocument(documentNumber);
+  const documentValidationMessage = getBrTaxDocumentValidationMessage(documentNumber, {
+    required: true
+  });
+  const showDocumentError = Boolean(documentValidationMessage)
+    && (documentTouched || documentDigits.length >= 11);
   const customerName = [name, lastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const canSubmit = items.length > 0 && name.trim() && lastName.trim() && email.trim() && contact.trim()
-    && [11, 14].includes(documentDigits.length)
+    && isValidBrTaxDocument(documentDigits)
     && address.postalCode.trim() && address.street.trim() && address.number.trim()
     && address.city.trim() && address.state.trim().length === 2
     && couponReady;
@@ -448,15 +460,23 @@ function CheckoutForm() {
           />
         </label>
         <label className="field">
-          <span>CPF ou CNPJ</span>
+          <span>CPF ou CNPJ <RequiredMark /></span>
           <input
             inputMode="numeric"
             required
             value={documentNumber}
-            placeholder="Somente numeros"
-            maxLength={18}
-            onChange={(event) => setDocumentNumber(event.target.value)}
+            placeholder="000.000.000-00"
+            maxLength={32}
+            aria-invalid={showDocumentError}
+            aria-describedby={showDocumentError ? "document-number-error" : undefined}
+            onBlur={() => setDocumentTouched(true)}
+            onChange={(event) => setDocumentNumber(formatBrTaxDocument(event.target.value))}
           />
+          {showDocumentError && (
+            <small id="document-number-error" className="field-validation" role="alert">
+              {documentValidationMessage}
+            </small>
+          )}
         </label>
       </div>
       <div className="checkout-account-disclosure">

@@ -1461,6 +1461,18 @@ label span {
   font-weight: 800;
 }
 
+.field-validation {
+  color: #9f2f25;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.checkout-form input[aria-invalid="true"] {
+  border-color: #9f2f25;
+  box-shadow: 0 0 0 2px rgba(159, 47, 37, 0.12);
+}
+
 input,
 select,
 textarea {
