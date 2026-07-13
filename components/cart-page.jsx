@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCart } from "@/components/cart-provider";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
+import { buildConfiguratorOrderPayload } from "@/lib/order-payload";
 import { ORDER_STATUS } from "@/lib/order-status";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
@@ -371,14 +372,12 @@ function CheckoutForm() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          source: "configurator",
+        body: JSON.stringify(buildConfiguratorOrderPayload({
           customer: { name: customerName, email, contact, document: documentDigits },
           shippingAddress: address,
           couponCode: normalizeCouponCode(couponCode),
-          notes: "",
           items
-        })
+        }))
       });
       const orderPayload = await orderResponse.json();
 
