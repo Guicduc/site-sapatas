@@ -106,6 +106,7 @@ export function ProductCatalog({ categories }) {
               className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
               key={image.src}
               src={image.src}
+              style={{ "--hero-image-position": image.objectPosition }}
               alt={index === heroIndex ? image.alt : ""}
               aria-hidden={index === heroIndex ? undefined : "true"}
             />
