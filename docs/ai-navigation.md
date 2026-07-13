@@ -46,6 +46,9 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
 - `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
+- `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
+- `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
+- `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
 
 ## Dados de catalogo
@@ -116,6 +119,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `lib/print-job.js` e `lib/print-job-store.js`: contrato, idempotencia, persistencia, lease, artefatos e retries dos jobs de geracao de arquivos.
 - `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
 - Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal e automatizada via Focus NFe com `INVOICE_PROVIDER=focus_nfe` e `FOCUS_NFE_TOKEN`; sem token, as NFs ficam pendentes.

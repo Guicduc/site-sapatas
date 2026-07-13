@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test": "node --test tests/*.test.mjs",
     "start": "next start",
     "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
     "product:check": "node Produtos/scripts/product-check.mjs",
