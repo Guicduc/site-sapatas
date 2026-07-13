@@ -513,6 +513,19 @@ section {
   background: var(--surface-soft);
 }
 
+.category-card__media {
+  width: 100%;
+  aspect-ratio: 2.8 / 1;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.category-card__media .category-card__image {
+  display: block;
+  height: 100%;
+}
+
 .category-card__body {
   display: grid;
   align-content: start;
@@ -528,6 +541,29 @@ section {
 .category-card p:not(.eyebrow) {
   max-width: 64ch;
   line-height: 1.4;
+}
+
+@media (min-width: 981px) {
+  /* Reserve the shared text rhythm while cards sit side by side. Longer copy still grows. */
+  .category-grid > .category-card {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .category-grid > .category-card .category-card__body {
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .category-grid > .category-card .eyebrow {
+    min-block-size: 1.55em;
+  }
+
+  .category-grid > .category-card h2 {
+    min-block-size: calc(2 * 1.08em);
+  }
+
+  .category-grid > .category-card p:not(.eyebrow) {
+    min-block-size: calc(2 * 1.4em);
+  }
 }
 
 .meta-list,
@@ -5318,7 +5354,7 @@ summary {
     padding: 12px;
   }
 
-  .category-card__image {
+  .category-card__media {
     aspect-ratio: 1.65 / 1;
   }
 

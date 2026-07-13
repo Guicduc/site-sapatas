@@ -149,7 +149,9 @@ export function ProductCatalog({ categories }) {
           return (
             <article className="category-card" key={category.slug}>
               {cardImage && (
-                <img className="category-card__image" src={cardImage.src} alt={cardImage.alt} />
+                <div className="category-card__media">
+                  <img className="category-card__image" src={cardImage.src} alt={cardImage.alt} />
+                </div>
               )}
               <div className="category-card__body">
                 <p className="eyebrow">{category.eyebrow}</p>
