@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CookiePreferencesButton } from "@/components/cookie-preferences-button";
 import { brand } from "@/lib/site-data";
 
 export function SiteFooter() {
@@ -15,6 +16,8 @@ export function SiteFooter() {
         <Link href="/conta">Minha conta</Link>
         <Link href="/projeto-especial">Projeto especial</Link>
         <Link href="/faq">FAQ</Link>
+        <Link href="/privacidade">Privacidade e cookies</Link>
+        <CookiePreferencesButton />
       </div>
     </footer>
   );

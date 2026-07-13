@@ -31,6 +31,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
 - Login administrativo em `/admin`, com `ADMIN_ACCESS_TOKEN` usado para criar sessao assinada em cookie HttpOnly.
+- Aviso e centro de preferencias de cookies com inventario publico em `/privacidade`, escolha revisavel e bloqueio padrao de categorias opcionais.
 
 ## Condicoes para operar em producao
 
@@ -66,7 +67,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Estoque de insumos ou capacidade por maquina, se a operacao deixar de ser apenas sob demanda.
 - Testes E2E de checkout, webhook, conta, admin e operacao.
 - Observabilidade de producao: logs estruturados, alertas para falha de pagamento, erro de e-mail e fila operacional.
-- LGPD operacional: tela de exclusao/anonimizacao de cliente e politica formal de retencao.
+- LGPD operacional alem de cookies: tela de exclusao/anonimizacao de cliente e politica formal de retencao.
 - Canais externos de venda somente se houver decisao futura de sincronizacao sem substituir o checkout proprio.
 
 ## Ordem recomendada da proxima fase

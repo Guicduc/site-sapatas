@@ -1,4 +1,5 @@
 import { CartProvider } from "@/components/cart-provider";
+import { CookiePreferences } from "@/components/cookie-preferences";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { brand, siteUrl } from "@/lib/site-data";
@@ -68,6 +69,7 @@ export default function RootLayout({ children }) {
             <main className="site-main">{children}</main>
             <SiteFooter />
           </div>
+          <CookiePreferences />
         </CartProvider>
       </body>
     </html>
