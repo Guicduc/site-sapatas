@@ -2158,6 +2158,11 @@ dt {
   margin: 4px 0 0;
 }
 
+.site-footer__legal {
+  max-width: 100%;
+  font-size: 0.875rem;
+}
+
 .site-footer .footer-links {
   justify-content: flex-end;
   text-align: right;
