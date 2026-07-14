@@ -10,6 +10,9 @@ O provedor real implementado e Melhor Envio.
 - Se o provedor estiver sem token ou sem CEP de origem, o site usa fallback manual e registra essa origem no objeto `commerce.shipping`.
 - Quando Melhor Envio esta ativo e configurado, a cotacao registra servico escolhido, alternativas retornadas, origem/destino e valor segurado. Dimensoes e peso existem somente no payload enviado ao provedor para calcular o frete.
 - Mesmo com cotacao Melhor Envio ativa, a expedicao do lancamento permanece manual: o objeto de frete registra `fulfillmentMode: "manual_posting"` e nao compra etiqueta nem registra rastreio automaticamente.
+- O e-mail "Pedido enviado" usa o mesmo Resend dos demais e-mails transacionais. Ele e disparado somente depois que a operacao salva `metadata.fulfillment.shipment.status: "shipped"`; o status `quoted`, a selecao de servico e `ready_for_pickup` nao comprovam postagem e nao disparam mensagem.
+- Transportadora, servico e codigo de rastreio entram no e-mail quando estiverem registrados. Sem codigo, a mensagem informa explicitamente que o rastreio nao foi fornecido.
+- O resultado fica em `metadata.fulfillment.shipment.notification`. `sentAt` impede novos envios depois do sucesso, e a chave deterministica `order-shipped-{orderId}` tambem protege repeticoes imediatas no Resend.
 
 ## Lancamento com Correios manual
 
@@ -28,6 +31,14 @@ O valor e o prazo sao estimativas comerciais para o MVP. A operacao deve revisar
 Faz sentido integrar Melhor Envio desde ja para homologar preco e prazo, mantendo a postagem manual no Correios. Para isso, configure `SHIPPING_PROVIDER=melhor_envio`, `MELHOR_ENVIO_ENV=sandbox`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`. Com credenciais validas, o checkout usa a cotacao retornada pelo Melhor Envio; sem credenciais ou em caso de erro, volta para a tabela manual.
 
 Essa integracao e somente de cotacao. O pedido salvo deve continuar sendo tratado pela operacao em `/admin/pedidos`: conferir embalagem, emitir NF manual quando aplicavel, postar manualmente e preencher transportadora/rastreio se houver.
+
+Ao salvar a expedicao como `Expedido`, o site tenta enviar o e-mail ao cliente. Falta de `RESEND_API_KEY`, remetente ou e-mail do cliente nao desfaz a expedicao: a notificacao fica `blocked`, o motivo operacional aparece no admin sem expor o destinatario nos logs e um novo salvamento repete a tentativa. Falhas de rede/provedor ficam `failed` com apenas um codigo tecnico persistido.
+
+## Bloqueio para evento automatico do Melhor Envio
+
+A API atualmente integrada e apenas `/me/shipment/calculate`; ela retorna cotacao, nao uma etiqueta comprada nem confirmacao de postagem. Por isso, esta entrega nao inventa um webhook ou status do Melhor Envio: o evento confiavel continua sendo a confirmacao manual `shipped` feita pela operacao depois da postagem real.
+
+Quando compra de etiqueta e webhook de rastreio forem implementados, o mesmo disparador deve ser chamado apenas apos persistir um evento autenticado que comprove a postagem. Criacao/pagamento/impressao de etiqueta, por si sos, nao devem marcar o pedido como enviado.
 
 ## Variaveis necessarias
 

@@ -22,7 +22,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`; no MVP, o frete e "Correios manual" por UF, com origem registrada em `metadata.commerce.shipping`.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
-- E-mails transacionais via Resend para codigo de conta, pedido criado e pagamento resolvido.
+- E-mails transacionais via Resend para codigo de conta, pedido criado, pagamento resolvido e pedido enviado. O ultimo parte do estado operacional persistido `shipment.status: "shipped"`, inclui rastreio quando informado e registra sucesso/falha para evitar duplicidade.
 - Recuperacao de carrinho sem disparo automatico, com leads em `cart_recovery_leads` ou `.local-data/cart-recovery.dev.json`.
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.
 - Relatorios basicos em `/admin/relatorios`.
@@ -60,7 +60,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 ## Backlog futuro
 
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
-- Compra de etiqueta, impressao e rastreio no Melhor Envio, depois da homologacao de cotacao.
+- Compra de etiqueta, impressao e webhooks de rastreio no Melhor Envio, depois da homologacao de cotacao. Ate la, o e-mail de pedido enviado depende da confirmacao manual de expedicao no admin.
 - Cancelamento e carta de correcao de NF-e por API na Focus NFe, alem de armazenamento proprio de XML/PDF e webhook de status.
 - Regras avancadas de cupons: limites por cliente, validade, uso maximo e campanha.
 - Automacao de recuperacao de carrinho por e-mail ou WhatsApp, somente depois de aprovar texto, consentimento e frequencia.
