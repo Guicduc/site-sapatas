@@ -1,13 +1,19 @@
 import Link from "next/link";
 
+import { ProductImageCarousel } from "@/components/product-image-carousel";
 import { formatCurrency } from "@/lib/format";
 
 export function FamilyCard({ family }) {
   return (
     <article className="family-card surface-card">
-      {family.image && (
-        <img className="family-card__image" src={family.image.src} alt={family.image.alt} />
-      )}
+      {family.images?.length > 0 || family.image ? (
+        <ProductImageCarousel
+          className="family-card__carousel"
+          images={family.images || [family.image]}
+          label={`Fotos de ${family.name}`}
+          aspectRatio="1.55 / 1"
+        />
+      ) : null}
       <div className="family-card__header">
         <div>
           <p className="eyebrow">{family.eyebrow}</p>
