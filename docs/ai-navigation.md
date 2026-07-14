@@ -49,7 +49,8 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
 - `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
 - `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
-- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
+- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
+- `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
 
 ## Dados de catalogo
 

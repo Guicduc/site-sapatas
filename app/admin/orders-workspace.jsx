@@ -22,6 +22,7 @@ import {
   refreshInvoiceStatus,
   requestInvoiceAfterPayment
 } from "@/lib/invoice-provider";
+import { deliverShipmentNotification } from "@/lib/shipment-notification";
 import {
   getOrderById,
   getStoreMode,
@@ -686,6 +687,7 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
 
       <fieldset className="operation-form__group">
         <legend>Expedicao</legend>
+        <p className="admin-note">{formatShipmentNotificationStatus(fulfillment.shipment.notification)}</p>
         <label className="field">
           <span>Status</span>
           <select name="shipmentStatus" defaultValue={toSimpleShipmentStatus(fulfillment.shipment.status)}>
@@ -790,7 +792,7 @@ async function updateOperation(formData) {
   const submittedInvoiceStatus = cleanFormValue(formData.get("invoiceStatus")) || INVOICE_STATUS.PENDING;
   const submittedShipmentStatus = cleanFormValue(formData.get("shipmentStatus")) || SHIPMENT_STATUS.PENDING;
 
-  await updateOrderFulfillmentState(orderId, {
+  const updatedOrder = await updateOrderFulfillmentState(orderId, {
     production: {
       status: resolveSubmittedSimpleStatus({
         currentStatus: currentProductionStatus,
@@ -827,6 +829,8 @@ async function updateOperation(formData) {
       notes: operationNotes
     }
   });
+
+  await deliverShipmentNotification(updatedOrder);
 
   revalidateAdminOrderPaths();
 }
@@ -1344,6 +1348,30 @@ function formatShippingDetail(shipping = {}) {
   const source = shipping.source ? `origem ${shipping.source}` : "";
   const fulfillment = shipping.fulfillmentLabel || (shipping.fulfillmentMode === "manual_posting" ? "Postagem manual" : "");
   return [service, delivery, fulfillment, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
+}
+
+function formatShipmentNotificationStatus(notification = {}) {
+  if (notification.status === "sent") {
+    return `E-mail de pedido enviado em ${formatDateTime(notification.sentAt)}.`;
+  }
+
+  if (notification.lastErrorCode === "missing_customer_email") {
+    return "E-mail de envio bloqueado: o pedido nao tem e-mail do cliente. A expedicao foi salva; corrija o cadastro e salve novamente para tentar o envio.";
+  }
+
+  if (notification.lastErrorCode === "missing_resend_api_key") {
+    return "E-mail de envio bloqueado: RESEND_API_KEY nao esta configurada. A expedicao foi salva; configure o provedor e salve novamente para tentar o envio.";
+  }
+
+  if (notification.lastErrorCode === "missing_email_from") {
+    return "E-mail de envio bloqueado: TRANSACTIONAL_EMAIL_FROM ou ACCOUNT_EMAIL_FROM nao esta configurado. A expedicao foi salva; configure o remetente e salve novamente.";
+  }
+
+  if (notification.status === "failed") {
+    return "Falha ao enviar o e-mail de expedicao. O pedido continua expedido; salve novamente para repetir a tentativa.";
+  }
+
+  return "O e-mail e disparado quando este pedido e salvo como Expedido. Transportadora e rastreio entram na mensagem quando informados.";
 }
 
 function formatDateTime(value) {
