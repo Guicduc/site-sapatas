@@ -470,6 +470,20 @@ section {
   color: #9fe3da;
 }
 
+.category-section {
+  gap: clamp(14px, 1.8vw, 24px);
+}
+
+.category-section__heading {
+  display: grid;
+  gap: 8px;
+}
+
+.category-section__heading h2 {
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+  line-height: 1.08;
+}
+
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
