@@ -4,12 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useCart } from "@/components/cart-provider";
+import {
+  formatBrTaxDocument,
+  getBrTaxDocumentValidationMessage,
+  isValidBrTaxDocument,
+  normalizeBrTaxDocument
+} from "@/lib/br-tax-document";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
 import { buildConfiguratorOrderPayload } from "@/lib/order-payload";
-import { ORDER_STATUS } from "@/lib/order-status";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
+import { saveDemoOrder } from "@/components/demo-account";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
+const pendingCheckoutStorageKey = "baseforma-pending-checkout";
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -122,10 +130,12 @@ function CheckoutForm() {
   const [email, setEmail] = useState("");
   const [contact, setContact] = useState("");
   const [documentNumber, setDocumentNumber] = useState("");
+  const [documentTouched, setDocumentTouched] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [address, setAddress] = useState({
     postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
   });
+  const demoPrefillAttemptedRef = useRef(false);
   const lastPostalCodeLookupRef = useRef("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -148,10 +158,15 @@ function CheckoutForm() {
   });
   const commerce = shippingQuoteState.commerce || localCommerce;
   const couponReady = !couponCode || commerce.discount.applied;
-  const documentDigits = documentNumber.replace(/\D/g, "");
+  const documentDigits = normalizeBrTaxDocument(documentNumber);
+  const documentValidationMessage = getBrTaxDocumentValidationMessage(documentNumber, {
+    required: true
+  });
+  const showDocumentError = Boolean(documentValidationMessage)
+    && (documentTouched || documentDigits.length >= 11);
   const customerName = [name, lastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const canSubmit = items.length > 0 && name.trim() && lastName.trim() && email.trim() && contact.trim()
-    && [11, 14].includes(documentDigits.length)
+    && isValidBrTaxDocument(documentDigits)
     && address.postalCode.trim() && address.street.trim() && address.number.trim()
     && address.city.trim() && address.state.trim().length === 2
     && couponReady;
@@ -171,6 +186,38 @@ function CheckoutForm() {
     state: address.state,
     couponCode
   });
+
+  useEffect(() => {
+    if (demoPrefillAttemptedRef.current) return undefined;
+    demoPrefillAttemptedRef.current = true;
+    let cancelled = false;
+
+    fetch("/api/demo-session", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (cancelled || payload.active !== true) return;
+
+        setName((current) => current || "Cliente");
+        setLastName((current) => current || "Demonstração");
+        setEmail((current) => current || "cliente.teste@example.com");
+        setContact((current) => current || "(11) 99999-9999");
+        setDocumentNumber((current) => current || "529.982.247-25");
+        setAddress((current) => ({
+          postalCode: current.postalCode || "01001-000",
+          street: current.street || "Praça da Sé",
+          number: current.number || "100",
+          complement: current.complement || "Conjunto de teste",
+          district: current.district || "Sé",
+          city: current.city || "São Paulo",
+          state: current.state || "SP"
+        }));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const postalCode = String(address.postalCode || "").replace(/\D/g, "");
@@ -367,52 +414,147 @@ function CheckoutForm() {
     setError("");
 
     try {
-      const orderResponse = await fetch("/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(buildConfiguratorOrderPayload({
-          customer: { name: customerName, email, contact, document: documentDigits },
-          shippingAddress: address,
-          couponCode: normalizeCouponCode(couponCode),
-          items
-        }))
+      const fingerprint = await buildCheckoutFingerprint({
+        items,
+        name: customerName,
+        email,
+        contact,
+        document: documentDigits,
+        address,
+        couponCode
       });
-      const orderPayload = await orderResponse.json();
+      let pendingCheckout = readPendingCheckout();
+      let order = null;
+      let reusedOrder = false;
 
-      if (!orderResponse.ok) {
-        throw new Error(orderPayload.message || "Não foi possível criar o pedido.");
+      if (pendingCheckout?.orderId && pendingCheckout.fingerprint === fingerprint) {
+        order = await fetchOrderById(pendingCheckout.orderId).catch(() => null);
+
+        if (order) {
+          reusedOrder = true;
+        } else {
+          clearPendingCheckout();
+          pendingCheckout = null;
+        }
       }
 
-      const order = orderPayload.order;
+      // Carrinho mudou desde o pedido guardado: o novo pedido substitui o
+      // anterior e o servidor cancela o pedido superado.
+      const supersededOrderId = pendingCheckout?.orderId && !reusedOrder ? pendingCheckout.orderId : null;
+
+      async function createNewOrder() {
+        const orderResponse = await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...buildConfiguratorOrderPayload({
+              customer: { name: customerName, email, contact, document: documentDigits },
+              shippingAddress: address,
+              couponCode: normalizeCouponCode(couponCode),
+              items
+            }),
+            replacesOrderId: supersededOrderId
+          })
+        });
+        const orderPayload = await orderResponse.json();
+
+        if (!orderResponse.ok) {
+          throw new Error(orderPayload.message || "Não foi possível criar o pedido.");
+        }
+
+        const newOrder = orderPayload.order;
+        savePendingCheckout({ orderId: newOrder.id, fingerprint });
+        await markRecoveryLeadConverted(newOrder.id);
+        return newOrder;
+      }
+
+      if (!order) {
+        order = await createNewOrder();
+      }
+
       setCreatedOrder(order);
       window.sessionStorage.setItem("baseforma-last-order-id", order.id);
-      await markRecoveryLeadConverted(order.id);
+
+      if (order.demo) {
+        saveDemoOrder(order);
+        clearPendingCheckout();
+        clearCart();
+        window.location.assign(`/pedido-confirmado?orderId=${order.id}&payment=success&demo=1`);
+        return;
+      }
 
       if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
+        clearPendingCheckout();
         clearCart();
         window.location.assign(`/pedido-confirmado?orderId=${order.id}`);
         return;
       }
 
-      const paymentResponse = await fetch("/api/payments/mercado-pago/preference", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ orderId: order.id })
-      });
-      const paymentPayload = await paymentResponse.json();
+      async function requestPreference(orderId) {
+        const paymentResponse = await fetch("/api/payments/mercado-pago/preference", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ orderId })
+        });
+        const paymentPayload = await paymentResponse.json();
+        return { ok: paymentResponse.ok, status: paymentResponse.status, payload: paymentPayload };
+      }
 
-      if (!paymentResponse.ok) {
+      let payment = await requestPreference(order.id);
+
+      if (!payment.ok && reusedOrder && payment.status === 404) {
+        // O pedido guardado nao esta mais acessivel: descarte a referencia local
+        // e refaca a criacao no mesmo envio.
+        clearPendingCheckout();
+        order = await createNewOrder();
+        setCreatedOrder(order);
+        window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+
+        if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
+          clearPendingCheckout();
+          clearCart();
+          window.location.assign(`/pedido-confirmado?orderId=${order.id}`);
+          return;
+        }
+
+        payment = await requestPreference(order.id);
+      }
+
+      if (!payment.ok && reusedOrder && payment.status === 409 && order.paymentStatus === PAYMENT_STATUS.APPROVED) {
+        clearPendingCheckout();
+        clearCart();
+        window.location.assign(`/pedido-confirmado?orderId=${order.id}&payment=success`);
+        return;
+      }
+
+      if (!payment.ok && reusedOrder && payment.status === 409 && order.status === ORDER_STATUS.CANCELLED) {
+        clearPendingCheckout();
+        order = await createNewOrder();
+        setCreatedOrder(order);
+        window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+
+        if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
+          clearPendingCheckout();
+          clearCart();
+          window.location.assign(`/pedido-confirmado?orderId=${order.id}`);
+          return;
+        }
+
+        payment = await requestPreference(order.id);
+      }
+
+      if (!payment.ok) {
         throw new Error(
-          paymentPayload.message ||
+          payment.payload.message ||
             "Pedido criado, mas o pagamento Mercado Pago ainda não foi gerado."
         );
       }
 
-      window.location.assign(paymentPayload.checkoutUrl);
+      window.location.assign(payment.payload.checkoutUrl);
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível finalizar o pedido.");
     } finally {
@@ -422,42 +564,57 @@ function CheckoutForm() {
 
   return (
     <form className="checkout-form" onSubmit={handleSubmit}>
-      <div className="checkout-contact-grid">
-        <label className="field">
-          <span>Nome <RequiredMark /></span>
-          <input autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>Sobrenome <RequiredMark /></span>
-          <input autoComplete="family-name" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>E-mail <RequiredMark /></span>
-          <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
-        </label>
-        <label className="field">
-          <span>WhatsApp <RequiredMark /></span>
-          <input
-            type="tel"
-            autoComplete="tel"
-            required
-            value={contact}
-            placeholder="(11) 99999-0000"
-            onChange={(event) => setContact(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>CPF ou CNPJ</span>
-          <input
-            inputMode="numeric"
-            required
-            value={documentNumber}
-            placeholder="Somente numeros"
-            maxLength={18}
-            onChange={(event) => setDocumentNumber(event.target.value)}
-          />
-        </label>
-      </div>
+      <section className="checkout-section checkout-section--customer" aria-labelledby="checkout-customer-title">
+        <div className="checkout-section__heading">
+          <span className="eyebrow">Etapa 1</span>
+          <h3 id="checkout-customer-title">Seus dados</h3>
+          <p>Informe os dados de contato para identificarmos o seu pedido.</p>
+        </div>
+        <div className="checkout-contact-grid">
+          <label className="field">
+            <span>Nome <RequiredMark /></span>
+            <input autoComplete="given-name" required value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>Sobrenome <RequiredMark /></span>
+            <input autoComplete="family-name" required value={lastName} onChange={(event) => setLastName(event.target.value)} />
+          </label>
+          <label className="field checkout-field--wide">
+            <span>E-mail <RequiredMark /></span>
+            <input type="email" autoComplete="email" required value={email} placeholder="voce@empresa.com" onChange={(event) => setEmail(event.target.value)} />
+          </label>
+          <label className="field">
+            <span>WhatsApp <RequiredMark /></span>
+            <input
+              type="tel"
+              autoComplete="tel"
+              required
+              value={contact}
+              placeholder="(11) 99999-0000"
+              onChange={(event) => setContact(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>CPF ou CNPJ <RequiredMark /></span>
+            <input
+              inputMode="numeric"
+              required
+              value={documentNumber}
+              placeholder="000.000.000-00"
+              maxLength={32}
+              aria-invalid={showDocumentError}
+              aria-describedby={showDocumentError ? "document-number-error" : undefined}
+              onBlur={() => setDocumentTouched(true)}
+              onChange={(event) => setDocumentNumber(formatBrTaxDocument(event.target.value))}
+            />
+            {showDocumentError && (
+              <small id="document-number-error" className="field-validation" role="alert">
+                {documentValidationMessage}
+              </small>
+            )}
+          </label>
+        </div>
+      </section>
       <div className="checkout-account-disclosure">
         <div>
           <span className="eyebrow">Conta do cliente</span>
@@ -470,7 +627,11 @@ function CheckoutForm() {
         </p>
       </div>
       <fieldset className="checkout-address">
-        <legend>Endereço de entrega</legend>
+        <legend>
+          <span className="eyebrow">Etapa 2</span>
+          <strong>Endereço de entrega</strong>
+        </legend>
+        <p className="checkout-section__description">Usaremos este endereço para calcular o frete e enviar seu pedido.</p>
         <div className="checkout-address__row checkout-address__row--postal">
           <label className="field checkout-field--postal"><span>CEP <RequiredMark /></span><input inputMode="numeric" autoComplete="shipping postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
           <label className="field checkout-field--state"><span>UF <RequiredMark /></span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
@@ -525,19 +686,14 @@ function CheckoutForm() {
           <dd>{formatCurrency(commerce.totalBrl)}</dd>
         </div>
       </dl>
-      {(couponCode || commerce.shipping.message) && (
+      {couponCode && (
         <p className={`checkout-note${commerce.discount.status === "invalid" || commerce.discount.status === "not_eligible" ? " checkout-note--warning" : ""}`}>
-          {couponCode ? commerce.discount.message : commerce.shipping.message}
+          {commerce.discount.message}
         </p>
       )}
       {shippingQuoteState.status === "loading" && (
         <p className="checkout-note">
           Consultando frete para o CEP informado.
-        </p>
-      )}
-      {recoveryState.status === "saved" && !createdOrder && (
-        <p className="checkout-note">
-          Carrinho salvo para retomada pelo atendimento. Nenhuma mensagem automatica sera enviada.
         </p>
       )}
       {createdOrder && (
@@ -615,6 +771,96 @@ async function persistCartRecoveryLead({ status, orderId, name, email, contact, 
   }
 
   return payload.recovery;
+}
+
+async function buildCheckoutFingerprint({ items, name, email, contact, document: documentDigits, address, couponCode }) {
+  const snapshot = JSON.stringify({
+    items: items.map((item) => ({
+      id: item.id,
+      sku: item.sku,
+      values: item.values,
+      color: item.color,
+      finish: item.finish,
+      quantity: item.quantity
+    })),
+    name: String(name || "").trim(),
+    email: String(email || "").trim().toLowerCase(),
+    contact: String(contact || "").trim(),
+    document: String(documentDigits || ""),
+    address,
+    couponCode: normalizeCouponCode(couponCode)
+  });
+
+  if (!window.crypto?.subtle || typeof TextEncoder === "undefined") {
+    // Sem Web Crypto nao persistimos o pedido pendente: e preferivel recriar o
+    // pedido a manter CPF, endereco e contato em armazenamento do navegador.
+    return "";
+  }
+
+  try {
+    const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(snapshot));
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return "";
+  }
+}
+
+async function fetchOrderById(orderId) {
+  const response = await fetch(`/api/orders/${orderId}`);
+  const payload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(payload.message || "Pedido não encontrado.");
+  }
+
+  return payload.order;
+}
+
+// Vive em localStorage (não sessionStorage) para sobreviver ao retorno do
+// Mercado Pago em outra aba/janela. A API continua sendo a fonte de verdade
+// para decidir se a preferencia e o pedido ainda podem ser reutilizados.
+function readPendingCheckout() {
+  try {
+    const saved = window.localStorage.getItem(pendingCheckoutStorageKey);
+    const pending = saved ? JSON.parse(saved) : null;
+
+    // Remove o formato anterior, que persistia um objeto de pedido completo
+    // (incluindo dados pessoais) junto ao identificador.
+    if (pending?.order) {
+      window.localStorage.removeItem(pendingCheckoutStorageKey);
+      return null;
+    }
+
+    if (pending?.orderId && pending?.fingerprint) {
+      return pending;
+    }
+
+    if (pending) {
+      window.localStorage.removeItem(pendingCheckoutStorageKey);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingCheckout(pending) {
+  try {
+    window.localStorage.setItem(pendingCheckoutStorageKey, JSON.stringify(pending));
+  } catch {
+    // Storage indisponível não deve bloquear o checkout.
+  }
+}
+
+function clearPendingCheckout() {
+  try {
+    window.localStorage.removeItem(pendingCheckoutStorageKey);
+    // Chave usada antes da migração para localStorage.
+    window.sessionStorage.removeItem(pendingCheckoutStorageKey);
+  } catch {
+    // Storage indisponível não deve bloquear o checkout.
+  }
 }
 
 function readSavedRecoveryLead() {
