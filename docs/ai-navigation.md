@@ -25,6 +25,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. Entra por codigo enviado ao e-mail vinculado ao pedido.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
+- `/privacidade`: inventario publico de cookies, armazenamento local e scripts, com acesso ao centro de preferencias.
 - `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
 
 ## Rotas administrativas
@@ -98,6 +99,7 @@ As familias atuais publicadas sao:
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
+- `components/cookie-preferences.jsx`: aviso e revisao do consentimento persistido em `baseforma-cookie-consent`.
 - A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
 
 ## Pedidos e persistencia

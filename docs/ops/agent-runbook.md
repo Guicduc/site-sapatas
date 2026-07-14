@@ -11,6 +11,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Banco de dados: `docs/ops/database.sql`.
 - Variaveis de ambiente: `.env.example`.
 - Contexto de produto/design para UI: `PRODUCT.md`.
+- Privacidade, cookies e regra para novos scripts: `docs/ops/privacy-cookies.md`.
 
 ## Decisoes fixas
 
