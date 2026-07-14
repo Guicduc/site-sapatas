@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://baseforma.com.br/catalog/product.schema.json",
+  "title": "Produto Baseforma",
+  "description": "Manifesto canônico de um produto do catálogo. Fonte única para configurador, SKU, precificação, CAD, desenho e conteúdo.",
+  "type": "object",
+  "required": [
+    "productId",
+    "status",
+    "name",
+    "category",
+    "seo",
+    "skuPrefix",
+    "sku",
+    "material",
+    "colors",
+    "leadTimeBaseDays",
+    "generationMode",
+    "parameters",
+    "variants"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "productId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Identidade estável do produto (kebab-case). Nunca muda."
+    },
+    "status": {
+      "enum": ["draft", "active"],
+      "description": "draft: não aparece no catálogo público. active: vendável quando todas as variantes públicas têm superfície de preço válida."
+    },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "category": {
+      "type": "object",
+      "required": ["slug", "formatSlug"],
+      "additionalProperties": false,
+      "properties": {
+        "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "formatSlug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+      },
+      "description": "Rota atual: /configurar/{slug}?formato={formatSlug}."
+    },
+    "seo": {
+      "type": "object",
+      "required": ["familySlug"],
+      "additionalProperties": false,
+      "properties": {
+        "familySlug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Slug da página /familias/{familySlug}. Preservar: já indexado."
+        }
+      }
+    },
+    "skuPrefix": { "type": "string", "pattern": "^[A-Z0-9]+(-[A-Z0-9]+)*$" },
+    "sku": {
+      "type": "object",
+      "required": ["versionMarker", "parameterOrder", "parameterCodes"],
+      "additionalProperties": false,
+      "properties": {
+        "versionMarker": { "const": "V2" },
+        "parameterOrder": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordem dos parâmetros no SKU. Deve cobrir todo parâmetro numérico que afeta produção."
+        },
+        "parameterCodes": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^[A-Z0-9]{1,4}$" },
+          "description": "Código curto de cada parâmetro no SKU."
+        },
+        "colorCodes": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^[A-Z0-9]{1,4}$" }
+        }
+      }
+    },
+    "material": { "type": "string" },
+    "colors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "finishes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "leadTimeBaseDays": { "type": "integer", "minimum": 1 },
+    "generationMode": {
+      "enum": ["local_manual"],
+      "description": "local_manual: a peça específica é gerada manualmente no admin a partir do script Grasshopper. STL/GLB pré-gerado não é requisito."
+    },
+    "drawingType": {
+      "type": "string",
+      "description": "Renderer do desenho técnico 2D (registry de renderizadores)."
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "parameters": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["key", "label", "type"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "label": { "type": "string" },
+          "type": { "enum": ["dimension", "boolean"] },
+          "unit": { "type": "string" },
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "step": { "type": "number", "exclusiveMinimum": 0 },
+          "default": { "type": ["number", "boolean"] },
+          "role": {
+            "enum": [
+              "primary-width",
+              "secondary-width",
+              "base-height",
+              "neck-height",
+              "neck-width",
+              "wall-thickness",
+              "toggle"
+            ],
+            "description": "Papel semântico do parâmetro; usado por bindings de desenho e CAD."
+          },
+          "dependsOn": {
+            "type": "string",
+            "description": "Chave de um parâmetro boolean que ativa este parâmetro."
+          }
+        },
+        "if": { "properties": { "type": { "const": "dimension" } } },
+        "then": { "required": ["key", "label", "type", "unit", "min", "max", "default"] }
+      }
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "code", "public", "cad", "pricing"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "description": "ID único da variante — o mesmo em UI, CAD, dataset, imagens e auditoria."
+          },
+          "code": { "type": "string", "pattern": "^[A-Z0-9]{1,4}$" },
+          "public": { "type": "boolean" },
+          "condition": {
+            "type": "object",
+            "additionalProperties": { "type": ["boolean", "number", "string"] },
+            "description": "Valores de entrada que resolvem para esta variante (ex.: {\"pescoco\": true})."
+          },
+          "cad": {
+            "type": "object",
+            "required": ["script", "sliderOrder"],
+            "additionalProperties": false,
+            "properties": {
+              "script": {
+                "type": "string",
+                "description": "Caminho repo-relativo do .gh. Deve existir; é a capacidade de produção."
+              },
+              "modelVersion": { "type": "string" },
+              "sliderOrder": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Ordem dos sliders no script Grasshopper."
+              },
+              "sliderTransforms": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "offset": { "type": "number" },
+                    "scale": { "type": "number" }
+                  }
+                }
+              }
+            }
+          },
+          "pricing": {
+            "type": "object",
+            "required": ["surfaceId", "strategy"],
+            "additionalProperties": false,
+            "properties": {
+              "surfaceId": {
+                "type": "string",
+                "description": "Superfície de slice no dataset canônico: categoria:formato:variante."
+              },
+              "strategy": { "enum": ["sliced_dataset"] },
+              "saleMultiplier": { "type": "number", "exclusiveMinimum": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

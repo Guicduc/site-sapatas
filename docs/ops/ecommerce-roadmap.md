@@ -22,15 +22,18 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`; no MVP, o frete e "Correios manual" por UF, com origem registrada em `metadata.commerce.shipping`.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
-- E-mails transacionais via Resend para codigo de conta, pedido criado e pagamento resolvido.
+- E-mails transacionais via Resend para codigo de conta, pedido criado, pagamento resolvido e pedido enviado. O ultimo parte do estado operacional persistido `shipment.status: "shipped"`, inclui rastreio quando informado e registra sucesso/falha para evitar duplicidade.
 - Recuperacao de carrinho sem disparo automatico, com leads em `cart_recovery_leads` ou `.local-data/cart-recovery.dev.json`.
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.
 - Relatorios basicos em `/admin/relatorios`.
 - Operacao de producao, nota fiscal automatizada e expedicao em `/admin/operacao`.
+- Fluxo pos-pagamento simplificado em `Aguardando producao` -> `Produzido` -> expedicao; CAD permanece manual e fora dos estados do pedido.
+- Fila duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido.
 - Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
 - Login administrativo em `/admin`, com `ADMIN_ACCESS_TOKEN` usado para criar sessao assinada em cookie HttpOnly.
+- Aviso e centro de preferencias de cookies com inventario publico em `/privacidade`, escolha revisavel e bloqueio padrao de categorias opcionais.
 
 ## Condicoes para operar em producao
 
@@ -59,14 +62,14 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 ## Backlog futuro
 
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
-- Compra de etiqueta, impressao e rastreio no Melhor Envio, depois da homologacao de cotacao.
+- Compra de etiqueta, impressao e webhooks de rastreio no Melhor Envio, depois da homologacao de cotacao. Ate la, o e-mail de pedido enviado depende da confirmacao manual de expedicao no admin.
 - Cancelamento e carta de correcao de NF-e por API na Focus NFe, alem de armazenamento proprio de XML/PDF e webhook de status.
 - Regras avancadas de cupons: limites por cliente, validade, uso maximo e campanha.
 - Automacao de recuperacao de carrinho por e-mail ou WhatsApp, somente depois de aprovar texto, consentimento e frequencia.
 - Estoque de insumos ou capacidade por maquina, se a operacao deixar de ser apenas sob demanda.
 - Testes E2E de checkout, webhook, conta, admin e operacao.
 - Observabilidade de producao: logs estruturados, alertas para falha de pagamento, erro de e-mail e fila operacional.
-- LGPD operacional: tela de exclusao/anonimizacao de cliente e politica formal de retencao.
+- LGPD operacional alem de cookies: tela de exclusao/anonimizacao de cliente e politica formal de retencao.
 - Canais externos de venda somente se houver decisao futura de sincronizacao sem substituir o checkout proprio.
 
 ## Ordem recomendada da proxima fase

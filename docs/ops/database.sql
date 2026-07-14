@@ -71,6 +71,42 @@ create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists payments_order_id_idx on payments(order_id);
 create index if not exists payments_provider_payment_idx on payments(provider_payment_id);
 
+-- Fila duravel para gerar arquivos de impressao. Nao referencia orders por FK
+-- porque source/source_id tambem aceitam jobs vindos de outras frentes.
+create table if not exists print_jobs (
+  id text primary key,
+  schema_version integer not null default 1,
+  idempotency_key text not null unique,
+  source text not null,
+  source_id text not null,
+  source_item_id text,
+  source_label text,
+  origin jsonb not null default '{}'::jsonb,
+  material jsonb not null default '{}'::jsonb,
+  contract jsonb not null default '{}'::jsonb,
+  status text not null check (status in ('queued','processing','succeeded','failed','cancelled')),
+  priority text not null default 'normal' check (priority in ('urgent','high','normal','low')),
+  attempts integer not null default 0,
+  max_attempts integer not null default 3,
+  worker_id text,
+  lease_token_hash text,
+  leased_until timestamptz,
+  available_at timestamptz not null default now(),
+  artifacts jsonb not null default '[]'::jsonb,
+  error jsonb,
+  last_event_key text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  started_at timestamptz,
+  completed_at timestamptz
+);
+
+create index if not exists print_jobs_claim_idx
+  on print_jobs (status, available_at, priority, created_at);
+
+create index if not exists print_jobs_origin_idx
+  on print_jobs (source, source_id, source_item_id);
+
 create table if not exists account_access_codes (
   id text primary key,
   email text not null,
@@ -88,7 +124,7 @@ create index if not exists account_access_codes_email_idx on account_access_code
 -- {
 --   "schemaVersion": 1,
 --   "production": {
---     "status": "waiting_payment|waiting_cad|queued|scheduled|in_production|quality_check|ready_to_ship|blocked|shipped|cancelled",
+--     "status": "waiting_payment|queued|ready_to_ship|blocked|shipped|cancelled",
 --     "priority": "normal|high|urgent|low",
 --     "scheduledDate": "YYYY-MM-DD",
 --     "machine": "P2S-04",

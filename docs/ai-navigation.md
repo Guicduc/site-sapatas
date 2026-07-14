@@ -21,9 +21,11 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/configurar/[categoria]`: abre o configurador de uma categoria de produto.
 - `/carrinho`: exibe itens salvos no carrinho local do navegador.
 - `/pedido-confirmado`: mostra o resultado do pedido/pagamento.
+- `/demonstracao/[token]`: ativa por cookie o ambiente de testes isolado, sem persistencia operacional.
 - `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. Entra por codigo enviado ao e-mail vinculado ao pedido.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
+- `/privacidade`: inventario publico de cookies, armazenamento local e scripts, com acesso ao centro de preferencias.
 - `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
 
 ## Rotas administrativas
@@ -45,7 +47,11 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
 - `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
-- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
+- `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
+- `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
+- `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
+- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
+- `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
 
 ## Dados de catalogo
 
@@ -93,7 +99,8 @@ As familias atuais publicadas sao:
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
-- `components/admin-cad-panel.jsx` e `components/admin-pricing-panel.jsx`: registro de STL e precificacao Orca dentro do pedido expandido em `/admin/pedidos` (bloco recolhido "Fluxo CAD"), exibidos quando o pedido exige CAD (`shouldRequireCad`).
+- `components/cookie-preferences.jsx`: aviso e revisao do consentimento persistido em `baseforma-cookie-consent`.
+- A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
 
 ## Pedidos e persistencia
 
@@ -105,7 +112,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - O carrinho usa esse modulo para preview, mas `lib/order-validation.js` recalcula tudo no servidor antes de salvar o pedido.
 - Quando frete/desconto alteram o total, `lib/mercado-pago.js` envia uma linha consolidada ao Mercado Pago para manter o valor cobrado igual ao `order.totalBrl`.
 - `lib/cart-recovery.js`: recuperacao de carrinho com hash de token, IP hasheado, recalculo server-side dos itens e retencao por `CART_RECOVERY_RETENTION_DAYS`.
-- `lib/shipping.js`: adaptador de frete. O provedor real implementado e `melhor_envio`; os dados de envio sao derivados dos itens normalizados, com dimensoes em cm e peso em kg.
+- `lib/shipping.js`: adaptador de frete. O provedor real implementado e `melhor_envio`; dimensoes e peso sao derivados dos itens apenas para montar a requisicao efemera de cotacao.
 
 ## Operacao e relatorios
 
@@ -115,6 +122,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `lib/print-job.js` e `lib/print-job-store.js`: contrato, idempotencia, persistencia, lease, artefatos e retries dos jobs de geracao de arquivos.
 - `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
 - Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal e automatizada via Focus NFe com `INVOICE_PROVIDER=focus_nfe` e `FOCUS_NFE_TOKEN`; sem token, as NFs ficam pendentes.
@@ -125,7 +133,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - O schema SQL tambem esta documentado em `docs/ops/database.sql`.
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
 - A conta usa OTP por e-mail, cookie HttpOnly assinado por `ACCOUNT_SESSION_SECRET` e associacao individual de pedidos confirmados. O acesso temporario pos-checkout e limitado ao pedido recem-criado.
-- Regras de necessidade de CAD ficam em `lib/cad-contract.js`.
+- `lib/cad-contract.js` descreve os modelos e monta o payload manual do Grasshopper, mas nao participa de status, fila ou bloqueio operacional.
 
 ## Pagamento
 
@@ -158,11 +166,11 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 
 1. Adicione ou revise o script em `Produtos/Scripts-GH/`.
 2. Atualize `lib/configurator-data.js` com categoria/formato/parametros.
-3. Registre o modelo em `CAD_MODELS` dentro de `lib/cad-contract.js` (chaves de parametros, script GH, defaults tecnicos e variantes de haste). Passo a passo em `docs/catalog/contracts.md`, secao "Como adicionar um produto ao contrato CAD". Sem esse registro o pedido nasce como `not_required` e nunca entra no fluxo CAD do admin.
+3. Registre o modelo em `CAD_MODELS` dentro de `lib/cad-contract.js` (chaves de parametros, script GH, defaults tecnicos e variantes de haste). Passo a passo em `docs/catalog/contracts.md`, secao "Como adicionar um produto ao contrato CAD". Esse registro alimenta somente o payload manual do Grasshopper.
 4. Se houver pagina SEO, atualize `lib/site-data.js`.
 5. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
 6. Rode `npm run export:gh`, `npm run slice:dataset` e `npm run slice:check`.
-7. Valide o configurador, o carrinho e o payload CAD no admin (`/admin/pedidos`, secao "Dados para Grasshopper").
+7. Valide o configurador, o carrinho e o payload manual no admin (`/admin/pedidos`, secao "Dados para Grasshopper").
 
 ## Cuidados ao alterar
 

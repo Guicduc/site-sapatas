@@ -2,12 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
 
 import { ParametricDrawing } from "@/components/parametric-drawing";
 import { useCart } from "@/components/cart-provider";
 import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
+import {
+  INCH_DECIMAL_PLACES,
+  MEASUREMENT_SYSTEMS,
+  formatMeasurement,
+  formatMeasurementValue,
+  getDisplayRange,
+  measurementSystemReducer,
+  normalizeMeasurementInput,
+  toDisplayMeasurement
+} from "@/lib/measurement-units";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
 import {
   buildConfigurationSku,
@@ -32,6 +42,10 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [added, setAdded] = useState(false);
   const [previewMode, setPreviewMode] = useState("drawing");
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
+  const [measurementSystem, setMeasurementSystem] = useReducer(
+    measurementSystemReducer,
+    MEASUREMENT_SYSTEMS.METRIC
+  );
   const fieldsRef = useRef({});
   const { addItem } = useCart();
 
@@ -45,15 +59,16 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   }, [category, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
-  const validForCart = issues.length === 0;
   const priceBreakdown = useMemo(
     () => calculatePriceBreakdown(format, values, quantity),
     [format, values, quantity]
   );
+  const pricingAvailable = priceBreakdown.pricingAvailable !== false;
+  const validForCart = issues.length === 0 && pricingAvailable;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
-  const sku = useMemo(() => buildConfigurationSku(format, values), [format, values]);
+  const sku = useMemo(() => buildConfigurationSku(format, values, { color }), [format, values, color]);
   const headingDescription = getConfiguratorDescription(category);
   const hasColorChoices = category.colors.length > 1;
   const hasFinishChoices = category.finishes.length > 0;
@@ -148,6 +163,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               issues={issues}
               activeKey={activeKey}
               fieldsRef={fieldsRef}
+              measurementSystem={measurementSystem}
+              onMeasurementSystemChange={setMeasurementSystem}
               onChange={handleValueChange}
               onFocus={setActiveKey}
             />
@@ -158,6 +175,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               visualImages={visualImages}
               previewMode={previewMode}
               activeVisualIndex={activeVisualIndex}
+              measurementSystem={measurementSystem}
               onPreviewModeChange={setPreviewMode}
               onActiveVisualChange={setActiveVisualIndex}
               onSelectParameter={handleSelectParameter}
@@ -316,6 +334,7 @@ function ParametricPreview({
   visualImages,
   previewMode,
   activeVisualIndex,
+  measurementSystem,
   onPreviewModeChange,
   onActiveVisualChange,
   onSelectParameter
@@ -364,6 +383,7 @@ function ParametricPreview({
           format={format}
           values={values}
           activeKey={activeKey}
+          measurementSystem={measurementSystem}
           onSelectParameter={onSelectParameter}
         />
       )}
@@ -475,7 +495,19 @@ function FormatIcon({ type }) {
   );
 }
 
-function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onChange, onFocus }) {
+function ConfiguratorFields({
+  format,
+  values,
+  issues,
+  activeKey,
+  fieldsRef,
+  measurementSystem,
+  onMeasurementSystemChange,
+  onChange,
+  onFocus
+}) {
+  const measurementUnitLabelId = useId();
+
   function handleRangePointer(event, parameter) {
     if (event.type === "pointermove" && event.buttons !== 1) {
       return;
@@ -524,16 +556,45 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
 
   return (
     <div className="parameter-panel">
-      <div>
-        <p className="eyebrow">Medidas</p>
-        <h2>{format.name}</h2>
+      <div className="parameter-panel__heading">
+        <div>
+          <p className="eyebrow">Medidas</p>
+          <h2>{format.name}</h2>
+        </div>
+        <div className="measurement-unit-control">
+          <span id={measurementUnitLabelId}>Unidade</span>
+          <div role="group" aria-labelledby={measurementUnitLabelId}>
+            <button
+              type="button"
+              className={measurementSystem === MEASUREMENT_SYSTEMS.METRIC ? "is-selected" : ""}
+              aria-pressed={measurementSystem === MEASUREMENT_SYSTEMS.METRIC}
+              onClick={() => onMeasurementSystemChange(MEASUREMENT_SYSTEMS.METRIC)}
+            >
+              mm
+            </button>
+            <button
+              type="button"
+              className={measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL ? "is-selected" : ""}
+              aria-pressed={measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL}
+              onClick={() => onMeasurementSystemChange(MEASUREMENT_SYSTEMS.IMPERIAL)}
+            >
+              pol
+            </button>
+          </div>
+        </div>
       </div>
+      <p className="measurement-unit-note">
+        {measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL
+          ? `Polegadas com até ${INCH_DECIMAL_PLACES} casas; ao confirmar, a medida segue o passo técnico e é salva em mm.`
+          : "As medidas técnicas e o pedido são salvos em milímetros."}
+      </p>
       {format.parameters.map((parameter) => {
         if (parameter.dependsOn && !values[parameter.dependsOn]) {
           return null;
         }
 
         const isBoolean = parameter.type === "boolean";
+        const displayRange = isBoolean ? null : getDisplayRange(parameter, measurementSystem);
 
         return (
         <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
@@ -542,7 +603,7 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               <span className="parameter-label">{parameter.label}</span>
               {parameter.type === "number" && (
                 <small>
-                  Min {parameter.min} / max {parameter.max} {parameter.unit}
+                  Min {displayRange.min} / max {displayRange.max} {displayRange.unit}
                 </small>
               )}
             </span>
@@ -570,10 +631,10 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
               role="slider"
               tabIndex={parameter.dependsOn && !values[parameter.dependsOn] ? -1 : 0}
               aria-label={parameter.label}
-              aria-valuemin={parameter.min}
-              aria-valuemax={parameter.max}
-              aria-valuenow={Number(values[parameter.key] ?? parameter.min)}
-              aria-valuetext={`${values[parameter.key] ?? parameter.min} ${parameter.unit}`}
+              aria-valuemin={toDisplayMeasurement(parameter.min, parameter.unit, measurementSystem)}
+              aria-valuemax={toDisplayMeasurement(parameter.max, parameter.unit, measurementSystem)}
+              aria-valuenow={toDisplayMeasurement(values[parameter.key] ?? parameter.min, parameter.unit, measurementSystem)}
+              aria-valuetext={formatMeasurement(values[parameter.key] ?? parameter.min, parameter.unit, measurementSystem)}
               aria-disabled={parameter.dependsOn && !values[parameter.dependsOn] ? "true" : undefined}
               onFocus={() => onFocus(parameter.key)}
               onKeyDown={(event) => handleRangeKeyDown(event, parameter)}
@@ -585,34 +646,16 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
                 <span className="parameter-range__thumb" />
               </span>
             </div>
-            <input
-              className="parameter-value"
-              ref={(element) => {
+            <MeasurementInput
+              parameter={parameter}
+              value={values[parameter.key]}
+              measurementSystem={measurementSystem}
+              disabled={parameter.dependsOn && !values[parameter.dependsOn]}
+              inputRef={(element) => {
                 fieldsRef.current[parameter.key] = element;
               }}
-              type="number"
-              min={parameter.min}
-              max={parameter.max}
-              step={parameter.step}
-              value={values[parameter.key] ?? ""}
-              disabled={parameter.dependsOn && !values[parameter.dependsOn]}
-              onChange={(event) => onChange(parameter.key, event.target.value)}
-              onBlur={(event) => {
-                const nextValue = formatParameterValue(event.target.value, parameter);
-                if (String(values[parameter.key] ?? "") !== nextValue) {
-                  onChange(parameter.key, nextValue);
-                }
-              }}
-              onFocus={(event) => {
-                onFocus(parameter.key);
-                event.target.select();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.currentTarget.blur();
-                }
-              }}
-              aria-label={parameter.label}
+              onChange={(nextValue) => onChange(parameter.key, nextValue)}
+              onFocus={() => onFocus(parameter.key)}
             />
           </div>
           )}
@@ -625,6 +668,68 @@ function ConfiguratorFields({ format, values, issues, activeKey, fieldsRef, onCh
           : <span>Medidas dentro dos limites.</span>}
       </div>
     </div>
+  );
+}
+
+function MeasurementInput({
+  parameter,
+  value,
+  measurementSystem,
+  disabled,
+  inputRef,
+  onChange,
+  onFocus
+}) {
+  const [draftValue, setDraftValue] = useState(null);
+  const displayRange = getDisplayRange(parameter, measurementSystem);
+  const displayValue = draftValue ?? formatMeasurementValue(
+    value ?? parameter.defaultValue ?? parameter.min,
+    parameter.unit,
+    measurementSystem
+  );
+
+  useEffect(() => {
+    setDraftValue(null);
+  }, [measurementSystem, value]);
+
+  function commitValue(rawValue) {
+    setDraftValue(null);
+
+    if (String(rawValue).trim() === "") {
+      return;
+    }
+
+    const nextValue = normalizeMeasurementInput(rawValue, parameter, measurementSystem);
+
+    if (nextValue && String(value ?? "") !== nextValue) {
+      onChange(nextValue);
+    }
+  }
+
+  return (
+    <input
+      className="parameter-value"
+      ref={inputRef}
+      type="number"
+      inputMode="decimal"
+      min={displayRange.min}
+      max={displayRange.max}
+      step={displayRange.step}
+      value={displayValue}
+      disabled={disabled}
+      onChange={(event) => setDraftValue(event.target.value)}
+      onBlur={(event) => commitValue(event.target.value)}
+      onFocus={(event) => {
+        onFocus();
+        event.target.select();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.currentTarget.blur();
+        }
+      }}
+      aria-label={`${parameter.label} em ${displayRange.unit}`}
+    />
   );
 }
 
@@ -680,6 +785,8 @@ function ConfigurationSummary({
   added,
   onAddToCart
 }) {
+  const pricingAvailable = priceBreakdown.pricingAvailable !== false;
+
   return (
     <div className="summary-panel">
       <div className="summary-heading">
@@ -690,17 +797,25 @@ function ConfigurationSummary({
       <div className="summary-stats">
         <article>
           <strong>Preço unitário</strong>
-          <span>{formatCurrency(unitPrice)}</span>
+          <span>{pricingAvailable ? formatCurrency(unitPrice) : "Sob avaliação"}</span>
         </article>
         <article className="summary-total">
           <strong>Total</strong>
-          <span>{formatCurrency(totalPrice)}</span>
+          <span>{pricingAvailable ? formatCurrency(totalPrice) : "Sob avaliação"}</span>
         </article>
         <article>
           <strong>Prazo</strong>
           <span>{leadTime} dias úteis</span>
         </article>
       </div>
+      {!pricingAvailable && (
+        <div className="validation-note has-issues">
+          <span>{priceBreakdown.pricingUnavailableReason}</span>
+          <span>
+            Envie a configuração como <Link href="/projeto-especial">projeto especial</Link> para avaliação técnica.
+          </span>
+        </div>
+      )}
       <button className="button button-primary button-block" type="button" disabled={!validForCart} onClick={onAddToCart}>
         Adicionar ao carrinho
       </button>
