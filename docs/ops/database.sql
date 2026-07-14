@@ -88,7 +88,7 @@ create index if not exists account_access_codes_email_idx on account_access_code
 -- {
 --   "schemaVersion": 1,
 --   "production": {
---     "status": "waiting_payment|waiting_cad|queued|scheduled|in_production|quality_check|ready_to_ship|blocked|shipped|cancelled",
+--     "status": "waiting_payment|queued|ready_to_ship|blocked|shipped|cancelled",
 --     "priority": "normal|high|urgent|low",
 --     "scheduledDate": "YYYY-MM-DD",
 --     "machine": "P2S-04",

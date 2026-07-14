@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { saveCartRecoveryLead } from "@/lib/cart-recovery";
+import { isDemoSession } from "@/lib/demo-session";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,16 @@ const rateLimitBuckets = new Map();
 export async function POST(request) {
   try {
     const payload = await request.json();
+    if (await isDemoSession()) {
+      return NextResponse.json({
+        recovery: {
+          id: `demo-${crypto.randomUUID()}`,
+          status: payload?.status || "active",
+          updatedAt: new Date().toISOString(),
+          demo: true
+        }
+      }, { status: 201 });
+    }
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||

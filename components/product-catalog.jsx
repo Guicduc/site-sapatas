@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { getCategoryCardImage, homeHeroImages } from "@/lib/product-visuals";
+import { ProductImageCarousel } from "@/components/product-image-carousel";
+import { getCategoryCardGallery, homeHeroImages } from "@/lib/product-visuals";
 
 const moodTerms = [
   {
@@ -150,12 +151,17 @@ export function ProductCatalog({ categories }) {
 
         <div className="category-grid">
           {categories.map((category) => {
-            const cardImage = getCategoryCardImage(category.slug, category.image);
+            const cardImages = getCategoryCardGallery(category.slug, category.image);
 
             return (
               <article className="category-card" key={category.slug}>
-                {cardImage && (
-                  <img className="category-card__image" src={cardImage.src} alt={cardImage.alt} />
+                {cardImages.length > 0 && (
+                  <ProductImageCarousel
+                    className="category-card__carousel"
+                    images={cardImages}
+                    label={`Fotos de ${category.name}`}
+                    aspectRatio="2.8 / 1"
+                  />
                 )}
                 <div className="category-card__body">
                   <p className="eyebrow">{category.eyebrow}</p>

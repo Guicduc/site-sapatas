@@ -45,15 +45,16 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   }, [category, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
-  const validForCart = issues.length === 0;
   const priceBreakdown = useMemo(
     () => calculatePriceBreakdown(format, values, quantity),
     [format, values, quantity]
   );
+  const pricingAvailable = priceBreakdown.pricingAvailable !== false;
+  const validForCart = issues.length === 0 && pricingAvailable;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
-  const sku = useMemo(() => buildConfigurationSku(format, values), [format, values]);
+  const sku = useMemo(() => buildConfigurationSku(format, values, { color }), [format, values, color]);
   const headingDescription = getConfiguratorDescription(category);
   const hasColorChoices = category.colors.length > 1;
   const hasFinishChoices = category.finishes.length > 0;
@@ -680,6 +681,8 @@ function ConfigurationSummary({
   added,
   onAddToCart
 }) {
+  const pricingAvailable = priceBreakdown.pricingAvailable !== false;
+
   return (
     <div className="summary-panel">
       <div className="summary-heading">
@@ -690,17 +693,25 @@ function ConfigurationSummary({
       <div className="summary-stats">
         <article>
           <strong>Preço unitário</strong>
-          <span>{formatCurrency(unitPrice)}</span>
+          <span>{pricingAvailable ? formatCurrency(unitPrice) : "Sob avaliação"}</span>
         </article>
         <article className="summary-total">
           <strong>Total</strong>
-          <span>{formatCurrency(totalPrice)}</span>
+          <span>{pricingAvailable ? formatCurrency(totalPrice) : "Sob avaliação"}</span>
         </article>
         <article>
           <strong>Prazo</strong>
           <span>{leadTime} dias úteis</span>
         </article>
       </div>
+      {!pricingAvailable && (
+        <div className="validation-note has-issues">
+          <span>{priceBreakdown.pricingUnavailableReason}</span>
+          <span>
+            Envie a configuração como <Link href="/projeto-especial">projeto especial</Link> para avaliação técnica.
+          </span>
+        </div>
+      )}
       <button className="button button-primary button-block" type="button" disabled={!validForCart} onClick={onAddToCart}>
         Adicionar ao carrinho
       </button>
