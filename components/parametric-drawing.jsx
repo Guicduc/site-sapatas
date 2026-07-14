@@ -1,18 +1,30 @@
 "use client";
 
+import { createContext, useContext } from "react";
+
+import { MEASUREMENT_SYSTEMS, formatMeasurement } from "@/lib/measurement-units";
+
 const canvasWidth = 720;
 const canvasHeight = 500;
 const viewBox = `0 0 ${canvasWidth} ${canvasHeight}`;
 const viewLabelX = 62;
 const topViewY = 170;
 const baseBottomY = 440;
+const MeasurementSystemContext = createContext(MEASUREMENT_SYSTEMS.METRIC);
 
-export function ParametricDrawing({ format, values, activeKey, onSelectParameter }) {
+export function ParametricDrawing({
+  format,
+  values,
+  activeKey,
+  measurementSystem = MEASUREMENT_SYSTEMS.METRIC,
+  onSelectParameter
+}) {
   const type = format.drawingType;
 
   return (
-    <div className="drawing-panel">
-      <svg viewBox={viewBox} role="img" aria-label={`Vista cotada de ${format.name}`}>
+    <MeasurementSystemContext.Provider value={measurementSystem}>
+      <div className="drawing-panel">
+        <svg viewBox={viewBox} role="img" aria-label={`Vista cotada de ${format.name}`}>
         <defs>
           <pattern id="drawing-grid" width="32" height="32" patternUnits="userSpaceOnUse">
             <path d="M 32 0 H 0 V 32" />
@@ -36,8 +48,9 @@ export function ParametricDrawing({ format, values, activeKey, onSelectParameter
         {type === "base-oblong" && <BaseOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-rect" && <BaseRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-u" && <BaseU values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-      </svg>
-    </div>
+        </svg>
+      </div>
+    </MeasurementSystemContext.Provider>
   );
 }
 
@@ -709,6 +722,8 @@ function ViewTitle({ x, y, lines, anchor = "middle" }) {
 
 function Dimension({ x1, y1, x2, y2, label, paramKey, activeKey, onSelect }) {
   const active = activeKey === paramKey;
+  const measurementSystem = useContext(MeasurementSystemContext);
+  const displayLabel = formatDimensionLabel(label, measurementSystem);
   const startX = Number(x1);
   const startY = Number(y1);
   const endX = Number(x2);
@@ -745,9 +760,17 @@ function Dimension({ x1, y1, x2, y2, label, paramKey, activeKey, onSelect }) {
       }}
     >
       <line x1={lineX1} y1={lineY1} x2={lineX2} y2={lineY2} markerStart="url(#arrow)" markerEnd="url(#arrow)" />
-      <text x={labelX} y={labelY} style={{ textAnchor }}>{label}</text>
+      <text x={labelX} y={labelY} style={{ textAnchor }}>{displayLabel}</text>
     </g>
   );
+}
+
+function formatDimensionLabel(label, measurementSystem) {
+  const match = String(label).match(/^(-?\d+(?:\.\d+)?) mm$/);
+
+  return match
+    ? formatMeasurement(Number(match[1]), "mm", measurementSystem)
+    : label;
 }
 
 function clamp(value, min, max) {

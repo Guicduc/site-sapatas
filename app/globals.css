@@ -1362,6 +1362,67 @@ section {
   font-size: 1.18rem;
 }
 
+.parameter-panel__heading {
+  align-items: center;
+}
+
+.measurement-unit-control {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+}
+
+.measurement-unit-control > span {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.measurement-unit-control > div {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(44px, 1fr));
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.measurement-unit-control button {
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.measurement-unit-control button:hover {
+  color: var(--ink);
+}
+
+.measurement-unit-control button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.measurement-unit-control button.is-selected {
+  background: var(--surface);
+  color: var(--primary-dark);
+  box-shadow: 0 1px 0 rgba(24, 28, 29, 0.08);
+}
+
+.measurement-unit-note {
+  margin: -10px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
 .parameter-field__copy {
   display: grid;
   gap: 6px;

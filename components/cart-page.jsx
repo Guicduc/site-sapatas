@@ -12,6 +12,7 @@ import {
 } from "@/lib/br-tax-document";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { formatCurrency } from "@/lib/format";
+import { buildConfiguratorOrderPayload } from "@/lib/order-payload";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
 import { saveDemoOrder } from "@/components/demo-account";
 
@@ -448,12 +449,12 @@ function CheckoutForm() {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            source: "configurator",
-            customer: { name: customerName, email, contact, document: documentDigits },
-            shippingAddress: address,
-            couponCode: normalizeCouponCode(couponCode),
-            notes: "",
-            items,
+            ...buildConfiguratorOrderPayload({
+              customer: { name: customerName, email, contact, document: documentDigits },
+              shippingAddress: address,
+              couponCode: normalizeCouponCode(couponCode),
+              items
+            }),
             replacesOrderId: supersededOrderId
           })
         });
