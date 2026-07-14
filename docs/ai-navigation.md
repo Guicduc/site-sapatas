@@ -25,6 +25,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. Entra por codigo enviado ao e-mail vinculado ao pedido.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
+- `/privacidade`: inventario publico de cookies, armazenamento local e scripts, com acesso ao centro de preferencias.
 - `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
 
 ## Rotas administrativas
@@ -46,7 +47,11 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
 - `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
-- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado e pagamento aprovado/nao aprovado. Nao instancie SDK em escopo global.
+- `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
+- `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
+- `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
+- `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
+- `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
 
 ## Dados de catalogo
 
@@ -94,6 +99,7 @@ As familias atuais publicadas sao:
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
+- `components/cookie-preferences.jsx`: aviso e revisao do consentimento persistido em `baseforma-cookie-consent`.
 - A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
 
 ## Pedidos e persistencia
@@ -116,6 +122,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `lib/print-job.js` e `lib/print-job-store.js`: contrato, idempotencia, persistencia, lease, artefatos e retries dos jobs de geracao de arquivos.
 - `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
 - Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal e automatizada via Focus NFe com `INVOICE_PROVIDER=focus_nfe` e `FOCUS_NFE_TOKEN`; sem token, as NFs ficam pendentes.

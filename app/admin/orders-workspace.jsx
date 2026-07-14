@@ -22,6 +22,7 @@ import {
   refreshInvoiceStatus,
   requestInvoiceAfterPayment
 } from "@/lib/invoice-provider";
+import { deliverShipmentNotification } from "@/lib/shipment-notification";
 import {
   getOrderById,
   getStoreMode,
@@ -29,6 +30,11 @@ import {
   updateOrderFulfillmentState
 } from "@/lib/order-store";
 import { ORDER_STATUS, PAYMENT_STATUS, getPaymentStatusLabel } from "@/lib/order-status";
+import {
+  listPrintJobs,
+  summarizePrintJobs,
+  syncSiteOrderPrintJobs
+} from "@/lib/print-job-store";
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
@@ -76,11 +82,15 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
   }
 
   const activeFilter = normalizeFilter(searchParams?.fila || searchParams?.tab || defaultFilter);
-  const orders = await listOrders({ limit: 200 });
+  const [orders, printJobs] = await Promise.all([
+    listOrders({ limit: 200 }),
+    listPrintJobs({ limit: 200 })
+  ]);
   const queue = buildProductionQueue(orders);
   const rows = buildOrderRows(orders, queue);
   const printQueueRows = buildPrintQueueRows(rows);
   const printQueueSummary = summarizePrintQueueRows(printQueueRows);
+  const printJobSummary = summarizePrintJobs(printJobs);
   const counts = countFilters(rows);
   const filteredRows = rows.filter((row) => row.filters.includes(activeFilter));
   const overview = buildOrdersOverview(orders, rows, printQueueRows);
@@ -144,7 +154,13 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
       </nav>
 
       {activeFilter === "impressao" && (
-        <PrintQueuePanel rows={printQueueRows} queueSummary={printQueueSummary} access={access} />
+        <PrintQueuePanel
+          rows={printQueueRows}
+          queueSummary={printQueueSummary}
+          printJobs={printJobs}
+          printJobSummary={printJobSummary}
+          access={access}
+        />
       )}
 
       {activeFilter === "impressao" ? null : filteredRows.length === 0 ? (
@@ -163,7 +179,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
   );
 }
 
-function PrintQueuePanel({ rows, queueSummary, access }) {
+function PrintQueuePanel({ rows, queueSummary, printJobs, printJobSummary, access }) {
   return (
     <section className="admin-print-queue" aria-labelledby="print-queue-heading">
       <div className="admin-section-heading">
@@ -175,6 +191,8 @@ function PrintQueuePanel({ rows, queueSummary, access }) {
           {queueSummary.demandUnits} un. trab. | {queueSummary.estimatedProductionDays} dia(s)
         </span>
       </div>
+
+      <PrintFileJobsPanel jobs={printJobs} summary={printJobSummary} access={access} />
 
       {rows.length === 0 ? (
         <p className="admin-note">Nenhum pedido pago esta aguardando producao.</p>
@@ -212,6 +230,69 @@ function PrintQueuePanel({ rows, queueSummary, access }) {
             </li>
           ))}
         </ol>
+      )}
+    </section>
+  );
+}
+
+function PrintFileJobsPanel({ jobs, summary, access }) {
+  return (
+    <section className="print-file-jobs" aria-labelledby="print-file-jobs-heading">
+      <div className="admin-section-heading">
+        <div>
+          <h3 id="print-file-jobs-heading">Jobs de geracao de arquivos</h3>
+          <p>
+            O site registra contratos e acompanha tentativas. Rhino, Grasshopper e slicers rodam em um worker separado.
+          </p>
+        </div>
+        <form action={syncPrintFileJobs}>
+          <input type="hidden" name="token" value={access.token} />
+          <button className="button button-secondary" type="submit">Sincronizar pedidos pagos</button>
+        </form>
+      </div>
+
+      <dl className="print-file-jobs__summary">
+        <div><dt>Na fila</dt><dd>{summary.queued}</dd></div>
+        <div><dt>Processando</dt><dd>{summary.processing}</dd></div>
+        <div><dt>Concluidos</dt><dd>{summary.succeeded}</dd></div>
+        <div><dt>Falhas</dt><dd>{summary.failed}</dd></div>
+        <div><dt>Retries</dt><dd>{summary.retrying}</dd></div>
+      </dl>
+
+      {jobs.length === 0 ? (
+        <p className="admin-note">
+          Nenhum job criado. A sincronizacao considera pedidos pagos ativos com modelo registrado no contrato CAD.
+        </p>
+      ) : (
+        <div className="print-file-jobs__list">
+          {jobs.map((job) => (
+            <article className={`print-file-job print-file-job--${job.status}`} key={job.id}>
+              <div className="print-file-job__heading">
+                <div>
+                  <strong>{job.origin.label || job.origin.sourceId}</strong>
+                  <small>{job.origin.source} | {job.origin.sourceItemId || "origem sem item"}</small>
+                </div>
+                <span>{formatPrintJobStatus(job.status)}</span>
+              </div>
+              <dl>
+                <div><dt>Modelo</dt><dd>{job.contract.modelVersion}</dd></div>
+                <div><dt>Material</dt><dd>{formatPrintJobMaterial(job.material)}</dd></div>
+                <div><dt>Prioridade</dt><dd>{formatPriorityLabel(job.priority)}</dd></div>
+                <div><dt>Tentativas</dt><dd>{job.attempts}/{job.maxAttempts}</dd></div>
+              </dl>
+              {job.artifacts?.length > 0 && (
+                <p className="print-file-job__artifacts">
+                  Artefatos: {job.artifacts.map((artifact) => `${artifact.type.toUpperCase()} ${artifact.name}`).join(" | ")}
+                </p>
+              )}
+              {job.error && (
+                <p className="print-file-job__error">
+                  {job.error.code}: {job.error.message}
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -606,6 +687,7 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
 
       <fieldset className="operation-form__group">
         <legend>Expedicao</legend>
+        <p className="admin-note">{formatShipmentNotificationStatus(fulfillment.shipment.notification)}</p>
         <label className="field">
           <span>Status</span>
           <select name="shipmentStatus" defaultValue={toSimpleShipmentStatus(fulfillment.shipment.status)}>
@@ -710,7 +792,7 @@ async function updateOperation(formData) {
   const submittedInvoiceStatus = cleanFormValue(formData.get("invoiceStatus")) || INVOICE_STATUS.PENDING;
   const submittedShipmentStatus = cleanFormValue(formData.get("shipmentStatus")) || SHIPMENT_STATUS.PENDING;
 
-  await updateOrderFulfillmentState(orderId, {
+  const updatedOrder = await updateOrderFulfillmentState(orderId, {
     production: {
       status: resolveSubmittedSimpleStatus({
         currentStatus: currentProductionStatus,
@@ -748,6 +830,8 @@ async function updateOperation(formData) {
     }
   });
 
+  await deliverShipmentNotification(updatedOrder);
+
   revalidateAdminOrderPaths();
 }
 
@@ -781,6 +865,20 @@ async function updatePrintQueue(formData) {
     }
   });
 
+  revalidateAdminOrderPaths();
+}
+
+async function syncPrintFileJobs(formData) {
+  "use server";
+
+  try {
+    await assertAdminAccess(cleanFormValue(formData.get("token")));
+  } catch {
+    return;
+  }
+
+  const orders = await listOrders({ limit: 200 });
+  await syncSiteOrderPrintJobs(orders);
   revalidateAdminOrderPaths();
 }
 
@@ -1109,6 +1207,21 @@ function formatPriorityLabel(priority) {
   return labels[priority] || priority || "Normal";
 }
 
+function formatPrintJobStatus(status) {
+  const labels = {
+    queued: "Na fila",
+    processing: "Processando",
+    succeeded: "Concluido",
+    failed: "Falhou",
+    cancelled: "Cancelado"
+  };
+  return labels[status] || status || "Sem status";
+}
+
+function formatPrintJobMaterial(material = {}) {
+  return [material.code?.toUpperCase(), material.color, material.profileId].filter(Boolean).join(" | ") || "Nao informado";
+}
+
 function resolveSubmittedSimpleStatus({ currentStatus, submittedStatus, simplify }) {
   if (!currentStatus) return submittedStatus;
   return submittedStatus === simplify(currentStatus) ? currentStatus : submittedStatus;
@@ -1235,6 +1348,30 @@ function formatShippingDetail(shipping = {}) {
   const source = shipping.source ? `origem ${shipping.source}` : "";
   const fulfillment = shipping.fulfillmentLabel || (shipping.fulfillmentMode === "manual_posting" ? "Postagem manual" : "");
   return [service, delivery, fulfillment, source].filter(Boolean).join(" | ") || "Frete sem detalhe operacional";
+}
+
+function formatShipmentNotificationStatus(notification = {}) {
+  if (notification.status === "sent") {
+    return `E-mail de pedido enviado em ${formatDateTime(notification.sentAt)}.`;
+  }
+
+  if (notification.lastErrorCode === "missing_customer_email") {
+    return "E-mail de envio bloqueado: o pedido nao tem e-mail do cliente. A expedicao foi salva; corrija o cadastro e salve novamente para tentar o envio.";
+  }
+
+  if (notification.lastErrorCode === "missing_resend_api_key") {
+    return "E-mail de envio bloqueado: RESEND_API_KEY nao esta configurada. A expedicao foi salva; configure o provedor e salve novamente para tentar o envio.";
+  }
+
+  if (notification.lastErrorCode === "missing_email_from") {
+    return "E-mail de envio bloqueado: TRANSACTIONAL_EMAIL_FROM ou ACCOUNT_EMAIL_FROM nao esta configurado. A expedicao foi salva; configure o remetente e salve novamente.";
+  }
+
+  if (notification.status === "failed") {
+    return "Falha ao enviar o e-mail de expedicao. O pedido continua expedido; salve novamente para repetir a tentativa.";
+  }
+
+  return "O e-mail e disparado quando este pedido e salvo como Expedido. Transportadora e rastreio entram na mensagem quando informados.";
 }
 
 function formatDateTime(value) {

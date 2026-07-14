@@ -10,7 +10,8 @@ export default function sitemap() {
     "/como-funciona",
     "/processo",
     "/projeto-especial",
-    "/faq"
+    "/faq",
+    "/privacidade"
   ].map((path) => ({
     url: `${siteUrl}${path}`,
     lastModified,

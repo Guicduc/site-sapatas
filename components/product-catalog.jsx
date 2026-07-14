@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { getCategoryCardImage, homeHeroImages } from "@/lib/product-visuals";
+import { ProductImageCarousel } from "@/components/product-image-carousel";
+import { getCategoryCardGallery, homeHeroImages } from "@/lib/product-visuals";
 
 const moodTerms = [
   {
@@ -106,6 +107,7 @@ export function ProductCatalog({ categories }) {
               className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
               key={image.src}
               src={image.src}
+              style={{ "--hero-image-position": image.objectPosition }}
               alt={index === heroIndex ? image.alt : ""}
               aria-hidden={index === heroIndex ? undefined : "true"}
             />
@@ -142,33 +144,45 @@ export function ProductCatalog({ categories }) {
         ))}
       </div>
 
-      <div className="category-grid">
-        {categories.map((category) => {
-          const cardImage = getCategoryCardImage(category.slug, category.image);
+      <section className="category-section" aria-labelledby="products-heading">
+        <div className="category-section__heading">
+          <p className="eyebrow">Catálogo</p>
+          <h2 id="products-heading">Produtos</h2>
+        </div>
 
-          return (
-            <article className="category-card" key={category.slug}>
-              {cardImage && (
-                <img className="category-card__image" src={cardImage.src} alt={cardImage.alt} />
-              )}
-              <div className="category-card__body">
-                <p className="eyebrow">{category.eyebrow}</p>
-                <h2>{category.name}</h2>
-                <p>{category.description}</p>
-                <div className="meta-list">
-                  <span>{category.primaryFixation}</span>
-                  {category.formats.length > 1 && (
-                    <span>{category.formats.map((format) => format.name).join(" / ")}</span>
-                  )}
+        <div className="category-grid">
+          {categories.map((category) => {
+            const cardImages = getCategoryCardGallery(category.slug, category.image);
+
+            return (
+              <article className="category-card" key={category.slug}>
+                {cardImages.length > 0 && (
+                  <ProductImageCarousel
+                    className="category-card__carousel"
+                    images={cardImages}
+                    label={`Fotos de ${category.name}`}
+                    aspectRatio="2.8 / 1"
+                  />
+                )}
+                <div className="category-card__body">
+                  <p className="eyebrow">{category.eyebrow}</p>
+                  <h2>{category.name}</h2>
+                  <p>{category.description}</p>
+                  <div className="meta-list">
+                    <span>{category.primaryFixation}</span>
+                    {category.formats.length > 1 && (
+                      <span>{category.formats.map((format) => format.name).join(" / ")}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <Link className="button button-primary" href={`/configurar/${category.slug}`}>
-                Configurar
-              </Link>
-            </article>
-          );
-        })}
-      </div>
+                <Link className="button button-primary" href={`/configurar/${category.slug}`}>
+                  Configurar
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      </section>
     </section>
   );
 }
