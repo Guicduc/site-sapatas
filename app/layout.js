@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { brand, siteUrl } from "@/lib/site-data";
 import { Barlow_Condensed } from "next/font/google";
+import { DemoBanner } from "@/components/demo-banner";
 
 import "./globals.css";
 
@@ -58,13 +59,14 @@ export const metadata = {
   }
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
       <body className={brandDisplay.variable}>
         <CartProvider>
           <div className="page-background" aria-hidden="true" />
           <div className="site-shell">
+            <DemoBanner />
             <SiteHeader />
             <main className="site-main">{children}</main>
             <SiteFooter />

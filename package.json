@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test": "node --test",
     "start": "next start",
     "test:cookie-consent": "node --test lib/cookie-consent.test.js",
     "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
+    "product:check": "node Produtos/scripts/product-check.mjs",
     "slice:dataset": "node Produtos/scripts/orca-slice-dataset.mjs",
     "slice:check": "node Produtos/scripts/orca-slice-dataset.mjs --check",
     "cost:build": "node Produtos/scripts/build-production-cost-data.mjs",

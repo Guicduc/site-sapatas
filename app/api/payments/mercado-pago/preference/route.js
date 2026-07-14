@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
 import { getAccountSession, getOrderAccess } from "@/lib/account-session";
-import { createMercadoPagoPreference, getMercadoPagoCheckoutUrl } from "@/lib/mercado-pago";
+import {
+  createMercadoPagoPreference,
+  getMercadoPagoCheckoutUrl,
+  getPreferenceReuseWindowMinutes
+} from "@/lib/mercado-pago";
 import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForEmail } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
-
-const PENDING_PAYMENT_REUSE_MINUTES = 120;
 
 function isReusablePendingPayment(payment) {
   if (!payment?.checkoutUrl || payment.status !== PAYMENT_STATUS.PENDING) return false;
@@ -13,7 +15,7 @@ function isReusablePendingPayment(payment) {
   const createdAt = Date.parse(payment.createdAt || payment.updatedAt || "");
   if (!Number.isFinite(createdAt)) return false;
 
-  return Date.now() - createdAt <= PENDING_PAYMENT_REUSE_MINUTES * 60 * 1000;
+  return Date.now() - createdAt <= getPreferenceReuseWindowMinutes() * 60 * 1000;
 }
 
 export async function POST(request) {

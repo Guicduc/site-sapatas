@@ -7,7 +7,15 @@ import {
 } from "@/lib/mercado-pago";
 import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
 import { recordMercadoPagoUpdate } from "@/lib/order-store";
+import { ORDER_STATUS } from "@/lib/order-status";
 import { notifyPaymentResolved } from "@/lib/transactional-email";
+
+// Pagamento tardio de um pedido cancelado ou marcado para revisao manual não
+// deve gerar e-mail de confirmacao ao cliente; o alerta interno já foi enviado
+// por recordMercadoPagoUpdate.
+function canNotifyCustomer(order) {
+  return order && order.status !== ORDER_STATUS.CANCELLED && !order.metadata?.paymentReview;
+}
 
 export async function POST(request) {
   let payload;
@@ -29,7 +37,9 @@ export async function POST(request) {
       amountBrl: payload.amountBrl || null,
       raw: payload
     });
-    await notifyPaymentResolved(order, order?.paymentStatus || status);
+    if (canNotifyCustomer(order)) {
+      await notifyPaymentResolved(order, order?.paymentStatus || status);
+    }
     await requestInvoiceAfterPayment(order, {
       providerPaymentId: payload.paymentId,
       raw: payload
@@ -75,7 +85,9 @@ export async function POST(request) {
       amountBrl: payment.transaction_amount,
       raw: payment
     });
-    await notifyPaymentResolved(order, order?.paymentStatus || status);
+    if (canNotifyCustomer(order)) {
+      await notifyPaymentResolved(order, order?.paymentStatus || status);
+    }
     await requestInvoiceAfterPayment(order, payment);
 
     return NextResponse.json({
