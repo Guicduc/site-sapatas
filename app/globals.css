@@ -3028,6 +3028,100 @@ dt {
   font-size: 1.08rem;
 }
 
+.print-file-jobs {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-soft) 58%, transparent);
+}
+
+.print-file-jobs__summary,
+.print-file-job dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.print-file-jobs__summary div,
+.print-file-job dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.print-file-jobs__summary dt,
+.print-file-job dt {
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.print-file-jobs__summary dd,
+.print-file-job dd {
+  margin: 0;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.print-file-jobs__list {
+  display: grid;
+  gap: 8px;
+}
+
+.print-file-job {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary-dark);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.print-file-job--failed {
+  border-left-color: var(--danger, #9f2f2f);
+}
+
+.print-file-job--succeeded {
+  border-left-color: var(--success, #28734a);
+}
+
+.print-file-job__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.print-file-job__heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.print-file-job__heading small,
+.print-file-job__artifacts {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.print-file-job__heading span {
+  font-weight: 800;
+}
+
+.print-file-job__artifacts,
+.print-file-job__error {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.print-file-job__error {
+  color: var(--danger, #9f2f2f);
+  font-weight: 700;
+}
+
 .admin-print-queue__list {
   display: grid;
   gap: 0;
