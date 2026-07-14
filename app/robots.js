@@ -6,7 +6,14 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api", "/conta", "/carrinho", "/pedido-confirmado"]
+        disallow: [
+          "/admin",
+          "/api",
+          "/conta",
+          "/carrinho",
+          "/pedido-confirmado",
+          "/demonstracao"
+        ]
       }
     ],
     sitemap: `${siteUrl}/sitemap.xml`

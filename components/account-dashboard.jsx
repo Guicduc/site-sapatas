@@ -129,7 +129,7 @@ export function AccountAccess() {
   );
 }
 
-export function AccountDashboard({ email, orders }) {
+export function AccountDashboard({ email, orders, demo = false }) {
   const [filter, setFilter] = useState("all");
   const [paymentError, setPaymentError] = useState("");
   const customer = orders[0]?.customer;
@@ -144,6 +144,11 @@ export function AccountDashboard({ email, orders }) {
   const visibleOrders = orders.filter((order) => matchesFilter(order, filter));
 
   async function logout() {
+    if (demo) {
+      window.localStorage.removeItem("baseforma-demo-orders");
+      window.location.assign("/catalogo");
+      return;
+    }
     await fetch("/api/account/session", { method: "DELETE" });
     window.location.reload();
   }
@@ -171,7 +176,7 @@ export function AccountDashboard({ email, orders }) {
           <h1>Olá, {firstName(customer?.name) || "cliente"}.</h1>
           <p>Aqui está o registro comercial vinculado a {email}.</p>
         </div>
-        <button className="button button-secondary" type="button" onClick={logout}>Sair</button>
+        <button className="button button-secondary" type="button" onClick={logout}>{demo ? "Limpar testes" : "Sair"}</button>
       </header>
 
       <div className="account-layout">
@@ -311,14 +316,12 @@ function buildSteps(order) {
   const paid = PAID.has(order.paymentStatus) || order.paymentStatus === PAYMENT_STATUS.REFUNDED;
   const productionStatus = order.fulfillment?.production?.status || "";
   const shipmentStatus = order.fulfillment?.shipment?.status || "";
-  const validationDone = paid && !["waiting_cad", "blocked"].includes(productionStatus) && order.status !== ORDER_STATUS.PAID_PENDING_REVIEW;
   const production = PRODUCTION_DONE.has(productionStatus) || SHIPMENT_DONE.has(shipmentStatus);
   return [
     { label: "Pedido recebido", done: true },
     { label: "Pagamento", done: paid },
-    { label: "Validação técnica", done: validationDone },
     { label: "Produção", done: production },
-    { label: "Envio", done: SHIPMENT_DONE.has(shipmentStatus) || order.status === ORDER_STATUS.SHIPPED }
+    { label: "Expedição", done: SHIPMENT_DONE.has(shipmentStatus) || order.status === ORDER_STATUS.SHIPPED }
   ];
 }
 
@@ -335,11 +338,10 @@ function getClientOrderStatusLabel(order) {
 
   if (shipmentStatus === "delivered") return "Concluído";
   if (["packing", "ready_for_pickup", "shipped"].includes(shipmentStatus)) return "Enviando";
-  if (["waiting_cad", "blocked"].includes(productionStatus) || order.status === ORDER_STATUS.PAID_PENDING_REVIEW) return "Validação técnica";
-  if (productionStatus === "ready_to_ship") return "Pronto para expedir";
-  if (["queued", "scheduled"].includes(productionStatus)) return "Na fila de produção";
+  if (productionStatus === "blocked" || order.status === ORDER_STATUS.PAID_PENDING_REVIEW) return "Revisão técnica";
+  if (productionStatus === "ready_to_ship") return "Produzido";
 
-  return "Em produção";
+  return "Aguardando produção";
 }
 
 function formatDate(value) {
