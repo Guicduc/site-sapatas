@@ -9,13 +9,12 @@ import { useCart } from "@/components/cart-provider";
 import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
 import {
-  INCH_DECIMAL_PLACES,
   MEASUREMENT_SYSTEMS,
   formatMeasurement,
   formatMeasurementValue,
   getDisplayRange,
   measurementSystemReducer,
-  normalizeMeasurementInput,
+  parseMeasurementInput,
   toDisplayMeasurement
 } from "@/lib/measurement-units";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
@@ -40,6 +39,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [finish, setFinish] = useState(category.finishes[0] || "não se aplica");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [invalidMeasurementKeys, setInvalidMeasurementKeys] = useState({});
   const [previewMode, setPreviewMode] = useState("drawing");
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
   const [measurementSystem, setMeasurementSystem] = useReducer(
@@ -56,6 +56,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setColor(category.colors[0]);
     setFinish(category.finishes[0] || "não se aplica");
     setAdded(false);
+    setInvalidMeasurementKeys({});
   }, [category, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
@@ -64,7 +65,10 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     [format, values, quantity]
   );
   const pricingAvailable = priceBreakdown.pricingAvailable !== false;
-  const validForCart = issues.length === 0 && pricingAvailable;
+  const hasInvalidMeasurementInput = Object.keys(invalidMeasurementKeys).length > 0;
+  const validForCart = issues.length === 0
+    && !hasInvalidMeasurementInput
+    && pricingAvailable;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
@@ -103,8 +107,39 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
       ...current,
       [key]: value
     }));
+
+    if (value === false) {
+      const hiddenKeys = new Set(
+        format.parameters
+          .filter((parameter) => parameter.dependsOn === key)
+          .map((parameter) => parameter.key)
+      );
+      setInvalidMeasurementKeys((current) => Object.fromEntries(
+        Object.entries(current).filter(([parameterKey]) => !hiddenKeys.has(parameterKey))
+      ));
+    }
+
     setActiveKey(key);
     setAdded(false);
+  }
+
+  function handleMeasurementValidityChange(key, isValid) {
+    setInvalidMeasurementKeys((current) => {
+      const isCurrentlyInvalid = Boolean(current[key]);
+
+      if (isCurrentlyInvalid === !isValid) {
+        return current;
+      }
+
+      const next = { ...current };
+      if (isValid) {
+        delete next[key];
+      } else {
+        next[key] = true;
+      }
+
+      return next;
+    });
   }
 
   function handleSelectParameter(key) {
@@ -161,11 +196,13 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               format={format}
               values={values}
               issues={issues}
+              hasInvalidInput={hasInvalidMeasurementInput}
               activeKey={activeKey}
               fieldsRef={fieldsRef}
               measurementSystem={measurementSystem}
               onMeasurementSystemChange={setMeasurementSystem}
               onChange={handleValueChange}
+              onInputValidityChange={handleMeasurementValidityChange}
               onFocus={setActiveKey}
             />
             <ParametricPreview
@@ -499,11 +536,13 @@ function ConfiguratorFields({
   format,
   values,
   issues,
+  hasInvalidInput,
   activeKey,
   fieldsRef,
   measurementSystem,
   onMeasurementSystemChange,
   onChange,
+  onInputValidityChange,
   onFocus
 }) {
   const measurementUnitLabelId = useId();
@@ -585,8 +624,8 @@ function ConfiguratorFields({
       </div>
       <p className="measurement-unit-note">
         {measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL
-          ? `Polegadas com até ${INCH_DECIMAL_PLACES} casas; ao confirmar, a medida segue o passo técnico e é salva em mm.`
-          : "As medidas técnicas e o pedido são salvos em milímetros."}
+          ? "Aceita ponto, vírgula ou fração, como 1,25 ou 1 1/4. O pedido é salvo em mm sem alterar a medida informada."
+          : "Aceita medidas exatas com ponto ou vírgula, como 30,5. O pedido é salvo em milímetros."}
       </p>
       {format.parameters.map((parameter) => {
         if (parameter.dependsOn && !values[parameter.dependsOn]) {
@@ -655,6 +694,7 @@ function ConfiguratorFields({
                 fieldsRef.current[parameter.key] = element;
               }}
               onChange={(nextValue) => onChange(parameter.key, nextValue)}
+              onValidityChange={(isValid) => onInputValidityChange(parameter.key, isValid)}
               onFocus={() => onFocus(parameter.key)}
             />
           </div>
@@ -662,10 +702,12 @@ function ConfiguratorFields({
         </label>
       );
       })}
-      <div className={`validation-note${issues.length > 0 ? " has-issues" : ""}`}>
+      <div className={`validation-note${issues.length > 0 || hasInvalidInput ? " has-issues" : ""}`}>
         {issues.length > 0
           ? issues.map((issue) => <span key={issue}>{issue}</span>)
-          : <span>Medidas dentro dos limites.</span>}
+          : hasInvalidInput
+            ? <span>Revise a medida destacada.</span>
+            : <span>Medidas dentro dos limites.</span>}
       </div>
     </div>
   );
@@ -678,58 +720,136 @@ function MeasurementInput({
   disabled,
   inputRef,
   onChange,
+  onValidityChange,
   onFocus
 }) {
-  const [draftValue, setDraftValue] = useState(null);
-  const displayRange = getDisplayRange(parameter, measurementSystem);
-  const displayValue = draftValue ?? formatMeasurementValue(
+  const validationMessageId = useId();
+  const [draftValue, setDraftValue] = useState(() => formatMeasurementValue(
     value ?? parameter.defaultValue ?? parameter.min,
     parameter.unit,
     measurementSystem
-  );
+  ));
+  const [inputError, setInputError] = useState("");
+  const lastCommittedValueRef = useRef(null);
+  const lastValidValueRef = useRef(String(value ?? parameter.defaultValue ?? parameter.min));
+  const previousMeasurementSystemRef = useRef(measurementSystem);
+  const skipNextBlurRef = useRef(false);
+  const displayRange = getDisplayRange(parameter, measurementSystem);
 
   useEffect(() => {
-    setDraftValue(null);
+    const measurementSystemChanged = previousMeasurementSystemRef.current !== measurementSystem;
+    const valueCameFromThisInput = !measurementSystemChanged
+      && lastCommittedValueRef.current === String(value ?? "");
+
+    if (!valueCameFromThisInput) {
+      setDraftValue(formatMeasurementValue(
+        value ?? parameter.defaultValue ?? parameter.min,
+        parameter.unit,
+        measurementSystem
+      ));
+      setInputError("");
+      onValidityChange(true);
+
+      if (String(value ?? "") !== "") {
+        lastValidValueRef.current = String(value);
+      }
+    }
+
+    lastCommittedValueRef.current = null;
+    previousMeasurementSystemRef.current = measurementSystem;
   }, [measurementSystem, value]);
 
-  function commitValue(rawValue) {
-    setDraftValue(null);
+  function invalidateValue(message) {
+    setInputError(message);
+    onValidityChange(false);
+  }
 
+  function commitValue(rawValue) {
     if (String(rawValue).trim() === "") {
+      invalidateValue("Informe a medida.");
       return;
     }
 
-    const nextValue = normalizeMeasurementInput(rawValue, parameter, measurementSystem);
+    const result = parseMeasurementInput(rawValue, parameter, measurementSystem);
 
-    if (nextValue && String(value ?? "") !== nextValue) {
-      onChange(nextValue);
+    if (result.error) {
+      invalidateValue(result.error);
+      return;
+    }
+
+    setInputError("");
+    onValidityChange(true);
+    lastValidValueRef.current = result.value;
+
+    if (result.value && String(value ?? "") !== result.value) {
+      lastCommittedValueRef.current = result.value;
+      onChange(result.value);
     }
   }
 
   return (
-    <input
-      className="parameter-value"
-      ref={inputRef}
-      type="number"
-      inputMode="decimal"
-      min={displayRange.min}
-      max={displayRange.max}
-      step={displayRange.step}
-      value={displayValue}
-      disabled={disabled}
-      onChange={(event) => setDraftValue(event.target.value)}
-      onBlur={(event) => commitValue(event.target.value)}
-      onFocus={(event) => {
-        onFocus();
-        event.target.select();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.currentTarget.blur();
-        }
-      }}
-      aria-label={`${parameter.label} em ${displayRange.unit}`}
-    />
+    <div className="measurement-input">
+      <div className={`measurement-input__control${inputError ? " has-error" : ""}`}>
+        <input
+          className="parameter-value"
+          ref={inputRef}
+          type="text"
+          inputMode={measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL ? "text" : "decimal"}
+          value={draftValue}
+          disabled={disabled}
+          onChange={(event) => {
+            setDraftValue(event.target.value);
+            setInputError("");
+            onValidityChange(false);
+          }}
+          onBlur={(event) => {
+            if (skipNextBlurRef.current) {
+              skipNextBlurRef.current = false;
+              return;
+            }
+
+            commitValue(event.target.value);
+          }}
+          onFocus={(event) => {
+            onFocus();
+            event.target.select();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "Escape") {
+              const restoredValue = lastValidValueRef.current;
+              skipNextBlurRef.current = true;
+              setDraftValue(formatMeasurementValue(
+                restoredValue,
+                parameter.unit,
+                measurementSystem
+              ));
+              setInputError("");
+              onValidityChange(true);
+
+              if (String(value ?? "") !== restoredValue) {
+                lastCommittedValueRef.current = restoredValue;
+                onChange(restoredValue);
+              }
+
+              event.currentTarget.blur();
+            }
+          }}
+          aria-label={`${parameter.label} em ${displayRange.unit}`}
+          aria-invalid={inputError ? "true" : undefined}
+          aria-describedby={inputError ? validationMessageId : undefined}
+        />
+        <span aria-hidden="true">{displayRange.unit}</span>
+      </div>
+      {inputError && (
+        <small className="measurement-input__error" id={validationMessageId} role="alert">
+          {inputError}
+        </small>
+      )}
+    </div>
   );
 }
 
