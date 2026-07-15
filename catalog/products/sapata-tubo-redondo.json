@@ -22,6 +22,14 @@
   "finishes": [],
   "leadTimeBaseDays": 5,
   "generationMode": "local_manual",
+  "manufacturing": {
+    "tubeInnerSpan": {
+      "sizeKeys": ["diametroBase"],
+      "sizeOffsetsMm": { "diametroBase": 10 },
+      "wallThicknessKey": "paredeTubo",
+      "minimumMm": 5
+    }
+  },
   "drawingType": "tube-round",
   "notes": ["Meça o tubo por dentro, depois da pintura ou cromagem."],
   "parameters": [

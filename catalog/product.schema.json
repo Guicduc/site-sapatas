@@ -92,6 +92,30 @@
       "enum": ["local_manual"],
       "description": "local_manual: a peça específica é gerada manualmente no admin a partir do script Grasshopper. STL/GLB pré-gerado não é requisito."
     },
+    "manufacturing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tubeInnerSpan": {
+          "type": "object",
+          "required": ["sizeKeys", "wallThicknessKey", "minimumMm"],
+          "additionalProperties": false,
+          "properties": {
+            "sizeKeys": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" }
+            },
+            "sizeOffsetsMm": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            },
+            "wallThicknessKey": { "type": "string" },
+            "minimumMm": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
     "drawingType": {
       "type": "string",
       "description": "Renderer do desenho técnico 2D (registry de renderizadores)."

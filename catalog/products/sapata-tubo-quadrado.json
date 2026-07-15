@@ -23,6 +23,14 @@
   "finishes": [],
   "leadTimeBaseDays": 6,
   "generationMode": "local_manual",
+  "manufacturing": {
+    "tubeInnerSpan": {
+      "sizeKeys": ["tamanhoBaseX", "tamanhoBaseY"],
+      "sizeOffsetsMm": {},
+      "wallThicknessKey": "paredeTubo",
+      "minimumMm": 5
+    }
+  },
   "drawingType": "tube-rect",
   "notes": ["Informe a medida interna real do tubo quadrado."],
   "parameters": [

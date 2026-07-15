@@ -406,7 +406,7 @@ function testMonotonicSweeps(formats) {
           continue;
         }
 
-        const points = representativeValues(parameter, defaults[parameter.key]).map((value) => {
+        const evaluatedPoints = representativeValues(parameter, defaults[parameter.key]).map((value) => {
           const breakdown = calculatePriceBreakdown(item.format, { ...defaults, [parameter.key]: value }, 1);
           return {
             value,
@@ -414,13 +414,22 @@ function testMonotonicSweeps(formats) {
             pricingMode: breakdown.pricingMode
           };
         });
-        const drops = diagnoseDrops(points);
+        const points = evaluatedPoints.filter((point) => point.pricingMode !== "invalid_configuration");
+        const direction = parameter.key === "paredeTubo" ? "variable" : "nondecreasing";
+        const drops = direction === "nondecreasing" ? diagnoseDrops(points) : [];
+        const sensitive = new Set(points.map((point) => point.unitPriceBrl)).size > 1;
+        const unavailable = points.filter((point) => point.pricingMode === "missing_slicer_data");
+        const passed = drops.length === 0 && unavailable.length === 0 && sensitive;
         checks.push({
           surfaceId: surfaceKey(item.categorySlug, item.formatSlug, variantSlug),
           parameter: parameter.key,
+          direction,
           points: points.length,
+          invalidConfigurationPoints: evaluatedPoints.length - points.length,
+          sensitive,
           drops: drops.slice(0, 20),
-          status: drops.length > 0 ? "fail" : "pass"
+          unavailable: unavailable.slice(0, 20),
+          status: passed ? "pass" : "fail"
         });
       }
     }

@@ -31,6 +31,7 @@ SAMPLE_OFFSET = int(os.environ.get("GH_SAMPLE_OFFSET", "0"))
 ONLY_FILTER = os.environ.get("GH_ONLY", "").lower()
 APPEND_DATASET = os.environ.get("GH_APPEND_DATASET", "false").lower() == "true"
 REPLACE_EXISTING = os.environ.get("GH_REPLACE_EXISTING", "false").lower() == "true"
+TARGETED_SAMPLES_ONLY = os.environ.get("GH_TARGETED_SAMPLES_ONLY", "false").lower() == "true"
 
 DEFAULT_SAMPLE_COUNTS_BY_PARAMETER_COUNT = {
     0: 1,
@@ -118,6 +119,18 @@ PRODUCT_CONFIGS = [
                 "offset": 10,
             },
         },
+        "sampling": {
+            "force_axis_keys": ["diametroBase", "alturaBase", "alturaPescoco", "paredeTubo"],
+            "target_count": 520,
+        },
+        "manufacturing": {
+            "tube_inner_span": {
+                "size_keys": ["diametroBase"],
+                "size_offsets_mm": {"diametroBase": 10},
+                "wall_thickness_key": "paredeTubo",
+                "minimum_mm": 5,
+            },
+        },
         "parameters": {
             "diametroBase": parameter(3, 150, 28),
             "alturaBase": parameter(1, 10, 6),
@@ -140,7 +153,15 @@ PRODUCT_CONFIGS = [
             "xy_keys": ["tamanhoBaseX", "tamanhoBaseY"],
             "xy_low_max": 30,
             "xy_coarse_step": 5,
-            "random_count": 240,
+            "random_count": 480,
+        },
+        "manufacturing": {
+            "tube_inner_span": {
+                "size_keys": ["tamanhoBaseX", "tamanhoBaseY"],
+                "size_offsets_mm": {},
+                "wall_thickness_key": "paredeTubo",
+                "minimum_mm": 5,
+            },
         },
         "parameters": {
             "tamanhoBaseX": parameter(3, 150, 30),
@@ -159,6 +180,25 @@ PRODUCT_CONFIGS = [
         "has_neck": False,
         "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "paredeTubo"],
         "generic_slider_order": ["tamanhoBaseX", "tamanhoBaseY", "paredeTubo", "alturaBase", "alturaPescoco"],
+        "sampling": {
+            "force_axis_keys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "paredeTubo"],
+            "target_count": 720,
+            "required_samples": [
+                {"tamanhoBaseX": 8},
+                {"tamanhoBaseX": 9},
+                {"tamanhoBaseX": 10},
+                {"tamanhoBaseX": 11},
+                {"tamanhoBaseX": 12},
+            ],
+        },
+        "manufacturing": {
+            "tube_inner_span": {
+                "size_keys": ["tamanhoBaseX", "tamanhoBaseY"],
+                "size_offsets_mm": {},
+                "wall_thickness_key": "paredeTubo",
+                "minimum_mm": 5,
+            },
+        },
         "parameters": {
             "tamanhoBaseX": parameter(3, 150, 36),
             "tamanhoBaseY": parameter(3, 150, 18),
@@ -175,6 +215,11 @@ PRODUCT_CONFIGS = [
         "variant_slug": "sem-haste",
         "has_neck": False,
         "slider_order": ["diametro", "alturaBase"],
+        "sample_strategy": "product_axis_forced_ranges",
+        "sampling": {
+            "force_axis_keys": ["diametro", "alturaBase"],
+            "target_count": 320,
+        },
         "parameters": {
             "diametro": parameter(3, 150, 28),
             "alturaBase": parameter(1, 10, 6),
@@ -191,7 +236,7 @@ PRODUCT_CONFIGS = [
         "sample_strategy": "product_axis_forced_neck_height_ranges",
         "sampling": {
             "force_axis_keys": ["alturaPescoco"],
-            "target_count": 400,
+            "target_count": 600,
         },
         "parameters": {
             "diametro": parameter(3, 150, 28),
@@ -221,6 +266,25 @@ PRODUCT_CONFIGS = [
         "variant_slug": "sem-haste",
         "has_neck": False,
         "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+        "sample_strategy": "product_axis_forced_ranges",
+        "sampling": {
+            "force_axis_keys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+            "target_count": 480,
+            "required_samples": [
+                {"tamanhoBaseX": 37},
+                {"tamanhoBaseX": 38},
+                {"tamanhoBaseX": 39},
+                {"tamanhoBaseX": 40},
+                {"tamanhoBaseX": 41},
+                {"tamanhoBaseX": 42},
+                {"tamanhoBaseY": 37},
+                {"tamanhoBaseY": 38},
+                {"tamanhoBaseY": 39},
+                {"tamanhoBaseY": 40},
+                {"tamanhoBaseY": 41},
+                {"tamanhoBaseY": 42},
+            ],
+        },
         "parameters": {
             "tamanhoBaseX": parameter(3, 150, 50),
             "tamanhoBaseY": parameter(3, 150, 50),
@@ -238,7 +302,15 @@ PRODUCT_CONFIGS = [
         "sample_strategy": "product_axis_forced_neck_height_ranges",
         "sampling": {
             "force_axis_keys": ["alturaPescoco"],
-            "target_count": 480,
+            "target_count": 720,
+            "required_samples": [
+                {"tamanhoBaseY": 8},
+                {"tamanhoBaseY": 9},
+                {"tamanhoBaseY": 10},
+                {"tamanhoBaseY": 11},
+                {"tamanhoBaseY": 12},
+                {"tamanhoBaseY": 13},
+            ],
         },
         "parameters": {
             "tamanhoBaseX": parameter(3, 150, 50),
@@ -422,6 +494,14 @@ def product_variation_plan(product_config):
     defaults = default_parameter_values(product_config)
     plan = []
     seen = set()
+    for overrides in sampling.get("required_samples", []) or []:
+        values = dict(defaults)
+        values.update(overrides)
+        add_planned_variation(plan, seen, values)
+
+    if TARGETED_SAMPLES_ONLY:
+        return plan
+
     add_planned_variation(plan, seen, defaults)
 
     dense_mode = sampling.get("mode") == "dense_xy_axis"
@@ -1195,7 +1275,28 @@ def value_matches(slider_values, key, expected):
         return False
 
 
-def slicer_unsafe_sample_reason(base_name, slider_values):
+def tube_inner_span(product_config, slider_values):
+    constraint = (product_config or {}).get("manufacturing", {}).get("tube_inner_span")
+    if not constraint:
+        return None
+
+    wall = numeric_slider_value(slider_values, constraint.get("wall_thickness_key"), 0)
+    spans = []
+    for key in constraint.get("size_keys", []):
+        size = numeric_slider_value(slider_values, key, 0)
+        offset = float(constraint.get("size_offsets_mm", {}).get(key, 0))
+        spans.append(size + offset - wall * 2)
+    return min(spans) if spans else None
+
+
+def slicer_unsafe_sample_reason(base_name, slider_values, product_config=None):
+    span_constraint = (product_config or {}).get("manufacturing", {}).get("tube_inner_span")
+    inner_span = tube_inner_span(product_config, slider_values)
+    if span_constraint and inner_span is not None:
+        minimum = float(span_constraint.get("minimum_mm", 0))
+        if inner_span < minimum - 0.0001:
+            return "tube_inner_span_below_{}mm".format(format_input_value(minimum))
+
     if base_name == "Sapata_Interna_Tubo-Oblongo":
         if (
             value_matches(slider_values, "tamanhoBaseX", 109)
@@ -1228,6 +1329,30 @@ def slicer_unsafe_sample_reason(base_name, slider_values):
             and value_matches(slider_values, "alturaBase", 9)
         ):
             return "empty_or_invalid_export_geometry"
+    return ""
+
+
+def generated_geometry_issue(product_config, slider_values, metric_values):
+    if not product_config:
+        return ""
+
+    requires_neck = (
+        product_config.get("category_slug") == "ponteira-interna-tubo"
+        or product_config.get("has_neck", False)
+    )
+    if not requires_neck:
+        return ""
+
+    expected_height = (
+        numeric_slider_value(slider_values, "alturaBase", 0)
+        + numeric_slider_value(slider_values, "alturaPescoco", 0)
+    )
+    actual_height = float(metric_values.get("bbox_z", 0))
+    if expected_height > 0 and actual_height + 0.1 < expected_height:
+        return "incomplete_neck_geometry_expected_{}mm_got_{}mm".format(
+            format_input_value(expected_height),
+            format_input_value(actual_height),
+        )
     return ""
 
 
@@ -1323,7 +1448,15 @@ def process_file(Grasshopper, gh_path):
 
     variation_plan = product_variation_plan(product_config)
     existing_signatures = existing_product_signatures(product_config)
-    if variation_plan:
+    if TARGETED_SAMPLES_ONLY:
+        plan_signatures = [
+            public_parameter_signature(product_config, values)
+            for values in variation_plan
+        ]
+        target_valid = len([signature for signature in plan_signatures if signature not in existing_signatures])
+        max_attempts = len(variation_plan)
+        log("Plano de amostragem direcionado: {} variacoes, {} novas no append".format(len(variation_plan), target_valid))
+    elif variation_plan:
         plan_signatures = [
             public_parameter_signature(product_config, values)
             for values in variation_plan
@@ -1358,7 +1491,7 @@ def process_file(Grasshopper, gh_path):
             continue
         if signature:
             seen_parameter_signatures.add(signature)
-        unsafe_reason = slicer_unsafe_sample_reason(base_name, slider_values)
+        unsafe_reason = slicer_unsafe_sample_reason(base_name, slider_values, product_config)
         if unsafe_reason:
             log("Amostra descartada antes do export: {} tentativa {} ({})".format(base_name, attempt_index + 1, unsafe_reason))
             continue
@@ -1380,6 +1513,10 @@ def process_file(Grasshopper, gh_path):
             log("Rhino nao adicionou solido valido no {}: {} tentativa {}".format(selection_source, base_name, attempt_index + 1))
             continue
         metric_values = metrics(rhino_object)
+        geometry_issue = generated_geometry_issue(product_config, slider_values, metric_values)
+        if geometry_issue:
+            log("Amostra descartada apos gerar geometria: {} ({})".format(sample_id, geometry_issue))
+            continue
         output_path = os.path.join(OUT_DIR, sample_id + ".3mf")
         stl_path = os.path.join(STL_DIR, sample_id + ".stl")
         export_3mf(output_path, object_id)
