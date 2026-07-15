@@ -31,7 +31,7 @@ O admin oferece **Sincronizar pedidos pagos**. A operacao usa `getGrasshopperPay
 O modelo `print_jobs` registra:
 
 - `origin`: `source`, `sourceId`, `sourceItemId`, rotulo e metadados. Pedidos usam `site_order`, mas a tabela e a API nao dependem dessa origem;
-- `contract`: snapshot imutavel das versoes, engine, modo de geracao, arquivo fonte, parametros, defaults tecnicos e saidas solicitadas;
+- `contract`: snapshot imutavel das versoes, engine, modo de geracao, arquivo fonte, parametros publicos de configuracao, transformacoes, valores finais dos sliders, defaults tecnicos e saidas solicitadas;
 - `material`: codigo, cor, perfil, lote e notas;
 - `priority`, `attempts`, `maxAttempts`, disponibilidade e lease;
 - `artifacts`: tipo, nome, URI, checksum, tamanho e metadados;
@@ -52,7 +52,7 @@ Artefatos e erros permanecem no job e nao criam status, gate ou bloqueio CAD no 
 Todas as rotas abaixo chamam `assertAdminAccess`. Um worker pode enviar `ADMIN_ACCESS_TOKEN` em `x-admin-token` ou `Authorization: Bearer ...`; o admin no navegador usa a sessao HttpOnly.
 
 1. `POST /api/admin/print-jobs/claim` com `{ "workerId": "cad-windows-01" }` reserva o proximo job por prioridade e retorna `job` + `claimToken`.
-2. O worker executa a geracao fora do site, usando apenas o snapshot em `job.contract` e `job.material`.
+2. O worker executa a geracao fora do site, usando apenas o snapshot em `job.contract` e `job.material`. Em `job.contract`, `configurationParameters` preserva as medidas informadas pelo cliente e `parameters` contem os valores finais que devem ser aplicados aos sliders do Grasshopper depois de `parameterTransforms`.
 3. `POST /api/admin/print-jobs/{id}/complete` recebe `claimToken`, um `eventId` unico e `artifacts`.
 4. Em erro, `POST /api/admin/print-jobs/{id}/fail` recebe `claimToken`, `eventId`, `error` e `retryAfterSeconds` opcional.
 

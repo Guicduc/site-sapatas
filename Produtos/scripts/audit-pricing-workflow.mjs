@@ -422,16 +422,20 @@ function testSlicerSamplePricingSanity(formats) {
       const samples = samplesForSurface(item.categorySlug, item.formatSlug, variantSlug);
       for (const sample of samples) {
         const directUnitCostBrl = Number(sample.productionCostBrl || 0);
-        const unitPriceBrl = Math.max(
-          0.3,
-          roundSalePrice(directUnitCostBrl * saleMultiplierForFormat(item.format))
-        );
+        const breakdown = calculatePriceBreakdown(item.format, sample.params, 1);
+        const unitPriceBrl = Number(breakdown.unitPriceBrl || 0);
         const netRevenueBrl = unitPriceBrl * 0.94;
         const hasPositiveMargin = netRevenueBrl + 0.0001 >= directUnitCostBrl;
 
-        if (!hasPositiveMargin || unitPriceBrl <= 0 || directUnitCostBrl <= 0) {
+        if (
+          breakdown.pricingAvailable === false
+          || !hasPositiveMargin
+          || unitPriceBrl <= 0
+          || directUnitCostBrl <= 0
+        ) {
           failures.push({
             sampleId: sample.sampleId,
+            pricingMode: breakdown.pricingMode,
             unitPriceBrl,
             directUnitCostBrl,
             netRevenueBrl: roundMoney(netRevenueBrl)
@@ -588,14 +592,6 @@ function diagnoseDrops(points) {
   }
 
   return drops;
-}
-
-function saleMultiplierForFormat(format) {
-  return format.skuPrefix?.includes("PI") ? 1.7 : 4;
-}
-
-function roundSalePrice(value) {
-  return roundMoney(Math.ceil(Number(value || 0) / 0.25) * 0.25);
 }
 
 function representativeValues(parameter, defaultValue) {
