@@ -2,507 +2,248 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  calculatePriceBreakdown,
+  getInitialValues,
+  productCategories,
+  validateConfiguration
+} from "../../lib/configurator-data.js";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = process.env.TRACO_BASE_REPO
-  ? path.resolve(process.env.TRACO_BASE_REPO)
-  : path.resolve(scriptDir, "../..");
-const datasetPath = path.join(repoRoot, "Produtos", "datasets", "slicer_pricing_dataset.csv");
-
-const pricingAssumptions = {
-  tpuFilamentBrlPerKg: 170,
-  printWasteRate: 0.05,
-  printerPurchasePriceBrl: 7000,
-  printerLifetimeHours: 7000,
-  annualOperatingHours: 2000,
-  annualMaintenanceBrl: 600,
-  averagePowerDrawW: 200,
-  electricityTariffBrlPerKwh: 0.95,
-  minOrderPriceBrl: 0.3
-};
-
-const progressiveDimensionKeys = new Set(["diametro", "diametroBase", "tamanhoBaseX", "tamanhoBaseY"]);
+const repoRoot = path.resolve(scriptDir, "../..");
+const outputPath = path.join(repoRoot, "Produtos", "logs", "pricing-sweep-diagnostics.json");
+const checkMode = process.argv.includes("--check");
 const monotonicToleranceBrl = Number(process.env.PRICING_MONOTONIC_TOLERANCE_BRL || 0.05);
-const salePriceRoundingIncrementBrl = 0.25;
-const saleMultipliers = {
-  "ponteira-interna-tubo": 1.7,
-  "sapata-base-lisa": 4
-};
-
-function progressiveAxisKeysForFormat(format) {
-  return new Set(progressiveDimensionKeys);
-}
-
-function saleMultiplierForFormat(format) {
-  return saleMultipliers[format.categorySlug] || 1;
-}
-
-function roundSalePrice(value) {
-  return roundMoney(Math.ceil(Number(value || 0) / salePriceRoundingIncrementBrl) * salePriceRoundingIncrementBrl);
-}
-
-const formats = [
-  {
-    categorySlug: "ponteira-interna-tubo",
-    formatSlug: "redondo",
-    variantSlug: "sem-haste",
-    label: "Tubo redondo",
-    defaults: { diametroBase: 28, alturaBase: 6, alturaPescoco: 18, paredeTubo: 1.5 },
-    parameters: [
-      { key: "diametroBase", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 },
-      { key: "alturaPescoco", min: 5, max: 35, step: 1 },
-      { key: "paredeTubo", min: 0.8, max: 8, step: 0.1 }
-    ]
-  },
-  {
-    categorySlug: "ponteira-interna-tubo",
-    formatSlug: "quadrado",
-    variantSlug: "sem-haste",
-    label: "Tubo quadrado",
-    defaults: { tamanhoBaseX: 30, tamanhoBaseY: 30, alturaBase: 6, alturaPescoco: 20, paredeTubo: 1.5 },
-    parameters: [
-      { key: "tamanhoBaseX", min: 3, max: 150, step: 1 },
-      { key: "tamanhoBaseY", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 },
-      { key: "alturaPescoco", min: 5, max: 35, step: 1 },
-      { key: "paredeTubo", min: 0.8, max: 8, step: 0.1 }
-    ]
-  },
-  {
-    categorySlug: "ponteira-interna-tubo",
-    formatSlug: "oblongo",
-    variantSlug: "sem-haste",
-    label: "Tubo oblongo",
-    defaults: { tamanhoBaseX: 36, tamanhoBaseY: 18, alturaBase: 6, alturaPescoco: 18, paredeTubo: 1.5 },
-    parameters: [
-      { key: "tamanhoBaseX", min: 3, max: 150, step: 1 },
-      { key: "tamanhoBaseY", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 },
-      { key: "alturaPescoco", min: 5, max: 35, step: 1 },
-      { key: "paredeTubo", min: 0.8, max: 8, step: 0.1 }
-    ]
-  },
-  {
-    categorySlug: "sapata-base-lisa",
-    formatSlug: "redonda",
-    variantSlug: "sem-haste",
-    label: "Lisa redonda",
-    defaults: { diametro: 28, alturaBase: 6 },
-    parameters: [
-      { key: "diametro", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 }
-    ]
-  },
-  {
-    categorySlug: "sapata-base-lisa",
-    formatSlug: "redonda",
-    variantSlug: "haste",
-    label: "Lisa redonda haste",
-    defaults: { diametro: 28, alturaBase: 6, alturaPescoco: 12, diametroPescoco: 8 },
-    parameters: [
-      { key: "diametro", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 },
-      { key: "alturaPescoco", min: 5, max: 35, step: 1 },
-      { key: "diametroPescoco", min: 3, max: 15, step: 1 }
-    ]
-  },
-  {
-    categorySlug: "sapata-base-lisa",
-    formatSlug: "quadrada",
-    variantSlug: "sem-haste",
-    label: "Lisa quadrada",
-    defaults: { tamanhoBaseX: 50, tamanhoBaseY: 50, alturaBase: 7 },
-    parameters: [
-      { key: "tamanhoBaseX", min: 3, max: 150, step: 1 },
-      { key: "tamanhoBaseY", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 }
-    ]
-  },
-  {
-    categorySlug: "sapata-base-lisa",
-    formatSlug: "quadrada",
-    variantSlug: "haste",
-    label: "Lisa quadrada haste",
-    defaults: { tamanhoBaseX: 50, tamanhoBaseY: 50, alturaBase: 7, alturaPescoco: 12, diametroPescoco: 8 },
-    parameters: [
-      { key: "tamanhoBaseX", min: 3, max: 150, step: 1 },
-      { key: "tamanhoBaseY", min: 3, max: 150, step: 1 },
-      { key: "alturaBase", min: 1, max: 10, step: 1 },
-      { key: "alturaPescoco", min: 5, max: 35, step: 1 },
-      { key: "diametroPescoco", min: 3, max: 15, step: 1 }
-    ]
-  }
-];
+const inverseDimensionKeys = new Set(["paredeTubo"]);
 
 async function main() {
-  const checkMode = process.argv.includes("--check");
-  const rows = await readDataset();
-  const samples = rows
-    .filter((row) => row.slice_status === "ok" && Number(row.material_grams || 0) > 0 && Number(row.print_minutes || 0) > 0)
-    .map((row) => ({
-      sampleId: row.sample_id,
-      categorySlug: row.category_slug,
-      formatSlug: row.format_slug,
-      variantSlug: row.variant_slug,
-      params: Object.fromEntries(
-        ["diametro", "diametroBase", "tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco", "paredeTubo"]
-          .filter((key) => row[key] !== "")
-          .map((key) => [key, Number(row[key])])
-      ),
-      materialGrams: Number(row.material_grams),
-      printMinutes: Number(row.print_minutes)
-    }));
-
   const sweepSummary = [];
-  const worstDrops = [];
-  const coverageSummary = [];
+  const failures = [];
 
-  for (const format of formats) {
-    const candidates = samples.filter((sample) => sample.categorySlug === format.categorySlug && sample.formatSlug === format.formatSlug && sample.variantSlug === format.variantSlug);
-    coverageSummary.push(buildCoverageSummary(format, candidates));
+  for (const category of productCategories) {
+    for (const format of category.formats.filter((item) => item.status === "active")) {
+      for (const variant of variantsForFormat(format)) {
+        const defaults = valuesForVariant(format, variant);
+        const surfaceId = calculatePriceBreakdown(format, defaults, 1).surfaceId;
 
-    for (const parameter of format.parameters) {
-      const points = [];
-      const values = range(parameter.min, parameter.max, parameter.step);
-      for (const value of values) {
-        const request = { ...format.defaults, [parameter.key]: value };
-        const resolved = resolveByCurrentEngine(
-          candidates,
-          request,
-          format.parameters.map((item) => ({ ...item, defaultValue: format.defaults[item.key] })),
-          progressiveAxisKeysForFormat(format)
-        );
-        const unitCost = Math.max(
-          productionCost(resolved),
-          Number(resolved.progressiveUnitCostFloorBrl || 0),
-          pricingAssumptions.minOrderPriceBrl
-        );
-        const cost = roundSalePrice(unitCost * saleMultiplierForFormat(format));
-        points.push({ value, cost, materialGrams: resolved.materialGrams, printMinutes: resolved.printMinutes, mode: resolved.mode });
+        for (const parameter of format.parameters) {
+          if (parameter.type === "boolean" || (parameter.dependsOn && !defaults[parameter.dependsOn])) {
+            continue;
+          }
+
+          for (const context of sweepContexts(format, variant, parameter)) {
+            const points = range(parameter.min, parameter.max, parameter.step).map((value) => {
+              const values = { ...context.values, [parameter.key]: value };
+              const configurationIssues = validateConfiguration(format, values);
+              const breakdown = calculatePriceBreakdown(format, values, 1);
+              return {
+                value,
+                unitPriceBrl: breakdown.unitPriceBrl,
+                rawUnitPriceBrl: rawUnitPrice(format, breakdown),
+                pricingMode: breakdown.pricingMode,
+                configurationValid: configurationIssues.length === 0,
+                pricingAvailable: breakdown.pricingAvailable,
+                issues: configurationIssues
+              };
+            });
+            const validPoints = points.filter((point) => point.configurationValid);
+            const unexpectedUnavailable = validPoints.filter((point) => !point.pricingAvailable);
+            const direction = inverseDimensionKeys.has(parameter.key) ? "variable" : "nondecreasing";
+            const drops = direction === "nondecreasing" ? findDrops(validPoints) : [];
+            const uniquePrices = new Set(validPoints.map((point) => point.unitPriceBrl)).size;
+            const plateaus = findPlateaus(validPoints);
+            const sensitivityRequired = context.id === "default" && validPoints.length > 1;
+            const sensitive = !sensitivityRequired || uniquePrices > 1;
+            const status =
+              drops.length === 0 &&
+              unexpectedUnavailable.length === 0 &&
+              sensitive
+              ? "pass"
+              : "fail";
+            const report = {
+              surfaceId,
+              parameter: parameter.key,
+              contextId: context.id,
+              context: Object.fromEntries(
+                Object.entries(context.values).filter(([key]) => key !== parameter.key)
+              ),
+              direction,
+              points: points.length,
+              validPoints: validPoints.length,
+              invalidConfigurationPoints: points.length - validPoints.length,
+              uniquePrices,
+              sensitive,
+              drops: drops.slice(0, 20),
+              unexpectedUnavailable: unexpectedUnavailable.slice(0, 20),
+              referenceIdwDifferences: validPoints
+                .filter((point) => Math.abs(point.unitPriceBrl - point.rawUnitPriceBrl) > monotonicToleranceBrl)
+                .slice(0, 20),
+              plateauSegments: plateaus.length,
+              longestPlateau: plateaus.reduce(
+                (longest, plateau) => Math.max(longest, plateau.to - plateau.from),
+                0
+              ),
+              minPriceBrl: validPoints.length > 0
+                ? Math.min(...validPoints.map((point) => point.unitPriceBrl))
+                : null,
+              maxPriceBrl: validPoints.length > 0
+                ? Math.max(...validPoints.map((point) => point.unitPriceBrl))
+                : null,
+              status
+            };
+
+            sweepSummary.push(report);
+            if (status === "fail") {
+              failures.push(report);
+            }
+          }
+        }
       }
-
-      const diagnostics = diagnosePoints(points);
-      sweepSummary.push({
-        family: `${format.categorySlug}:${format.formatSlug}:${format.variantSlug}`,
-        parameter: parameter.key,
-        samples: candidates.length,
-        points: points.length,
-        drops: diagnostics.drops.length,
-        plateauSegments: diagnostics.plateauSegments.length,
-        longestPlateau: diagnostics.longestPlateau,
-        minCost: roundMoney(Math.min(...points.map((point) => point.cost))),
-        maxCost: roundMoney(Math.max(...points.map((point) => point.cost)))
-      });
-      worstDrops.push(
-        ...diagnostics.drops.slice(0, 3).map((drop) => ({
-          family: `${format.categorySlug}:${format.formatSlug}:${format.variantSlug}`,
-          parameter: parameter.key,
-          ...drop
-        }))
-      );
     }
   }
 
-  const result = { monotonicToleranceBrl, coverageSummary, sweepSummary, worstDrops: worstDrops.slice(0, 40) };
-  const outputPath = path.join(repoRoot, "Produtos", "logs", "pricing-sweep-diagnostics.json");
+  const result = {
+    generatedAt: new Date().toISOString(),
+    engine: "lib/configurator-data.js#calculatePriceBreakdown",
+    monotonicToleranceBrl,
+    summary: {
+      status: failures.length > 0 ? "fail" : "pass",
+      sweeps: sweepSummary.length,
+      failed: failures.length
+    },
+    sweepSummary
+  };
+
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, `${JSON.stringify(result, null, 2)}\n`, "utf8");
 
-  const missingFamilies = coverageSummary.filter((summary) => summary.samples === 0);
-  const totalDrops = sweepSummary.reduce((sum, summary) => sum + summary.drops, 0);
-
-  if (!checkMode) {
-    console.log(JSON.stringify(result, null, 2));
-    return;
-  }
-
   console.log(
-    [
-      `Pricing check: ${totalDrops} quedas em ${sweepSummary.length} sweeps.`,
-      `Tolerancia monotonicidade: R$ ${monotonicToleranceBrl.toFixed(2)}.`,
-      `Familias sem amostras Orca: ${missingFamilies.length}.`,
-      `Relatorio: ${outputPath}`
-    ].join("\n")
+    `Pricing check real: ${sweepSummary.length - failures.length}/${sweepSummary.length} sweeps aprovados; ${failures.length} falha(s).`
   );
+  console.log(`Relatorio: ${outputPath}`);
 
-  if (totalDrops > 0 || missingFamilies.length > 0) {
+  if (checkMode && failures.length > 0) {
     process.exitCode = 1;
   }
 }
 
-function resolveByCurrentEngine(candidates, requestedParams, parameters, progressiveAxisKeys) {
-  const activeKeys = Object.keys(requestedParams).filter((key) => candidates.some((sample) => Number.isFinite(Number(sample.params?.[key]))));
-  const ranges = parameterRanges(candidates, activeKeys);
-  const exact = findExactSlicerSample(candidates, requestedParams, activeKeys);
-  const resolved = interpolatedSlicerMetrics(candidates, requestedParams, activeKeys, ranges);
-  const progressiveUnitCostFloorBrl = progressiveSlicerUnitCostFloor(candidates, requestedParams, activeKeys, ranges, parameters, progressiveAxisKeys);
+function variantsForFormat(format) {
+  return format.parameters.some((parameter) => parameter.key === "pescoco")
+    ? ["sem-haste", "haste"]
+    : ["sem-haste"];
+}
 
+function valuesForVariant(format, variant) {
   return {
-    materialGrams: resolved.materialGrams,
-    printMinutes: resolved.printMinutes,
-    progressiveUnitCostFloorBrl,
-    mode: exact ? "exact" : "interpolated"
+    ...getInitialValues(format),
+    ...(variant === "haste" ? { pescoco: true } : { pescoco: false })
   };
 }
 
-function buildCoverageSummary(format, candidates) {
-  return {
-    family: `${format.categorySlug}:${format.formatSlug}:${format.variantSlug}`,
-    samples: candidates.length,
-    uniquePerParameter: Object.fromEntries(
-      format.parameters.map((parameter) => [
-        parameter.key,
-        new Set(candidates.map((sample) => sample.params?.[parameter.key]).filter((value) => value !== undefined)).size
-      ])
-    ),
-    duplicateParamVectors: candidates.length - new Set(candidates.map((sample) => JSON.stringify(format.parameters.map((parameter) => sample.params?.[parameter.key] ?? "")))).size
-  };
+function rawUnitPrice(format, breakdown) {
+  if (!breakdown.pricingAvailable) {
+    return 0;
+  }
+  const multiplier = format.skuPrefix?.includes("PI") ? 1.7 : 4;
+  return Math.max(0.3, roundMoneyUp(Number(breakdown.orcaDirectUnitCostBrl || 0) * multiplier));
 }
 
-function diagnosePoints(points) {
+function roundMoneyUp(value) {
+  return Math.ceil(Number(value || 0) / 0.25) * 0.25;
+}
+
+function sweepContexts(format, variant, sweptParameter) {
+  const defaults = valuesForVariant(format, variant);
+  const activeParameters = format.parameters.filter((parameter) => {
+    return parameter.type !== "boolean" && (!parameter.dependsOn || defaults[parameter.dependsOn]);
+  });
+  const contexts = [{ id: "default", values: defaults }];
+
+  for (const parameter of activeParameters) {
+    if (parameter.key === sweptParameter.key) {
+      continue;
+    }
+    contexts.push(
+      { id: `${parameter.key}=min`, values: { ...defaults, [parameter.key]: parameter.min } },
+      { id: `${parameter.key}=max`, values: { ...defaults, [parameter.key]: parameter.max } }
+    );
+  }
+
+  const wall = activeParameters.find((parameter) => parameter.key === "paredeTubo");
+  if (wall && sweptParameter.key !== wall.key) {
+    for (const value of [0.8, 2, 4, 6, 8]) {
+      if (value >= wall.min && value <= wall.max) {
+        contexts.push({ id: `paredeTubo=${value}`, values: { ...defaults, paredeTubo: value } });
+      }
+    }
+  }
+
+  const unique = new Map();
+  for (const context of contexts) {
+    const signature = activeParameters.map((parameter) => context.values[parameter.key]).join("|");
+    unique.set(signature, unique.has(signature) ? unique.get(signature) : context);
+  }
+  return [...unique.values()];
+}
+
+function findDrops(points) {
   const drops = [];
-  const plateauSegments = [];
-  let plateauStart = null;
-
   for (let index = 1; index < points.length; index += 1) {
     const previous = points[index - 1];
     const current = points[index];
-    const delta = current.cost - previous.cost;
-
+    const delta = current.unitPriceBrl - previous.unitPriceBrl;
     if (delta < -monotonicToleranceBrl) {
       drops.push({
         fromValue: previous.value,
         toValue: current.value,
-        fromCost: roundMoney(previous.cost),
-        toCost: roundMoney(current.cost),
-        delta: roundMoney(delta)
+        fromPriceBrl: previous.unitPriceBrl,
+        toPriceBrl: current.unitPriceBrl,
+        deltaBrl: roundMoney(delta)
       });
     }
+  }
+  return drops;
+}
 
-    if (Math.abs(delta) < 0.005) {
-      plateauStart ??= previous.value;
-    } else if (plateauStart !== null) {
-      plateauSegments.push({ from: plateauStart, to: previous.value });
-      plateauStart = null;
+function findPlateaus(points) {
+  const plateaus = [];
+  let start = null;
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const adjacent = Math.abs(current.value - previous.value) > 0;
+    if (adjacent && Math.abs(current.unitPriceBrl - previous.unitPriceBrl) < 0.005) {
+      start ??= previous.value;
+    } else if (start !== null) {
+      plateaus.push({ from: start, to: previous.value });
+      start = null;
     }
   }
-
-  if (plateauStart !== null) {
-    plateauSegments.push({ from: plateauStart, to: points.at(-1).value });
+  if (start !== null && points.length > 0) {
+    plateaus.push({ from: start, to: points.at(-1).value });
   }
-
-  return {
-    drops,
-    plateauSegments,
-    longestPlateau: plateauSegments.reduce((longest, segment) => Math.max(longest, segment.to - segment.from), 0)
-  };
-}
-
-function parameterRanges(candidates, activeKeys) {
-  return Object.fromEntries(
-    activeKeys.map((key) => {
-      const values = candidates.map((sample) => Number(sample.params?.[key])).filter((value) => Number.isFinite(value));
-      return [key, { min: Math.min(...values), max: Math.max(...values) }];
-    })
-  );
-}
-
-function normalizedSampleDistance(sample, requestedParams, ranges, activeKeys) {
-  if (activeKeys.length === 0) {
-    return 0;
-  }
-
-  return Math.sqrt(
-    activeKeys.reduce((sum, key) => {
-      const range = ranges[key];
-      const scale = Math.max(1, range.max - range.min);
-      return sum + Math.pow((Number(sample.params?.[key] || 0) - Number(requestedParams[key] || 0)) / scale, 2);
-    }, 0)
-  );
-}
-
-function weightedSlicerMetrics(samples) {
-  const weighted = samples.reduce(
-    (sum, sample) => {
-      const weight = 1 / Math.pow(sample.distance + 0.0001, 2);
-      return {
-        materialGrams: sum.materialGrams + sample.materialGrams * weight,
-        printMinutes: sum.printMinutes + sample.printMinutes * weight,
-        weight: sum.weight + weight
-      };
-    },
-    { materialGrams: 0, printMinutes: 0, weight: 0 }
-  );
-
-  return {
-    materialGrams: weighted.materialGrams / weighted.weight,
-    printMinutes: weighted.printMinutes / weighted.weight
-  };
-}
-
-function interpolatedSlicerMetrics(candidates, requestedParams, activeKeys, ranges) {
-  const exact = findExactSlicerSample(candidates, requestedParams, activeKeys);
-  if (exact) {
-    return {
-      materialGrams: Number(exact.materialGrams || 0),
-      printMinutes: Number(exact.printMinutes || 0)
-    };
-  }
-
-  const nearestSamples = candidates
-    .map((sample) => ({ ...sample, distance: normalizedSampleDistance(sample, requestedParams, ranges, activeKeys) }))
-    .sort((left, right) => left.distance - right.distance)
-    .slice(0, 8);
-
-  return weightedSlicerMetrics(nearestSamples);
-}
-
-function findExactSlicerSample(candidates, requestedParams, activeKeys) {
-  return candidates.find((sample) => activeKeys.every((key) => Math.abs(Number(sample.params?.[key] || 0) - Number(requestedParams[key] || 0)) <= 0.01));
-}
-
-function progressiveSlicerUnitCostFloor(candidates, requestedParams, activeKeys, ranges, parameters, progressiveAxisKeys) {
-  let floor = productionCost(interpolatedSlicerMetrics(candidates, requestedParams, activeKeys, ranges));
-
-  const dominatedSamples = candidates.filter((sample) => {
-    return activeKeys.every((key) => {
-      const sampleValue = Number(sample.params?.[key]);
-      const requestedValue = Number(requestedParams[key]);
-      return Number.isFinite(sampleValue) && Number.isFinite(requestedValue) && sampleValue <= requestedValue + 0.01;
-    });
-  });
-
-  for (const sample of dominatedSamples) {
-    floor = Math.max(floor, productionCost(sample));
-  }
-
-  const parameterByKey = new Map(parameters.map((parameter) => [parameter.key, parameter]));
-  for (const key of activeKeys) {
-    if (!progressiveAxisKeys.has(key)) {
-      continue;
-    }
-
-    const parameter = parameterByKey.get(key);
-    const range = ranges[key];
-    if (!parameter || !range) {
-      continue;
-    }
-
-    const currentValue = Number(requestedParams[key] || 0);
-    const minValue = Math.max(Number(parameter.min ?? range.min), range.min);
-    const maxValue = Math.min(currentValue, range.max);
-    const step = Math.max(Number(parameter.step || 1), 0.01);
-
-    for (const value of rangeValues(minValue, maxValue, step)) {
-      const metrics = interpolatedSlicerMetrics(candidates, { ...requestedParams, [key]: value }, activeKeys, ranges);
-      floor = Math.max(floor, productionCost(metrics));
-    }
-  }
-
-  return floor;
-}
-
-function rangeValues(min, max, step) {
-  if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) {
-    return [];
-  }
-
-  const values = [];
-  const decimals = step < 1 ? 2 : 0;
-  const limit = 300;
-  for (let value = min; value <= max + 0.000001 && values.length < limit; value += step) {
-    values.push(roundMetric(value, decimals));
-  }
-  return values;
-}
-
-function productionCost({ materialGrams, printMinutes }) {
-  const materialWithWasteGrams = materialGrams * (1 + pricingAssumptions.printWasteRate);
-  const printHours = printMinutes / 60;
-  const materialCostBrl = materialWithWasteGrams * (pricingAssumptions.tpuFilamentBrlPerKg / 1000);
-  const energyCostBrl =
-    (pricingAssumptions.averagePowerDrawW / 1000) *
-    printHours *
-    pricingAssumptions.electricityTariffBrlPerKwh *
-    (1 + pricingAssumptions.printWasteRate);
-  const maintenanceCostBrl =
-    (pricingAssumptions.annualMaintenanceBrl / pricingAssumptions.annualOperatingHours) * printHours;
-  const printerWearCostBrl =
-    (pricingAssumptions.printerPurchasePriceBrl / pricingAssumptions.printerLifetimeHours) *
-    printHours *
-    (1 + pricingAssumptions.printWasteRate);
-  return Math.max(
-    pricingAssumptions.minOrderPriceBrl,
-    materialCostBrl + energyCostBrl + maintenanceCostBrl + printerWearCostBrl
-  );
-}
-
-async function readDataset() {
-  const text = await fs.readFile(datasetPath, "utf8");
-  const records = parseCsv(text);
-  const headers = records[0] || [];
-  return records.slice(1).map((record) => Object.fromEntries(headers.map((header, index) => [header, record[index] ?? ""])));
-}
-
-function parseCsv(text) {
-  const records = [];
-  let record = [];
-  let field = "";
-  let quoted = false;
-
-  for (let index = 0; index < text.length; index += 1) {
-    const char = text[index];
-    const next = text[index + 1];
-    if (quoted) {
-      if (char === '"' && next === '"') {
-        field += '"';
-        index += 1;
-      } else if (char === '"') {
-        quoted = false;
-      } else {
-        field += char;
-      }
-    } else if (char === '"') {
-      quoted = true;
-    } else if (char === ",") {
-      record.push(field);
-      field = "";
-    } else if (char === "\n") {
-      record.push(field);
-      records.push(record);
-      record = [];
-      field = "";
-    } else if (char !== "\r") {
-      field += char;
-    }
-  }
-
-  if (field || record.length > 0) {
-    record.push(field);
-    records.push(record);
-  }
-
-  return records;
+  return plateaus;
 }
 
 function range(min, max, step) {
   const values = [];
+  const decimals = step < 1 ? 2 : 0;
   for (let value = min; value <= max + 0.000001; value += step) {
-    values.push(roundMetric(value, step < 1 ? 1 : 0));
+    values.push(round(value, decimals));
   }
   return values;
 }
 
 function roundMoney(value) {
-  return Math.round(Number(value || 0) * 100) / 100;
+  return round(value, 2);
 }
 
-function roundMetric(value, decimals = 2) {
+function round(value, decimals) {
   const factor = Math.pow(10, decimals);
   return Math.round(Number(value || 0) * factor) / factor;
 }
 
 main().catch((error) => {
-  console.error(error);
-  process.exit(1);
+  console.error(error.message);
+  process.exitCode = 1;
 });

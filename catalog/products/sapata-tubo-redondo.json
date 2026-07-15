@@ -2,7 +2,7 @@
   "productId": "sapata-tubo-redondo",
   "status": "active",
   "name": "Tubo redondo",
-  "description": "Para tubo redondo medido pelo diâmetro interno real.",
+  "description": "Para tubo redondo medido pelo diâmetro externo real e pela espessura da parede.",
   "category": { "slug": "ponteira-interna-tubo", "formatSlug": "redondo" },
   "seo": { "familySlug": "sapata-tubo-redondo" },
   "skuPrefix": "BF-RD-PI",
@@ -22,10 +22,18 @@
   "finishes": [],
   "leadTimeBaseDays": 5,
   "generationMode": "local_manual",
+  "manufacturing": {
+    "tubeInnerSpan": {
+      "sizeKeys": ["diametroBase"],
+      "sizeOffsetsMm": {},
+      "wallThicknessKey": "paredeTubo",
+      "minimumMm": 5
+    }
+  },
   "drawingType": "tube-round",
-  "notes": ["Meça o tubo por dentro, depois da pintura ou cromagem."],
+  "notes": ["Informe o diâmetro externo real do tubo; a parede determina o vão interno disponível."],
   "parameters": [
-    { "key": "diametroBase", "label": "Tamanho base (Ø)", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
+    { "key": "diametroBase", "label": "Diâmetro externo do tubo (Ø)", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
     { "key": "alturaBase", "label": "Altura base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
     { "key": "alturaPescoco", "label": "Altura pescoço", "type": "dimension", "unit": "mm", "min": 5, "max": 35, "step": 1, "default": 18, "role": "neck-height" },
     { "key": "paredeTubo", "label": "Parede tubo", "type": "dimension", "unit": "mm", "min": 0.8, "max": 8, "step": 0.1, "default": 1.5, "role": "wall-thickness" }
