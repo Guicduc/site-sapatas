@@ -668,6 +668,29 @@ section {
   line-height: 1.4;
 }
 
+@media (min-width: 981px) {
+  /* Reserve the shared text rhythm while cards sit side by side. Longer copy still grows. */
+  .category-grid > .category-card {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .category-grid > .category-card .category-card__body {
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .category-grid > .category-card .eyebrow {
+    min-block-size: 1.55em;
+  }
+
+  .category-grid > .category-card h2 {
+    min-block-size: calc(2 * 1.08em);
+  }
+
+  .category-grid > .category-card p:not(.eyebrow) {
+    min-block-size: calc(2 * 1.4em);
+  }
+}
+
 .meta-list,
 .format-preview,
 .chip-row,
@@ -5666,6 +5689,10 @@ summary {
   }
 
   .category-card__image {
+    aspect-ratio: 1.65 / 1;
+  }
+
+  .category-card__carousel .product-image-carousel__viewport {
     aspect-ratio: 1.65 / 1;
   }
 
