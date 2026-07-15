@@ -42,11 +42,14 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [added, setAdded] = useState(false);
   const [previewMode, setPreviewMode] = useState("drawing");
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
+  const [orderDocked, setOrderDocked] = useState(false);
   const [measurementSystem, setMeasurementSystem] = useReducer(
     measurementSystemReducer,
     MEASUREMENT_SYSTEMS.METRIC
   );
   const fieldsRef = useRef({});
+  const orderDockRef = useRef(null);
+  const orderDockSlotRef = useRef(null);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -92,6 +95,51 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 
     setActiveVisualIndex((current) => Math.min(current, Math.max(visualImages.length - 1, 0)));
   }, [previewMode, visualImages.length]);
+
+  useEffect(() => {
+    const dock = orderDockRef.current;
+    const slot = orderDockSlotRef.current;
+
+    if (!dock || !slot) {
+      return undefined;
+    }
+
+    const desktopQuery = window.matchMedia("(min-width: 981px)");
+    let frameId = 0;
+
+    function updateDockPosition() {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        if (!desktopQuery.matches) {
+          slot.style.removeProperty("--configurator-order-height");
+          setOrderDocked(false);
+          return;
+        }
+
+        const dockHeight = dock.offsetHeight;
+        const dockingBoundary = window.innerHeight - dockHeight - 12;
+        const shouldDock = slot.getBoundingClientRect().top > dockingBoundary;
+
+        slot.style.setProperty("--configurator-order-height", `${dockHeight}px`);
+        setOrderDocked((current) => current === shouldDock ? current : shouldDock);
+      });
+    }
+
+    const resizeObserver = new ResizeObserver(updateDockPosition);
+    resizeObserver.observe(dock);
+    desktopQuery.addEventListener?.("change", updateDockPosition);
+    window.addEventListener("resize", updateDockPosition);
+    window.addEventListener("scroll", updateDockPosition, { passive: true });
+    updateDockPosition();
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      desktopQuery.removeEventListener?.("change", updateDockPosition);
+      window.removeEventListener("resize", updateDockPosition);
+      window.removeEventListener("scroll", updateDockPosition);
+    };
+  }, []);
 
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
@@ -183,8 +231,12 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
           </div>
         </div>
 
-        <aside className="configurator-side">
-          <div className={`option-panel${!hasColorChoices && !hasFinishChoices ? " option-panel--compact" : ""}`}>
+        <div
+          ref={orderDockSlotRef}
+          className={`configurator-order-slot${orderDocked ? " is-docked" : ""}`}
+        >
+          <aside ref={orderDockRef} className="configurator-side">
+            <div className={`option-panel${!hasColorChoices && !hasFinishChoices ? " option-panel--compact" : ""}`}>
             <p className="eyebrow">{hasColorChoices || hasFinishChoices ? "Escolhas" : "Pedido"}</p>
             {hasColorChoices ? (
               <ColorSelector colors={category.colors} value={color} onChange={setColor} />
@@ -232,20 +284,21 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                 </button>
               </div>
             </div>
-          </div>
+            </div>
 
-          <ConfigurationSummary
-            format={{ ...format, name: getSummaryProductName(category, format) }}
-            sku={sku}
-            issues={issues}
-            unitPrice={unitPrice}
-            totalPrice={totalPrice}
-            priceBreakdown={priceBreakdown}
-            validForCart={validForCart}
-            added={added}
-            onAddToCart={handleAddToCart}
-          />
-        </aside>
+            <ConfigurationSummary
+              format={{ ...format, name: getSummaryProductName(category, format) }}
+              sku={sku}
+              issues={issues}
+              unitPrice={unitPrice}
+              totalPrice={totalPrice}
+              priceBreakdown={priceBreakdown}
+              validForCart={validForCart}
+              added={added}
+              onAddToCart={handleAddToCart}
+            />
+          </aside>
+        </div>
       </div>
 
       {relatedCategories.length > 0 && (
