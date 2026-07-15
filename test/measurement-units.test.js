@@ -36,6 +36,10 @@ test("valida os limites sem alterar silenciosamente a medida", () => {
   const range = getDisplayRange(parameter, MEASUREMENT_SYSTEMS.IMPERIAL);
 
   assert.deepEqual(range, { min: "0.118", max: "5.906", step: 0.001, unit: "pol" });
+  assert.equal(normalizeMeasurementInput(range.min, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "3");
+  assert.equal(normalizeMeasurementInput(range.max, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "150");
+  assert.equal(normalizeMeasurementInput("0.117", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
+  assert.equal(normalizeMeasurementInput("5.907", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
   assert.equal(normalizeMeasurementInput("0", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
   assert.equal(normalizeMeasurementInput("999", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
   assert.equal(normalizeMeasurementInput("not-a-number", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");

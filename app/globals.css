@@ -1607,14 +1607,26 @@ section {
   border-color: #9f2f25;
 }
 
-.measurement-input__error {
+.measurement-input__control.is-pending {
+  border-style: dashed;
+}
+
+.measurement-input__error,
+.measurement-input__hint {
   display: block;
   width: min(210px, 42vw);
   margin-top: 5px;
-  color: #9f2f25;
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.3;
+}
+
+.measurement-input__error {
+  color: #9f2f25;
+}
+
+.measurement-input__hint {
+  color: var(--ink-soft);
 }
 
 .parameter-range {

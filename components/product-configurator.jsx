@@ -636,7 +636,7 @@ function ConfiguratorFields({
         const displayRange = isBoolean ? null : getDisplayRange(parameter, measurementSystem);
 
         return (
-        <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
+        <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={`${format.slug}:${parameter.key}`}>
           <div className="parameter-field__copy">
             <span>
               <span className="parameter-label">{parameter.label}</span>
@@ -706,7 +706,7 @@ function ConfiguratorFields({
         {issues.length > 0
           ? issues.map((issue) => <span key={issue}>{issue}</span>)
           : hasInvalidInput
-            ? <span>Revise a medida destacada.</span>
+            ? <span>Confirme ou revise a medida em edição.</span>
             : <span>Medidas dentro dos limites.</span>}
       </div>
     </div>
@@ -730,6 +730,7 @@ function MeasurementInput({
     measurementSystem
   ));
   const [inputError, setInputError] = useState("");
+  const [inputPending, setInputPending] = useState(false);
   const lastCommittedValueRef = useRef(null);
   const lastValidValueRef = useRef(String(value ?? parameter.defaultValue ?? parameter.min));
   const previousMeasurementSystemRef = useRef(measurementSystem);
@@ -748,6 +749,7 @@ function MeasurementInput({
         measurementSystem
       ));
       setInputError("");
+      setInputPending(false);
       onValidityChange(true);
 
       if (String(value ?? "") !== "") {
@@ -761,6 +763,21 @@ function MeasurementInput({
 
   function invalidateValue(message) {
     setInputError(message);
+    setInputPending(false);
+    onValidityChange(false);
+  }
+
+  function updateDraftValue(rawValue) {
+    setDraftValue(rawValue);
+    const result = parseMeasurementInput(rawValue, parameter, measurementSystem);
+
+    if (result.error) {
+      invalidateValue(String(rawValue).trim() === "" ? "Informe a medida." : result.error);
+      return;
+    }
+
+    setInputError("");
+    setInputPending(true);
     onValidityChange(false);
   }
 
@@ -778,6 +795,7 @@ function MeasurementInput({
     }
 
     setInputError("");
+    setInputPending(false);
     onValidityChange(true);
     lastValidValueRef.current = result.value;
 
@@ -789,7 +807,7 @@ function MeasurementInput({
 
   return (
     <div className="measurement-input">
-      <div className={`measurement-input__control${inputError ? " has-error" : ""}`}>
+      <div className={`measurement-input__control${inputError ? " has-error" : ""}${inputPending ? " is-pending" : ""}`}>
         <input
           className="parameter-value"
           ref={inputRef}
@@ -797,11 +815,7 @@ function MeasurementInput({
           inputMode={measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL ? "text" : "decimal"}
           value={draftValue}
           disabled={disabled}
-          onChange={(event) => {
-            setDraftValue(event.target.value);
-            setInputError("");
-            onValidityChange(false);
-          }}
+          onChange={(event) => updateDraftValue(event.target.value)}
           onBlur={(event) => {
             if (skipNextBlurRef.current) {
               skipNextBlurRef.current = false;
@@ -828,6 +842,7 @@ function MeasurementInput({
                 measurementSystem
               ));
               setInputError("");
+              setInputPending(false);
               onValidityChange(true);
 
               if (String(value ?? "") !== restoredValue) {
@@ -840,13 +855,18 @@ function MeasurementInput({
           }}
           aria-label={`${parameter.label} em ${displayRange.unit}`}
           aria-invalid={inputError ? "true" : undefined}
-          aria-describedby={inputError ? validationMessageId : undefined}
+          aria-describedby={inputError || inputPending ? validationMessageId : undefined}
         />
         <span aria-hidden="true">{displayRange.unit}</span>
       </div>
       {inputError && (
         <small className="measurement-input__error" id={validationMessageId} role="alert">
           {inputError}
+        </small>
+      )}
+      {inputPending && (
+        <small className="measurement-input__hint" id={validationMessageId}>
+          Confirme com Enter ou saindo do campo.
         </small>
       )}
     </div>
