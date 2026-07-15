@@ -105,15 +105,8 @@ button:disabled {
 
 .brand-mark__logo {
   display: block;
-  width: clamp(148px, 14vw, 198px);
+  width: clamp(188px, 18vw, 258px);
   height: auto;
-}
-
-.brand-mark__icon {
-  display: block;
-  width: 52px;
-  height: 46px;
-  object-fit: contain;
 }
 
 .brand-mark strong,
@@ -5387,11 +5380,6 @@ summary {
     width: clamp(132px, 38vw, 168px);
   }
 
-  .brand-mark__icon {
-    width: 46px;
-    height: 40px;
-  }
-
   .nav-toggle {
     display: inline-flex;
     align-items: center;
@@ -6094,11 +6082,6 @@ summary {
   .cart-remove-confirmation__actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-  }
-
-  .brand-mark__icon {
-    width: 40px;
-    height: 36px;
   }
 
   .nav-toggle {

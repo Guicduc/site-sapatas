@@ -88,21 +88,33 @@ export function CartPage() {
                     </label>
                   </div>
                   <div className="cart-item__details">
-                    {measurements.length > 0 && (
+                    {(measurements.length > 0 || item.color) && (
                       <dl>
-                        <div className="cart-info-block cart-info-block--measures">
-                          <dt>Medidas</dt>
-                          <dd>
-                            {measurements.map((measurement) => (
-                              <span key={measurement.key}>
-                                <span>{measurement.label}</span>
-                                <strong>
-                                  {measurement.value}{measurement.unit ? ` ${measurement.unit}` : ""}
-                                </strong>
+                        {measurements.length > 0 && (
+                          <div className="cart-info-block cart-info-block--measures">
+                            <dt>Medidas</dt>
+                            <dd>
+                              {measurements.map((measurement) => (
+                                <span key={measurement.key}>
+                                  <span>{measurement.label}</span>
+                                  <strong>
+                                    {measurement.value}{measurement.unit ? ` ${measurement.unit}` : ""}
+                                  </strong>
+                                </span>
+                              ))}
+                            </dd>
+                          </div>
+                        )}
+                        {item.color && (
+                          <div className="cart-info-block">
+                            <dt>Cor</dt>
+                            <dd>
+                              <span>
+                                <strong>{item.color}</strong>
                               </span>
-                            ))}
-                          </dd>
-                        </div>
+                            </dd>
+                          </div>
+                        )}
                       </dl>
                     )}
                     <button
