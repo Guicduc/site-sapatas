@@ -126,7 +126,7 @@ PRODUCT_CONFIGS = [
         "manufacturing": {
             "tube_inner_span": {
                 "size_keys": ["diametroBase"],
-                "size_offsets_mm": {"diametroBase": 10},
+                "size_offsets_mm": {},
                 "wall_thickness_key": "paredeTubo",
                 "minimum_mm": 5,
             },

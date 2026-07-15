@@ -152,7 +152,7 @@ A base de slice e precificacao foi reiniciada em uma unica tabela:
 - `Produtos/scripts/gh_export_variations.py`: exporta `.3mf`/`.stl` e cria linhas com parametros do configurador.
 - `Produtos/scripts/orca-slice-dataset.mjs`: le essa mesma tabela e preenche `material_grams` e `print_minutes`.
 - `Produtos/scripts/audit-pricing-models.mjs`: rejeita configuracoes impossiveis e geometrias incompletas antes que contaminem a precificacao.
-- `Produtos/scripts/audit-pricing-coverage.mjs`: mede a cobertura das superficies publicas com validacao cruzada leave-one-out e IDW-8.
+- `Produtos/scripts/audit-pricing-coverage.mjs`: mede a cobertura das superficies publicas com leave-one-out IDW-8 e valida em cinco folds o modelo monotono realmente usado pela loja.
 - `Produtos/scripts/diagnose-pricing-sweeps.mjs`: percorre todos os sliders publicos usando o motor real de `lib/configurator-data.js`.
 - `lib/product-constraints.js`: concentra restricoes cruzadas de fabricacao usadas pelo configurador e pelo pedido.
 - `lib/pricing-engine.js`: continua atendendo a validacao administrativa de um STL ja gerado com Orca.

@@ -31,58 +31,71 @@ async function main() {
             continue;
           }
 
-          const points = range(parameter.min, parameter.max, parameter.step).map((value) => {
-            const values = { ...defaults, [parameter.key]: value };
-            const configurationIssues = validateConfiguration(format, values);
-            const breakdown = calculatePriceBreakdown(format, values, 1);
-            return {
-              value,
-              unitPriceBrl: breakdown.unitPriceBrl,
-              pricingMode: breakdown.pricingMode,
-              configurationValid: configurationIssues.length === 0,
-              pricingAvailable: breakdown.pricingAvailable,
-              issues: configurationIssues
+          for (const context of sweepContexts(format, variant, parameter)) {
+            const points = range(parameter.min, parameter.max, parameter.step).map((value) => {
+              const values = { ...context.values, [parameter.key]: value };
+              const configurationIssues = validateConfiguration(format, values);
+              const breakdown = calculatePriceBreakdown(format, values, 1);
+              return {
+                value,
+                unitPriceBrl: breakdown.unitPriceBrl,
+                rawUnitPriceBrl: rawUnitPrice(format, breakdown),
+                pricingMode: breakdown.pricingMode,
+                configurationValid: configurationIssues.length === 0,
+                pricingAvailable: breakdown.pricingAvailable,
+                issues: configurationIssues
+              };
+            });
+            const validPoints = points.filter((point) => point.configurationValid);
+            const unexpectedUnavailable = validPoints.filter((point) => !point.pricingAvailable);
+            const direction = inverseDimensionKeys.has(parameter.key) ? "variable" : "nondecreasing";
+            const drops = direction === "nondecreasing" ? findDrops(validPoints) : [];
+            const uniquePrices = new Set(validPoints.map((point) => point.unitPriceBrl)).size;
+            const plateaus = findPlateaus(validPoints);
+            const sensitivityRequired = context.id === "default" && validPoints.length > 1;
+            const sensitive = !sensitivityRequired || uniquePrices > 1;
+            const status =
+              drops.length === 0 &&
+              unexpectedUnavailable.length === 0 &&
+              sensitive
+              ? "pass"
+              : "fail";
+            const report = {
+              surfaceId,
+              parameter: parameter.key,
+              contextId: context.id,
+              context: Object.fromEntries(
+                Object.entries(context.values).filter(([key]) => key !== parameter.key)
+              ),
+              direction,
+              points: points.length,
+              validPoints: validPoints.length,
+              invalidConfigurationPoints: points.length - validPoints.length,
+              uniquePrices,
+              sensitive,
+              drops: drops.slice(0, 20),
+              unexpectedUnavailable: unexpectedUnavailable.slice(0, 20),
+              referenceIdwDifferences: validPoints
+                .filter((point) => Math.abs(point.unitPriceBrl - point.rawUnitPriceBrl) > monotonicToleranceBrl)
+                .slice(0, 20),
+              plateauSegments: plateaus.length,
+              longestPlateau: plateaus.reduce(
+                (longest, plateau) => Math.max(longest, plateau.to - plateau.from),
+                0
+              ),
+              minPriceBrl: validPoints.length > 0
+                ? Math.min(...validPoints.map((point) => point.unitPriceBrl))
+                : null,
+              maxPriceBrl: validPoints.length > 0
+                ? Math.max(...validPoints.map((point) => point.unitPriceBrl))
+                : null,
+              status
             };
-          });
-          const validPoints = points.filter((point) => point.configurationValid);
-          const unexpectedUnavailable = validPoints.filter((point) => !point.pricingAvailable);
-          const direction = inverseDimensionKeys.has(parameter.key) ? "variable" : "nondecreasing";
-          const drops = direction === "nondecreasing" ? findDrops(validPoints) : [];
-          const uniquePrices = new Set(validPoints.map((point) => point.unitPriceBrl)).size;
-          const plateaus = findPlateaus(validPoints);
-          const sensitivityRequired = validPoints.length > 1;
-          const sensitive = !sensitivityRequired || uniquePrices > 1;
-          const status = drops.length === 0 && unexpectedUnavailable.length === 0 && sensitive
-            ? "pass"
-            : "fail";
-          const report = {
-            surfaceId,
-            parameter: parameter.key,
-            direction,
-            points: points.length,
-            validPoints: validPoints.length,
-            invalidConfigurationPoints: points.length - validPoints.length,
-            uniquePrices,
-            sensitive,
-            drops: drops.slice(0, 20),
-            unexpectedUnavailable: unexpectedUnavailable.slice(0, 20),
-            plateauSegments: plateaus.length,
-            longestPlateau: plateaus.reduce(
-              (longest, plateau) => Math.max(longest, plateau.to - plateau.from),
-              0
-            ),
-            minPriceBrl: validPoints.length > 0
-              ? Math.min(...validPoints.map((point) => point.unitPriceBrl))
-              : null,
-            maxPriceBrl: validPoints.length > 0
-              ? Math.max(...validPoints.map((point) => point.unitPriceBrl))
-              : null,
-            status
-          };
 
-          sweepSummary.push(report);
-          if (status === "fail") {
-            failures.push(report);
+            sweepSummary.push(report);
+            if (status === "fail") {
+              failures.push(report);
+            }
           }
         }
       }
@@ -125,6 +138,52 @@ function valuesForVariant(format, variant) {
     ...getInitialValues(format),
     ...(variant === "haste" ? { pescoco: true } : { pescoco: false })
   };
+}
+
+function rawUnitPrice(format, breakdown) {
+  if (!breakdown.pricingAvailable) {
+    return 0;
+  }
+  const multiplier = format.skuPrefix?.includes("PI") ? 1.7 : 4;
+  return Math.max(0.3, roundMoneyUp(Number(breakdown.orcaDirectUnitCostBrl || 0) * multiplier));
+}
+
+function roundMoneyUp(value) {
+  return Math.ceil(Number(value || 0) / 0.25) * 0.25;
+}
+
+function sweepContexts(format, variant, sweptParameter) {
+  const defaults = valuesForVariant(format, variant);
+  const activeParameters = format.parameters.filter((parameter) => {
+    return parameter.type !== "boolean" && (!parameter.dependsOn || defaults[parameter.dependsOn]);
+  });
+  const contexts = [{ id: "default", values: defaults }];
+
+  for (const parameter of activeParameters) {
+    if (parameter.key === sweptParameter.key) {
+      continue;
+    }
+    contexts.push(
+      { id: `${parameter.key}=min`, values: { ...defaults, [parameter.key]: parameter.min } },
+      { id: `${parameter.key}=max`, values: { ...defaults, [parameter.key]: parameter.max } }
+    );
+  }
+
+  const wall = activeParameters.find((parameter) => parameter.key === "paredeTubo");
+  if (wall && sweptParameter.key !== wall.key) {
+    for (const value of [0.8, 2, 4, 6, 8]) {
+      if (value >= wall.min && value <= wall.max) {
+        contexts.push({ id: `paredeTubo=${value}`, values: { ...defaults, paredeTubo: value } });
+      }
+    }
+  }
+
+  const unique = new Map();
+  for (const context of contexts) {
+    const signature = activeParameters.map((parameter) => context.values[parameter.key]).join("|");
+    unique.set(signature, unique.has(signature) ? unique.get(signature) : context);
+  }
+  return [...unique.values()];
 }
 
 function findDrops(points) {

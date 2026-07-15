@@ -3,6 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { slicerPricingSamples } from "../../lib/slicer-pricing-data.js";
+import {
+  fitMonotonePricingModel,
+  predictMonotoneProductionCost
+} from "../../lib/monotone-pricing-model.js";
+import { calculateUnitProductionCost } from "../../lib/pricing-cost.js";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
@@ -18,7 +23,11 @@ async function main() {
   const products = await readActiveProducts();
   const surfaces = publicSurfaces(products);
   const reports = surfaces.map((surface) => auditSurface(surface));
+  const modelReports = surfaces.map((surface) => auditRuntimeModel(surface));
   const failingSurfaces = reports.filter((report) => {
+    return report.medianRelativeError > maxMedianRelativeError || report.highErrorRate > maxHighErrorRate;
+  });
+  const failingModels = modelReports.filter((report) => {
     return report.medianRelativeError > maxMedianRelativeError || report.highErrorRate > maxHighErrorRate;
   });
   const summary = {
@@ -45,7 +54,13 @@ async function main() {
       acceptance: { maxMedianRelativeError, maxHighErrorRate }
     },
     summary,
-    surfaces: reports.map(({ sampleErrors, ...report }) => report)
+    surfaces: reports.map(({ sampleErrors, ...report }) => report),
+    runtimeModelCrossValidation: {
+      method: "deterministic-5-fold",
+      model: "nonnegative-polynomial-degree-3",
+      acceptance: { maxMedianRelativeError, maxHighErrorRate },
+      surfaces: modelReports.map(({ sampleErrors, ...report }) => report)
+    }
   };
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
@@ -64,11 +79,77 @@ async function main() {
       ].join(" | ")
     );
   }
+  console.log("Validacao cruzada do modelo monotono usado no site:");
+  for (const report of modelReports) {
+    console.log(
+      [
+        report.surfaceId,
+        `n=${report.sampleCount}`,
+        `mediana=${percent(report.medianRelativeError)}`,
+        `p95=${percent(report.p95RelativeError)}`,
+        `>25%=${report.highErrorSamples} (${percent(report.highErrorRate)})`
+      ].join(" | ")
+    );
+  }
   console.log(`Relatorio: ${outputPath}`);
-  if (checkMode && failingSurfaces.length > 0) {
-    console.error(`Cobertura insuficiente em ${failingSurfaces.length} superficie(s).`);
+  if (checkMode && (failingSurfaces.length > 0 || failingModels.length > 0)) {
+    console.error(
+      `Cobertura insuficiente: ${failingSurfaces.length} superficie(s) IDW e ${failingModels.length} modelo(s) monotonos.`
+    );
     process.exitCode = 1;
   }
+}
+
+function auditRuntimeModel(surface) {
+  const samples = slicerPricingSamples.filter((sample) => {
+    return sampleSurfaceId(sample) === surface.surfaceId && isManufacturableSample(surface, sample);
+  });
+  const wallKey = surface.parameterKeys.includes("paredeTubo") ? "paredeTubo" : "";
+  const parameterKeys = surface.parameterKeys.filter((key) => key !== wallKey);
+  const sampleErrors = [];
+
+  for (let fold = 0; fold < 5; fold += 1) {
+    const trainingSamples = samples.filter((_, index) => index % 5 !== fold);
+    const testSamples = samples.filter((_, index) => index % 5 === fold);
+    const model = fitMonotonePricingModel(trainingSamples, {
+      surfaceId: surface.surfaceId,
+      parameterKeys,
+      wallKey,
+      degree: 3
+    });
+
+    for (const sample of testSamples) {
+      const actualCost = Number(sample.productionCostBrl);
+      const predictedCost = predictMonotoneProductionCost(model, sample.params);
+      sampleErrors.push({
+        sampleId: sample.sampleId,
+        fold,
+        actualCostBrl: round(actualCost, 4),
+        predictedCostBrl: round(predictedCost, 4),
+        relativeError: relativeDifference(predictedCost, actualCost)
+      });
+    }
+  }
+
+  const sortedErrors = sampleErrors.map((sample) => sample.relativeError).sort((a, b) => a - b);
+  const highErrorSamples = sampleErrors.filter((sample) => sample.relativeError > highErrorThreshold).length;
+  return {
+    productId: surface.productId,
+    surfaceId: surface.surfaceId,
+    parameterKeys,
+    wallKey,
+    sampleCount: sampleErrors.length,
+    medianRelativeError: quantile(sortedErrors, 0.5),
+    p90RelativeError: quantile(sortedErrors, 0.9),
+    p95RelativeError: quantile(sortedErrors, 0.95),
+    maxRelativeError: quantile(sortedErrors, 1),
+    highErrorSamples,
+    highErrorRate: ratio(highErrorSamples, sampleErrors.length),
+    worstSamples: [...sampleErrors]
+      .sort((left, right) => right.relativeError - left.relativeError)
+      .slice(0, 20),
+    sampleErrors
+  };
 }
 
 async function readActiveProducts() {
@@ -245,11 +326,7 @@ function normalizedDistance(sampleParams, requestedParams, keys, ranges) {
 }
 
 function directCost(metrics) {
-  const materialWithWaste = Number(metrics.materialGrams || 0) * 1.05;
-  const printHours = Number(metrics.printMinutes || 0) / 60;
-  const materialCost = materialWithWaste * (170 / 1000);
-  const energyCost = 0.2 * printHours * 0.95 * 1.05;
-  return materialCost + energyCost;
+  return calculateUnitProductionCost(metrics).productionCostBrl;
 }
 
 function sampleSurfaceId(sample) {

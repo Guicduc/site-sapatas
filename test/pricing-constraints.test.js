@@ -55,19 +55,34 @@ test("limite exato de 5 mm continua vendavel e campo vazio nao duplica erro", ()
   assert.match(validateConfiguration(format, emptyValues)[0], /precisa ser informado/);
 });
 
-test("transformacao do tubo redondo participa do limite fabricavel", () => {
+test("tubo redondo calcula o vão pela medida externa, sem somar a flange", () => {
   const format = tubeFormat("redondo");
   const minimumValues = {
     ...getInitialValues(format),
-    diametroBase: 3,
+    diametroBase: 7,
     paredeTubo: 0.8
   };
   const invalidValues = {
     ...getInitialValues(format),
     diametroBase: 6,
-    paredeTubo: 6.9
+    paredeTubo: 0.8
   };
 
   assert.deepEqual(validateConfiguration(format, minimumValues), []);
   assert.match(validateConfiguration(format, invalidValues).join(" "), /menos de 5 mm/);
+});
+
+test("modelo monotono nao volta ao custo IDW quando a previsao parte de zero", () => {
+  const category = getCategoryBySlug("sapata-base-lisa");
+  const format = getFormat(category, "redonda");
+  const defaults = { ...getInitialValues(format), pescoco: false };
+  const diameterPrices = [3, 4, 5, 6].map((diametro) => {
+    return calculatePriceBreakdown(format, { ...defaults, alturaBase: 10, diametro }).unitPriceBrl;
+  });
+  const heightPrices = [4, 5, 6, 7, 8, 9].map((alturaBase) => {
+    return calculatePriceBreakdown(format, { ...defaults, diametro: 3, alturaBase }).unitPriceBrl;
+  });
+
+  assert.deepEqual(diameterPrices, [...diameterPrices].sort((left, right) => left - right));
+  assert.deepEqual(heightPrices, [...heightPrices].sort((left, right) => left - right));
 });
