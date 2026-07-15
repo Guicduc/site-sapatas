@@ -214,7 +214,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                   aria-label="Diminuir quantidade"
                   onClick={() => setQuantity((current) => Math.max(1, Number(current) - 1))}
                 >
-                  -
+                  −
                 </button>
                 <input
                   type="number"
@@ -241,7 +241,6 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
             unitPrice={unitPrice}
             totalPrice={totalPrice}
             priceBreakdown={priceBreakdown}
-            leadTime={leadTime}
             validForCart={validForCart}
             added={added}
             onAddToCart={handleAddToCart}
@@ -260,8 +259,7 @@ function RelatedProducts({ categories }) {
   return (
     <section className="configurator-related" aria-labelledby="configurator-related-title">
       <div className="configurator-related__heading">
-        <p className="eyebrow">Produtos semelhantes</p>
-        <h2 id="configurator-related-title">Outras sapatas para comparar</h2>
+        <h2 id="configurator-related-title" className="eyebrow">Produtos semelhantes</h2>
       </div>
       <div className="configurator-related__grid">
         {categories.map((item) => (
@@ -303,24 +301,46 @@ function getSummaryProductName(category, format) {
 }
 
 function ColorSelector({ colors, value, onChange }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="field color-field">
       <span>Cor</span>
-      <div className="color-swatch-list" role="group" aria-label="Cor">
-        {colors.map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={`color-swatch${item === value ? " is-selected" : ""}`}
-            style={{ "--swatch": colorMap[item] || "#808784" }}
-            aria-label={item}
-            aria-pressed={item === value}
-            title={item}
-            onClick={() => onChange(item)}
-          >
-            <span className="visually-hidden">{item}</span>
-          </button>
-        ))}
+      <div className={`color-picker${open ? " is-open" : ""}`}>
+        {open && (
+          <div className="color-picker__options" role="group" aria-label="Cores disponíveis">
+            {colors.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`color-swatch${item === value ? " is-selected" : ""}`}
+                style={{ "--swatch": colorMap[item] || "#808784" }}
+                aria-label={item}
+                aria-pressed={item === value}
+                title={item}
+                onClick={() => {
+                  onChange(item);
+                  setOpen(false);
+                }}
+              >
+                <span className="visually-hidden">{item}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          className="color-picker__trigger"
+          aria-label={`Cor ${value}. ${open ? "Fechar" : "Abrir"} opções de cor`}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span
+            className="color-picker__current"
+            style={{ "--swatch": colorMap[value] || "#808784" }}
+            aria-hidden="true"
+          />
+        </button>
       </div>
       <span className="color-field__value">{value}</span>
     </div>
@@ -366,7 +386,7 @@ function ParametricPreview({
             disabled={!hasVisualImages}
             onClick={() => onPreviewModeChange("image")}
           >
-            Foto
+            Imagens
           </button>
         </div>
       </div>
@@ -392,31 +412,40 @@ function ParametricPreview({
 }
 
 function ProductVisualPreview({ images, activeImage, activeIndex, onChange }) {
+  const isCarousel = images.length > 1;
+
+  function selectImage(nextIndex) {
+    onChange((nextIndex + images.length) % images.length);
+  }
+
   return (
     <figure className="product-visual">
       <div className="product-visual__stage">
         <img className="product-visual__image" src={activeImage.src} alt={activeImage.alt} />
-      </div>
-      <figcaption>
-        <span>{activeImage.label}</span>
-      </figcaption>
-      {images.length > 1 && (
-        <div className="product-visual__thumbs" aria-label="Imagens disponíveis">
-          {images.map((image, index) => (
+        {isCarousel && (
+          <div className="product-visual__controls">
             <button
-              key={image.src}
+              className="product-image-carousel__control"
               type="button"
-              className={index === activeIndex ? "is-selected" : ""}
-              aria-label={`Ver ${image.label}`}
-              aria-pressed={index === activeIndex}
-              onClick={() => onChange(index)}
+              aria-label="Imagem anterior"
+              onClick={() => selectImage(activeIndex - 1)}
             >
-              <img src={image.src} alt="" aria-hidden="true" />
-              <span>{image.label}</span>
+              <span aria-hidden="true">←</span>
             </button>
-          ))}
-        </div>
-      )}
+            <button
+              className="product-image-carousel__control"
+              type="button"
+              aria-label="Próxima imagem"
+              onClick={() => selectImage(activeIndex + 1)}
+            >
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
+      </div>
+      <figcaption className="visually-hidden" aria-live="polite">
+        {activeImage.label}
+      </figcaption>
     </figure>
   );
 }
@@ -780,7 +809,6 @@ function ConfigurationSummary({
   unitPrice,
   totalPrice,
   priceBreakdown,
-  leadTime,
   validForCart,
   added,
   onAddToCart
@@ -802,10 +830,6 @@ function ConfigurationSummary({
         <article className="summary-total">
           <strong>Total</strong>
           <span>{pricingAvailable ? formatCurrency(totalPrice) : "Sob avaliação"}</span>
-        </article>
-        <article>
-          <strong>Prazo</strong>
-          <span>{leadTime} dias úteis</span>
         </article>
       </div>
       {!pricingAvailable && (

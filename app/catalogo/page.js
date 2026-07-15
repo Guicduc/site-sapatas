@@ -8,6 +8,6 @@ export const metadata = {
 };
 
 export default function CatalogPage() {
-  return <ProductCatalog categories={productCategories} />;
+  return <ProductCatalog categories={productCategories} catalogOnly />;
 }
 

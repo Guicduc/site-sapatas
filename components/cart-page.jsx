@@ -11,6 +11,7 @@ import {
   normalizeBrTaxDocument
 } from "@/lib/br-tax-document";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
+import { getCategoryBySlug, getFormat, productCategories } from "@/lib/configurator-data";
 import { formatCurrency } from "@/lib/format";
 import { buildConfiguratorOrderPayload } from "@/lib/order-payload";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
@@ -22,6 +23,7 @@ const pendingCheckoutStorageKey = "baseforma-pending-checkout";
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
   const [paymentResult, setPaymentResult] = useState("");
+  const [pendingRemovalId, setPendingRemovalId] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -32,12 +34,13 @@ export function CartPage() {
     <section className="cart-shell">
       <div className="configurator-heading">
         <div>
-          <p className="eyebrow">Carrinho</p>
           <h1>Revise as configurações antes de fechar o pedido.</h1>
         </div>
-        <Link className="button button-secondary" href="/">
-          Adicionar outro item
-        </Link>
+        {items.length > 0 && (
+          <Link className="button button-primary" href="/catalogo">
+            Adicionar outros itens
+          </Link>
+        )}
       </div>
 
       {paymentResult === "failure" && (
@@ -51,71 +54,116 @@ export function CartPage() {
       )}
 
       {items.length === 0 ? (
-        <article className="empty-cart">
-          <div>
-            <p className="eyebrow">Carrinho vazio</p>
-            <h2>O carrinho está vazio.</h2>
-            <p>Configure uma ponteira ou sapata para gerar o resumo técnico do pedido.</p>
-          </div>
-          <Link className="button button-primary" href="/">
-            Abrir catálogo
-          </Link>
-        </article>
+        <>
+          <article className="empty-cart">
+            <h2>O carrinho está vazio, adicione produtos para continuar</h2>
+            <Link className="button button-primary" href="/catalogo">
+              Abrir catálogo
+            </Link>
+          </article>
+          <CartProductSuggestions categories={productCategories} />
+        </>
       ) : (
         <div className="cart-grid">
           <div className="cart-list">
-            {items.map((item) => (
-              <article className="cart-item" key={item.id}>
-                <div>
-                  <p className="eyebrow">{item.categoryName}</p>
-                  <h2>{item.formatName}</h2>
-                  <span>{item.sku}</span>
-                </div>
-                <dl>
-                  <div className="cart-info-block cart-info-block--measures">
-                    <dt>Medidas</dt>
-                    <dd>
-                      {Object.entries(item.values).map(([key, value]) => (
-                        <span key={key}>
-                          <span>{formatKey(key)}</span>
-                          <strong>{value} mm</strong>
-                        </span>
-                      ))}
-                    </dd>
+            {items.map((item) => {
+              const productName = getCartProductName(item);
+              const measurements = getApplicableMeasurements(item);
+
+              return (
+                <article className="cart-item" key={item.id}>
+                  <div className="cart-item__heading">
+                    <div className="cart-item__heading-copy">
+                      <h2>{productName}</h2>
+                      <span className="cart-item__sku">{item.sku}</span>
+                    </div>
+                    <label className="field cart-item__quantity">
+                      <span>Quantidade</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(event) => updateQuantity(item.id, event.target.value)}
+                      />
+                    </label>
                   </div>
-                  <div className="cart-info-block">
-                    <dt>Outras informacoes</dt>
-                    <dd>
-                      <span>
-                        <span>Cor</span>
-                        <strong>{item.color}</strong>
-                      </span>
-                    </dd>
+                  <div className="cart-item__details">
+                    {(measurements.length > 0 || item.color) && (
+                      <dl>
+                        {measurements.length > 0 && (
+                          <div className="cart-info-block cart-info-block--measures">
+                            <dt>Medidas</dt>
+                            <dd>
+                              {measurements.map((measurement) => (
+                                <span key={measurement.key}>
+                                  <span>{measurement.label}</span>
+                                  <strong>
+                                    {measurement.value}{measurement.unit ? ` ${measurement.unit}` : ""}
+                                  </strong>
+                                </span>
+                              ))}
+                            </dd>
+                          </div>
+                        )}
+                        {item.color && (
+                          <div className="cart-info-block">
+                            <dt>Cor</dt>
+                            <dd>
+                              <span>
+                                <strong>{item.color}</strong>
+                              </span>
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                    )}
+                    <button
+                      type="button"
+                      className="cart-remove-button"
+                      aria-label={`Remover ${productName} do carrinho`}
+                      title="Remover item"
+                      aria-expanded={pendingRemovalId === item.id}
+                      onClick={() => setPendingRemovalId(item.id)}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" />
+                      </svg>
+                    </button>
                   </div>
-                </dl>
-                <div className="cart-item__footer">
-                  <label className="field">
-                    <span>Quantidade</span>
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(event) => updateQuantity(item.id, event.target.value)}
-                    />
-                  </label>
-                  <button type="button" className="text-button" onClick={() => removeItem(item.id)}>
-                    Remover
-                  </button>
-                </div>
-              </article>
-            ))}
+                  {pendingRemovalId === item.id && (
+                    <div className="cart-remove-confirmation" role="alert" aria-live="polite">
+                      <div>
+                        <strong>Remover este item?</strong>
+                        <span>Esta ação retira {productName} do carrinho.</span>
+                      </div>
+                      <div className="cart-remove-confirmation__actions">
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() => setPendingRemovalId("")}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          className="button cart-remove-confirmation__confirm"
+                          onClick={() => {
+                            removeItem(item.id);
+                            setPendingRemovalId("");
+                          }}
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
 
           <aside className="summary-panel cart-summary">
-            <p className="eyebrow">Total estimado</p>
-            <h2>{formatCurrency(total)}</h2>
-            <p>Pedidos dentro da matriz seguem para pagamento. Fora dela, entram em revisão técnica.</p>
-            <CheckoutForm />
+            <CheckoutForm cartTotal={total} />
           </aside>
         </div>
       )}
@@ -123,7 +171,33 @@ export function CartPage() {
   );
 }
 
-function CheckoutForm() {
+function CartProductSuggestions({ categories }) {
+  return (
+    <section className="configurator-related cart-suggestions" aria-labelledby="cart-suggestions-title">
+      <div className="configurator-related__heading">
+        <h2 id="cart-suggestions-title" className="eyebrow">Sugestões de produtos</h2>
+      </div>
+      <div className="configurator-related__grid">
+        {categories.map((category) => (
+          <article className="category-card configurator-related-card" key={category.slug}>
+            {category.image && (
+              <img className="category-card__image" src={category.image.src} alt={category.image.alt} />
+            )}
+            <div className="category-card__body">
+              <p className="eyebrow">{category.eyebrow}</p>
+              <h3>{category.name}</h3>
+            </div>
+            <Link className="button button-primary" href={`/configurar/${category.slug}`}>
+              Configurar
+            </Link>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CheckoutForm({ cartTotal }) {
   const { items, clearCart, loaded } = useCart();
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -562,8 +636,18 @@ function CheckoutForm() {
     }
   }
 
+  const submitLabel = submitting ? "Gerando pedido..." : "Seguir para pagamento";
+
   return (
     <form className="checkout-form" onSubmit={handleSubmit}>
+      <button className="button button-primary button-block checkout-submit--top" type="submit" disabled={!canSubmit || submitting}>
+        {submitLabel}
+      </button>
+      <div className="cart-summary__intro">
+        <p className="eyebrow">Total</p>
+        <h2>{formatCurrency(cartTotal)}</h2>
+        <p>Pedidos dentro da matriz seguem para pagamento. Fora dela, entram em revisão técnica.</p>
+      </div>
       <section className="checkout-section checkout-section--customer" aria-labelledby="checkout-customer-title">
         <div className="checkout-section__heading">
           <span className="eyebrow">Etapa 1</span>
@@ -710,7 +794,7 @@ function CheckoutForm() {
         </div>
       )}
       <button className="button button-primary button-block" type="submit" disabled={!canSubmit || submitting}>
-        {submitting ? "Gerando pedido..." : "Seguir para pagamento"}
+        {submitLabel}
       </button>
     </form>
   );
@@ -728,6 +812,43 @@ function formatKey(key) {
     .replace("Inserção", "inserção")
     .replace("Apoio", "apoio")
     .replace("Aparente", "aparente");
+}
+
+function getCartProductName(item) {
+  const formatName = String(item.formatName || "").trim().toLowerCase();
+
+  if (item.categorySlug === "ponteira-interna-tubo") {
+    return `Sapata interna ${formatName}`.trim();
+  }
+
+  if (item.categorySlug === "sapata-base-lisa") {
+    return `Sapata ${formatName}`.trim();
+  }
+
+  return [item.categoryName, item.formatName].filter(Boolean).join(" ");
+}
+
+function getApplicableMeasurements(item) {
+  const values = item.values || {};
+  const category = getCategoryBySlug(item.categorySlug);
+  const format = category ? getFormat(category, item.formatSlug) : null;
+
+  if (!format) {
+    return Object.entries(values)
+      .filter(([, value]) => typeof value !== "boolean" && value !== "" && value != null)
+      .map(([key, value]) => ({ key, label: formatKey(key), value, unit: "mm" }));
+  }
+
+  return format.parameters
+    .filter((parameter) => parameter.type !== "boolean")
+    .filter((parameter) => !parameter.dependsOn || Boolean(values[parameter.dependsOn]))
+    .map((parameter) => ({
+      key: parameter.key,
+      label: parameter.label,
+      value: values[parameter.key],
+      unit: parameter.unit || ""
+    }))
+    .filter((measurement) => measurement.value !== "" && measurement.value != null);
 }
 
 function canSaveRecoveryLead({ items, email, contact }) {

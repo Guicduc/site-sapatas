@@ -33,10 +33,10 @@ const moodTerms = [
   },
   {
     icon: "spark",
-    label: "Projeto especial",
-    question: "Forma fora do catálogo?",
-    cta: "entre em contato",
-    href: "/projeto-especial"
+    label: "Configuração",
+    question: "Configure seu produto",
+    cta: "abrir catálogo",
+    href: "/catalogo"
   }
 ];
 
@@ -77,11 +77,11 @@ const moodIcons = {
   )
 };
 
-export function ProductCatalog({ categories }) {
+export function ProductCatalog({ categories, catalogOnly = false }) {
   const [heroIndex, setHeroIndex] = useState(0);
 
   useEffect(() => {
-    if (homeHeroImages.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (catalogOnly || homeHeroImages.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return undefined;
     }
 
@@ -90,64 +90,78 @@ export function ProductCatalog({ categories }) {
     }, 6500);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [catalogOnly]);
 
   return (
-    <section className="shop-shell">
-      <div className="shop-hero">
-        <div className="shop-hero__copy">
-          <h1>Sapatas plásticas customizáveis para o seu projeto</h1>
-          <p className="lead">
-            Sapatas feitas sob medida para encaixar no seu projeto, proteger melhor e dar um acabamento mais bonito.
-          </p>
-        </div>
-        <div className="shop-hero__media" aria-label="Imagens de produtos Baseforma">
-          {homeHeroImages.map((image, index) => (
-            <img
-              className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
-              key={image.src}
-              src={image.src}
-              style={{ "--hero-image-position": image.objectPosition }}
-              alt={index === heroIndex ? image.alt : ""}
-              aria-hidden={index === heroIndex ? undefined : "true"}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="brand-mood" aria-label="Pilares da identidade Baseforma">
-        {moodTerms.map((term, index) => (
-          <article key={term.label} className={term.cta ? "is-cta" : undefined}>
-            <span className="brand-mood__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                {moodIcons[term.icon]}
-              </svg>
-            </span>
-            <div>
-              <span className="brand-mood__label">
-                {String(index + 1).padStart(2, "0")} / {term.label}
-              </span>
-              {term.question ? (
-                <p>
-                  <strong>{term.question}</strong>{" "}
-                  <Link className="brand-mood__cta" href={term.href}>
-                    {term.cta}
-                  </Link>
-                </p>
-              ) : (
-                <p>
-                  <strong>{term.emphasis}</strong> {term.text}
-                </p>
-              )}
+    <section className={`shop-shell${catalogOnly ? " shop-shell--catalog" : ""}`}>
+      {!catalogOnly && (
+        <>
+          <div className="shop-hero">
+            <div className="shop-hero__copy">
+              <h1>Sapatas plásticas customizáveis para o seu projeto</h1>
+              <p className="lead">
+                Sapatas feitas sob medida para encaixar no seu projeto, proteger melhor e dar um acabamento mais bonito.
+              </p>
             </div>
-          </article>
-        ))}
-      </div>
+            <div className="shop-hero__media" aria-label="Imagens de produtos Baseforma">
+              {homeHeroImages.map((image, index) => (
+                <img
+                  className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
+                  key={image.src}
+                  src={image.src}
+                  style={{ "--hero-image-position": image.objectPosition }}
+                  alt={index === heroIndex ? image.alt : ""}
+                  aria-hidden={index === heroIndex ? undefined : "true"}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="brand-mood" aria-label="Pilares da identidade Baseforma">
+            {moodTerms.map((term, index) => (
+              <article key={term.label} className={term.cta ? "is-cta" : undefined}>
+                <span className="brand-mood__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    {moodIcons[term.icon]}
+                  </svg>
+                </span>
+                <div>
+                  <span className="brand-mood__label">
+                    {String(index + 1).padStart(2, "0")} / {term.label}
+                  </span>
+                  {term.question ? (
+                    <p>
+                      <strong>{term.question}</strong>{" "}
+                      <Link className="brand-mood__cta" href={term.href}>
+                        {term.cta}
+                      </Link>
+                    </p>
+                  ) : (
+                    <p>
+                      <strong>{term.emphasis}</strong> {term.text}
+                    </p>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
 
       <section className="category-section" aria-labelledby="products-heading">
         <div className="category-section__heading">
-          <p className="eyebrow">Catálogo</p>
-          <h2 id="products-heading">Produtos</h2>
+          {catalogOnly ? (
+            <>
+              <p className="eyebrow">Produtos Baseforma</p>
+              <h1 id="products-heading">Catálogo de produtos</h1>
+              <p>Escolha uma família para configurar formato e medidas conforme o seu projeto.</p>
+            </>
+          ) : (
+            <>
+              <p className="eyebrow">Catálogo</p>
+              <h2 id="products-heading">Produtos</h2>
+            </>
+          )}
         </div>
 
         <div className="category-grid">
@@ -161,11 +175,10 @@ export function ProductCatalog({ categories }) {
                     className="category-card__carousel"
                     images={cardImages}
                     label={`Fotos de ${category.name}`}
-                    aspectRatio="2.8 / 1"
+                    aspectRatio="1.65 / 1"
                   />
                 )}
                 <div className="category-card__body">
-                  <p className="eyebrow">{category.eyebrow}</p>
                   <h2>{category.name}</h2>
                   <p>{category.description}</p>
                   <div className="meta-list">
@@ -181,8 +194,32 @@ export function ProductCatalog({ categories }) {
               </article>
             );
           })}
+          <SpecialProjectCard />
         </div>
       </section>
     </section>
+  );
+}
+
+function SpecialProjectCard() {
+  return (
+    <article className="category-card category-card--special">
+      <div className="category-card__special-visual" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          {moodIcons.spark}
+        </svg>
+      </div>
+      <div className="category-card__body">
+        <h2>Forma fora do catálogo?</h2>
+        <p>Conte o que precisa e desenvolvemos uma solução técnica para o seu projeto.</p>
+        <div className="meta-list">
+          <span>desenvolvimento sob medida</span>
+          <span>análise técnica / projeto exclusivo</span>
+        </div>
+      </div>
+      <Link className="button button-primary" href="/projeto-especial">
+        Entre em contato
+      </Link>
+    </article>
   );
 }
