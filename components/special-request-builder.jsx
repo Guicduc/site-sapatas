@@ -41,123 +41,156 @@ export function SpecialRequestBuilder() {
   }
 
   return (
-    <div className="brief-grid special-request-layout">
-      <form className="surface-card brief-form" onSubmit={handleSubmit}>
+    <section className="special-request-workspace" aria-labelledby="special-request-form-title">
+      <form className="brief-form" onSubmit={handleSubmit}>
         <div className="brief-form__heading">
           <p className="eyebrow">Formulário</p>
-          <h2>Descreva a sua necessidade de peça, que te ajudamos com o desenvolvimento</h2>
+          <h2 id="special-request-form-title">Conte o que precisamos avaliar</h2>
           <p>
-            Use este canal para peças que não existem no catálogo: outro formato, outro encaixe,
-            uma geometria específica ou uma solução feita para o seu móvel.
+            Não precisa ter um desenho técnico pronto. Preencha os campos obrigatórios e, se
+            possível, inclua medidas, aplicação, quantidade e prazo.
           </p>
         </div>
 
-        <div className="field-row">
+        <fieldset className="brief-form__section">
+          <legend>
+            <span>01</span>
+            Seus dados
+          </legend>
+
+          <div className="field-row">
+            <label className="field">
+              <span>
+                Nome <small className="required-label">obrigatório</small>
+              </span>
+              <input
+                autoComplete="name"
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+
+            <label className="field">
+              <span>
+                E-mail <small className="required-label">obrigatório</small>
+              </span>
+              <input
+                autoComplete="email"
+                inputMode="email"
+                required
+                type="email"
+                value={email}
+                placeholder="nome@empresa.com.br"
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="field-row">
+            <label className="field">
+              <span>
+                Empresa <small className="optional-label">opcional</small>
+              </span>
+              <input
+                autoComplete="organization"
+                value={company}
+                placeholder="Nome da empresa"
+                onChange={(event) => setCompany(event.target.value)}
+              />
+            </label>
+
+            <label className="field">
+              <span>
+                Telefone <small className="optional-label">opcional</small>
+              </span>
+              <input
+                autoComplete="tel"
+                inputMode="tel"
+                value={phone}
+                placeholder="(11) 00000-0000"
+                onChange={(event) => setPhone(event.target.value)}
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="brief-form__section">
+          <legend>
+            <span>02</span>
+            Contexto do projeto
+          </legend>
+
           <label className="field">
             <span>
-              Nome <small className="required-label">obrigatório</small>
+              Produto ou família de referência <small className="optional-label">opcional</small>
             </span>
             <input
-              autoComplete="name"
+              value={reference}
+              placeholder="Ex.: sapata parecida com a linha Redonda, mas com outro encaixe"
+              onChange={(event) => setReference(event.target.value)}
+            />
+          </label>
+
+          <div className="field-row">
+            <label className="field">
+              <span>
+                Quantidade estimada <small className="optional-label">opcional</small>
+              </span>
+              <input
+                inputMode="numeric"
+                value={quantity}
+                placeholder="Ex.: 40 unidades"
+                onChange={(event) => setQuantity(event.target.value)}
+              />
+            </label>
+
+            <label className="field">
+              <span>
+                Prazo desejado <small className="optional-label">opcional</small>
+              </span>
+              <input
+                value={deadline}
+                placeholder="Ex.: primeira semana de agosto"
+                onChange={(event) => setDeadline(event.target.value)}
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset className="brief-form__section">
+          <legend>
+            <span>03</span>
+            Necessidade técnica
+          </legend>
+
+          <label className="field field-wide">
+            <span>
+              O que a peça precisa resolver? <small className="required-label">obrigatório</small>
+            </span>
+            <textarea
+              aria-describedby="project-description-help"
               required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+              placeholder="Ex.: preciso de uma sapata para um pé inclinado, com desenho oval, encaixe interno e acabamento discreto para uma cadeira autoral."
+              value={project}
+              onChange={(event) => setProject(event.target.value)}
             />
+            <small className="field-help" id="project-description-help">
+              Inclua medidas, local de uso, forma de fixação e qualquer restrição importante.
+            </small>
           </label>
+        </fieldset>
 
-          <label className="field">
-            <span>
-              E-mail <small className="required-label">obrigatório</small>
-            </span>
-            <input
-              autoComplete="email"
-              inputMode="email"
-              required
-              type="email"
-              value={email}
-              placeholder="nome@empresa.com.br"
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </label>
+        <div className="brief-form__submit">
+          <button className="button button-primary" type="submit" disabled={!canSubmit}>
+            Preparar e-mail do projeto
+          </button>
+          <p>
+            O botão abre seu aplicativo de e-mail com o briefing preenchido para envio a
+            {` ${projectsEmail}`}.
+          </p>
         </div>
-
-        <div className="field-row">
-          <label className="field">
-            <span>
-              Empresa <small className="optional-label">opcional</small>
-            </span>
-            <input
-              autoComplete="organization"
-              value={company}
-              placeholder="Nome da empresa"
-              onChange={(event) => setCompany(event.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span>
-              Telefone <small className="optional-label">opcional</small>
-            </span>
-            <input
-              autoComplete="tel"
-              inputMode="tel"
-              value={phone}
-              placeholder="(11) 00000-0000"
-              onChange={(event) => setPhone(event.target.value)}
-            />
-          </label>
-        </div>
-
-        <label className="field">
-          <span>Produto ou família de referência</span>
-          <input
-            value={reference}
-            placeholder="Ex.: vi uma sapata parecida no catálogo, mas preciso de outro formato"
-            onChange={(event) => setReference(event.target.value)}
-          />
-        </label>
-
-        <div className="field-row">
-          <label className="field">
-            <span>
-              Quantidade estimada <small className="optional-label">opcional</small>
-            </span>
-            <input
-              inputMode="numeric"
-              value={quantity}
-              placeholder="Ex.: 40 unidades"
-              onChange={(event) => setQuantity(event.target.value)}
-            />
-          </label>
-
-          <label className="field">
-            <span>
-              Prazo desejado <small className="optional-label">opcional</small>
-            </span>
-            <input
-              value={deadline}
-              placeholder="Ex.: ate a primeira semana de agosto"
-              onChange={(event) => setDeadline(event.target.value)}
-            />
-          </label>
-        </div>
-
-        <label className="field field-wide">
-          <span>
-            Necessidade da peça <small className="required-label">obrigatório</small>
-          </span>
-          <textarea
-            required
-            placeholder="Descreva a forma que você precisa, onde a peça será usada e o que falta nas opções do site. Ex.: preciso de uma sapata para um pé inclinado, com desenho oval, encaixe interno e acabamento discreto para uma cadeira autoral."
-            value={project}
-            onChange={(event) => setProject(event.target.value)}
-          />
-        </label>
-
-        <button className="button button-primary button-block" type="submit" disabled={!canSubmit}>
-          Enviar para {projectsEmail}
-        </button>
       </form>
-    </div>
+    </section>
   );
 }

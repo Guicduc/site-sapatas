@@ -14,16 +14,25 @@ export const metadata = {
 export default function ProjetoEspecialPage() {
   return (
     <>
-      <section className="page-panel narrow-panel special-request-hero">
-        <p className="eyebrow">Projeto especial</p>
-        <h1>Descreva a sua necessidade de peça, que te ajudamos com o desenvolvimento.</h1>
-        <p className="lead">
-          Se a forma que você precisa não aparece no catálogo, conte o que a peça deve resolver.
-          Recebemos por e-mail e retornamos com o caminho de desenvolvimento.
-        </p>
+      <section className="special-request-hero">
+        <div className="special-request-hero__title">
+          <p className="eyebrow">Projeto especial</p>
+          <h1>Uma peça fora do catálogo começa com um briefing bem definido.</h1>
+        </div>
+        <div className="special-request-hero__intro">
+          <p className="lead">
+            Conte onde a peça será usada, quais medidas importam e o que as opções atuais ainda
+            não resolvem. A Baseforma avalia o caso e retorna por e-mail com o caminho de
+            desenvolvimento.
+          </p>
+          <p className="special-request-hero__note">
+            Indicado para novas geometrias, encaixes específicos e aplicações com requisitos
+            técnicos fora da matriz atual.
+          </p>
+        </div>
       </section>
 
-      <Suspense fallback={<div className="surface-card">Carregando formulário...</div>}>
+      <Suspense fallback={<div className="special-request-loading">Carregando formulário...</div>}>
         <SpecialRequestBuilder />
       </Suspense>
     </>
