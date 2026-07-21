@@ -42,7 +42,8 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
   - DNS salvo com `A` do dominio raiz para Vercel, `CNAME www` para Vercel e registros de envio Resend para DKIM/SPF/MX no subdominio `send`.
   - Dominio no Resend criado em Sao Paulo (`sa-east-1`); confirmar verificacao antes da abertura real.
   - Neon Postgres criado no Vercel (`neon-cordovan-fence`, regiao Sao Paulo) e conectado ao projeto com `DATABASE_URL`; schema de `docs/ops/database.sql` aplicado.
-  - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420`, provider fiscal Mercado Pago e capacidade operacional foram adicionadas no Vercel para Production/Preview.
+  - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420` e capacidade operacional foram adicionadas no Vercel para Production/Preview.
+  - Auditoria em 21/07/2026: o certificado A1 foi obtido, mas `INVOICE_PROVIDER`, `FOCUS_NFE_ENV`, `FOCUS_NFE_TOKEN` e `FOCUS_NFE_WEBHOOK_TOKEN` ainda estavam vazios em Production. A integracao fiscal permanece inativa ate preencher os valores, vincular o A1 no painel, registrar o gancho e homologar uma emissao.
   - Mercado Pago teve credenciais produtivas e webhook configurados no Vercel; antes da abertura real, ainda e obrigatorio validar pedido teste ponta a ponta, recebimento de webhook e estados no admin/conta.
   - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao.
 - Definir `DATABASE_URL` e confirmar que o banco executa o schema documentado em `docs/ops/database.sql`.
@@ -56,14 +57,14 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Para frete real, definir `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Homologar dimensoes/peso de envio com pedidos reais antes de trocar `MELHOR_ENVIO_ENV` para `production`.
 - Confirmar `CART_RECOVERY_RETENTION_DAYS` conforme a politica de atendimento e privacidade.
-- Criar conta Focus NFe, enviar certificado digital A1 e configurar `FOCUS_NFE_TOKEN` (homologacao primeiro, depois producao).
+- Vincular o certificado digital A1 ja obtido a empresa na Focus NFe e configurar tokens nao vazios (homologacao primeiro, depois producao).
 - Homologar a emissao automatica com `FOCUS_NFE_ENV=homologacao` e validar CFOP/CSOSN com a contabilidade antes de trocar para `producao`.
 
 ## Backlog futuro
 
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
 - Compra de etiqueta, impressao e webhooks de rastreio no Melhor Envio, depois da homologacao de cotacao. Ate la, o e-mail de pedido enviado depende da confirmacao manual de expedicao no admin.
-- Cancelamento e carta de correcao de NF-e por API na Focus NFe, alem de armazenamento proprio de XML/PDF e webhook de status.
+- Carta de correcao de NF-e por API na Focus NFe e armazenamento proprio de XML/PDF. Cancelamento e webhook de status ja estao implementados.
 - Regras avancadas de cupons: limites por cliente, validade, uso maximo e campanha.
 - Automacao de recuperacao de carrinho por e-mail ou WhatsApp, somente depois de aprovar texto, consentimento e frequencia.
 - Estoque de insumos ou capacidade por maquina, se a operacao deixar de ser apenas sob demanda.

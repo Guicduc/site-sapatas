@@ -9,7 +9,7 @@ Aplicacao Next.js para catalogo configuravel e pedidos de sapatas sob medida par
 - Rotas publicas principais: `/`, `/catalogo`, `/configurar/[categoria]`, `/carrinho`, `/pedido-confirmado`, `/familias/[slug]`, `/como-funciona`, `/processo`, `/projeto-especial` e `/faq`.
 - Area do cliente: `/conta`, com acesso por e-mail e numero do pedido, historico, pagamentos, especificacoes e dados de entrega.
 - Fluxo comercial: usuario escolhe categoria/formato, configura medidas, adiciona ao carrinho, informa entrega/cupom, cria pedido e pode gerar pagamento via Mercado Pago.
-- Administracao: `/admin`, `/admin/pedidos`, `/admin/relatorios` e `/admin/operacao` concentram login operacional, pedidos, indicadores, producao, nota fiscal manual e expedicao.
+- Administracao: `/admin`, `/admin/pedidos`, `/admin/relatorios` e `/admin/operacao` concentram login operacional, pedidos, indicadores, producao, NF-e automatizada via Focus NFe (com contingencia manual) e expedicao.
 - Recuperacao de carrinho: quando o checkout tem e-mail e WhatsApp validos, o site salva um lead de retomada sem disparar mensagens automaticas. Em desenvolvimento fica em `.local-data/cart-recovery.dev.json`; com `DATABASE_URL`, fica na tabela `cart_recovery_leads`.
 - Pagamento ativo: Mercado Pago. Nao ha checkout externo de loja na arquitetura do projeto.
 - Dados de catalogo e regras de configuracao ficam em `lib/configurator-data.js`.
@@ -47,7 +47,7 @@ Use `.env.example` como base.
 - `SHIPPING_ORIGIN_POSTAL_CODE`: CEP de origem usado na cotacao real de frete.
 - `MELHOR_ENVIO_ENV`, `MELHOR_ENVIO_ACCESS_TOKEN`, `MELHOR_ENVIO_USER_AGENT`, `MELHOR_ENVIO_SERVICE_IDS` e `MELHOR_ENVIO_PREFERRED_SERVICE_IDS`: configuram a integracao Melhor Envio. O `User-Agent` deve conter nome da aplicacao e e-mail tecnico.
 - `SHIPPING_PRODUCT_PADDING_CM`, `SHIPPING_PACKAGING_WEIGHT_GRAMS`, `SHIPPING_MIN_PRODUCT_DIMENSION_CM` e `SHIPPING_MIN_PRODUCT_WEIGHT_KG`: ajustes conservadores para transformar medidas das pecas em dados de envio.
-- `INVOICE_PROVIDER`: contrato operacional documentado. Atualmente deve ficar como `manual` ate escolher fornecedor externo.
+- `INVOICE_PROVIDER=focus_nfe`, `FOCUS_NFE_ENV`, `FOCUS_NFE_TOKEN` e `FOCUS_NFE_WEBHOOK_TOKEN`: habilitam emissao, consulta e atualizacao automatica de NF-e. Use `npm run invoice:audit` para validar a configuracao sem imprimir segredos.
 - `PRODUCTION_DAILY_UNIT_CAPACITY`: capacidade diaria usada no painel operacional. Padrao interno: `120`.
 - `ORCA_*`: configuracoes para integracao local com Orca Slicer.
 
