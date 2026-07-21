@@ -43,7 +43,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
   - Dominio no Resend criado em Sao Paulo (`sa-east-1`); confirmar verificacao antes da abertura real.
   - Neon Postgres criado no Vercel (`neon-cordovan-fence`, regiao Sao Paulo) e conectado ao projeto com `DATABASE_URL`; schema de `docs/ops/database.sql` aplicado.
   - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420` e capacidade operacional foram adicionadas no Vercel para Production/Preview.
-  - Auditoria em 21/07/2026: o certificado A1 foi obtido, mas `INVOICE_PROVIDER`, `FOCUS_NFE_ENV`, `FOCUS_NFE_TOKEN` e `FOCUS_NFE_WEBHOOK_TOKEN` ainda estavam vazios em Production. A integracao fiscal permanece inativa ate preencher os valores, vincular o A1 no painel, registrar o gancho e homologar uma emissao.
+  - Auditoria em 21/07/2026: certificado A1 valido no painel, NF-e habilitada, Vercel Production configurado para homologacao e gancho `nfe` registrado para `/api/webhooks/focus-nfe`. Restam publicar o codigo corrigido e homologar uma emissao completa antes de trocar para o token produtivo.
   - Mercado Pago teve credenciais produtivas e webhook configurados no Vercel; antes da abertura real, ainda e obrigatorio validar pedido teste ponta a ponta, recebimento de webhook e estados no admin/conta.
   - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao.
 - Definir `DATABASE_URL` e confirmar que o banco executa o schema documentado em `docs/ops/database.sql`.

@@ -44,7 +44,7 @@ Com as variaveis do ambiente desejado carregadas no processo, rode:
 npm run invoice:audit
 ```
 
-O comando confirma provider, ambiente, autenticacao na API, cadastro/habilitacao do CNPJ e gancho `nfe`, sem imprimir tokens nem o corpo fiscal bruto. Quando a API nao expuser a validade do certificado na consulta da empresa, o resultado marca essa etapa para confirmacao no painel e na emissao de homologacao. Para auditar variaveis puxadas do Vercel, use um arquivo local ignorado pelo Git e apague-o logo depois.
+O comando confirma provider, ambiente, autenticacao e gancho `nfe`, sem imprimir tokens nem o corpo fiscal bruto. Ele tambem tenta consultar cadastro, habilitacao e certificado; tokens de empresa podem receber `404` em `/v2/empresas`, caso em que o resultado marca essa etapa para confirmacao no painel e na emissao de homologacao. Variaveis marcadas como `Sensitive` no Vercel nao sao devolvidas por `env pull`/`env run`; execute a auditoria em um processo local controlado enquanto tiver os valores em memoria, sem rebaixar a protecao dos segredos.
 
 ## Pre-requisitos externos (fora do codigo)
 

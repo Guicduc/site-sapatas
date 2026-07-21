@@ -30,7 +30,13 @@ if (checks.some((item) => !item.ok)) {
 
   try {
     const companies = await requestJson(`${baseUrl}/v2/empresas?cnpj=${issuerCnpj}`, auth);
-    check("companies_api", companies.ok, companies.message);
+    check(
+      "companies_api",
+      companies.ok ? true : companies.status === 404 ? null : false,
+      companies.status === 404
+        ? "O token da empresa nao expoe /v2/empresas neste ambiente; confirme cadastro, certificado e habilitacao no painel."
+        : companies.message
+    );
 
     if (companies.ok) {
       const company = findCompany(companies.data, issuerCnpj);
@@ -116,6 +122,7 @@ async function requestJson(url, authorization) {
 
   return {
     ok: response.ok,
+    status: response.status,
     data,
     message: response.ok
       ? `API respondeu HTTP ${response.status}.`
