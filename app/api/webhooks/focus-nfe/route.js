@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { refreshInvoiceStatus } from "@/lib/invoice-provider";
+import { getOrderIdFromFocusNfeReference } from "@/lib/focus-nfe";
 import { getOrderById } from "@/lib/order-store";
 
 export async function POST(request) {
@@ -32,7 +33,7 @@ export async function POST(request) {
     return NextResponse.json({ received: true, ignored: "missing_ref" });
   }
 
-  const order = await getOrderById(reference);
+  const order = await getOrderById(getOrderIdFromFocusNfeReference(reference));
 
   if (!order) {
     return NextResponse.json({ received: true, ignored: "order_not_found", ref: reference });
@@ -51,7 +52,13 @@ export async function POST(request) {
 
   // A Focus reenvia notificacoes que nao recebem 2xx. Isso evita perder uma
   // atualizacao quando a consulta autoritativa falha temporariamente.
-  return NextResponse.json(response, { status: result.error ? 502 : 200 });
+  const shouldRetry = Boolean(result.error) || [
+    "invoice_credentials_missing",
+    "invoice_not_found",
+    "status_refresh_not_supported"
+  ].includes(result.skipped);
+
+  return NextResponse.json(response, { status: shouldRetry ? 503 : 200 });
 }
 
 export async function GET() {

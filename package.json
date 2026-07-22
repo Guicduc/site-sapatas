@@ -18,7 +18,8 @@
     "pricing:model-check": "node Produtos/scripts/audit-pricing-models.mjs --check",
     "pricing:coverage": "node Produtos/scripts/audit-pricing-coverage.mjs --check",
     "pricing:check": "node Produtos/scripts/diagnose-pricing-sweeps.mjs --check",
-    "pricing:audit": "npm run pricing:model-check && node Produtos/scripts/audit-pricing-workflow.mjs --check && npm run pricing:coverage"
+    "pricing:audit": "npm run pricing:model-check && node Produtos/scripts/audit-pricing-workflow.mjs --check && npm run pricing:coverage",
+    "invoice:audit": "node scripts/audit-focus-nfe.mjs"
   },
   "dependencies": {
     "next": "16.2.10",

@@ -12,7 +12,7 @@ Este documento registra o fluxo fiscal com `INVOICE_PROVIDER=focus_nfe`: a emiss
 ## Fluxo automatico
 
 1. Webhook do Mercado Pago confirma pagamento aprovado.
-2. `requestInvoiceAfterPayment` monta o payload da NF-e (destinatario, itens com NCM/CFOP/CSOSN, frete, desconto, totais) e envia `POST /v2/nfe?ref={orderId}` para a Focus NFe.
+2. `requestInvoiceAfterPayment` monta o payload da NF-e (destinatario, itens com NCM/CFOP/CSOSN, frete, desconto rateado e totais) e envia `POST /v2/nfe?ref={referenciaAlfanumerica}` para a Focus NFe. A referencia e derivada de forma estavel do UUID do pedido porque a Focus nao aceita caracteres especiais.
 3. Resposta `processando_autorizacao` deixa a NF como `api_pending`; `autorizado` grava numero, serie, chave de acesso e link do DANFE (`api_issued`).
 4. Quando a SEFAZ conclui o processamento, a Focus NFe notifica `POST /api/webhooks/focus-nfe` (gancho autenticado por `FOCUS_NFE_WEBHOOK_TOKEN`); o endpoint reconsulta `GET /v2/nfe/{ref}` e atualiza o pedido automaticamente. O botao "Atualizar status da NF" no admin continua disponivel como fallback manual.
 5. `erro_autorizacao`/`denegado` marcam `api_failed` com a mensagem da SEFAZ nas notas; o botao "Emitir NF" permite reenviar apos correcao.
@@ -22,7 +22,7 @@ Este documento registra o fluxo fiscal com `INVOICE_PROVIDER=focus_nfe`: a emiss
 ```bash
 curl -u "$FOCUS_NFE_TOKEN:" -X POST https://api.focusnfe.com.br/v2/hooks \
   -H "Content-Type: application/json" \
-  -d '{"cnpj":"42616830000198","event":"nfe","url":"https://www.baseforma.com.br/api/webhooks/focus-nfe","authorization":"<FOCUS_NFE_WEBHOOK_TOKEN>"}'
+  -d '{"cnpj":"42616830000198","event":"nfe","url":"https://www.baseforma.com.br/api/webhooks/focus-nfe","authorization":"<FOCUS_NFE_WEBHOOK_TOKEN>","authorization_header":"Authorization"}'
 ```
 
 Em homologacao, use `https://homologacao.focusnfe.com.br/v2/hooks` com o token de homologacao.
@@ -34,12 +34,22 @@ Em homologacao, use `https://homologacao.focusnfe.com.br/v2/hooks` com o token d
 - `FOCUS_NFE_WEBHOOK_TOKEN`: segredo compartilhado validado no header `Authorization` das notificacoes do gancho.
 - `INVOICE_ISSUER_CNPJ` / `INVOICE_ISSUER_UF`: emissor (CNPJ `42.616.830/0001-98`, SP).
 - CFOP automatico por UF de destino: `INVOICE_CFOP_INTRASTATE=5101`, `INVOICE_CFOP_INTERSTATE=6107` (ou `INVOICE_CFOP` fixo).
-- NCM `3926.30.00`, origem `0`, CSOSN `102`, PIS/COFINS CST `49` (Simples Nacional; confirmar com contabilidade).
+- NCM `3926.30.00`, origem `0`, CSOSN `102`, PIS/COFINS CST `49` e aliquotas em `INVOICE_PIS_RATE_PERCENT`/`INVOICE_COFINS_RATE_PERCENT` (padrao `0`; confirmar toda a tributacao com a contabilidade).
+
+## Auditoria segura da conta e do gancho
+
+Com as variaveis do ambiente desejado carregadas no processo, rode:
+
+```bash
+npm run invoice:audit
+```
+
+O comando confirma provider, ambiente, autenticacao e gancho `nfe`, sem imprimir tokens nem o corpo fiscal bruto. Ele tambem tenta consultar cadastro, habilitacao e certificado; tokens de empresa podem receber `404` em `/v2/empresas`, caso em que o resultado marca essa etapa para confirmacao no painel e na emissao de homologacao. Variaveis marcadas como `Sensitive` no Vercel nao sao devolvidas por `env pull`/`env run`; execute a auditoria em um processo local controlado enquanto tiver os valores em memoria, sem rebaixar a protecao dos segredos.
 
 ## Pre-requisitos externos (fora do codigo)
 
 1. Conta na Focus NFe com a empresa cadastrada (CNPJ emissor).
-2. Certificado digital A1 valido enviado ao painel Focus NFe.
+2. Certificado digital A1 valido enviado ao painel Focus NFe; a posse local do arquivo nao basta.
 3. Inscricao estadual e credenciamento de NF-e na SEFAZ.
 4. Homologacao: emitir notas de teste com `FOCUS_NFE_ENV=homologacao` e validar dados com a contabilidade antes de virar `producao`.
 

@@ -122,7 +122,9 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 
 - `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal operacional, expedicao e capacidade.
 - `lib/invoice-config.js`: configuracao fiscal (provider, CNPJ, NCM, CFOP, ambiente) compartilhada por admin e health check.
-- `lib/invoice-provider.js`: emissao automatica de NF-e via Focus NFe apos pagamento aprovado (emissao, consulta de status); mantem adaptador `mercado_pago` dormente.
+- `lib/focus-nfe.js`: payload fiscal validado, referencia alfanumerica, rateio de desconto e URLs oficiais por ambiente.
+- `lib/invoice-provider.js`: emissao automatica de NF-e via Focus NFe apos pagamento aprovado (emissao, consulta e cancelamento); mantem adaptador `mercado_pago` dormente.
+- `scripts/audit-focus-nfe.mjs`: auditoria segura de provider, credenciais e gancho, com verificacao de empresa/certificado quando o token expoe esse endpoint, sem imprimir segredos.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.

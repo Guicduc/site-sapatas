@@ -7,7 +7,7 @@ Escopo fixo da operacao:
 - Checkout proprio do site.
 - Pagamento via Mercado Pago.
 - Frete por Melhor Envio quando homologado, com fallback manual preservado.
-- Nota fiscal via provider Mercado Pago, com `INVOICE_PROVIDER=mercado_pago`.
+- Nota fiscal automatizada via Focus NFe, com `INVOICE_PROVIDER=focus_nfe`.
 - Admin protegido por sessao e token operacional.
 
 ## 1. Pre-lancamento
@@ -21,6 +21,8 @@ Escopo fixo da operacao:
   - `ACCOUNT_SESSION_SECRET`
   - `MERCADO_PAGO_ACCESS_TOKEN`
   - `MERCADO_PAGO_WEBHOOK_SECRET`
+  - `FOCUS_NFE_TOKEN`
+  - `FOCUS_NFE_WEBHOOK_TOKEN`
   - `RESEND_API_KEY`
 - Confirmar e-mails:
   - `ACCOUNT_EMAIL_FROM`
@@ -33,8 +35,8 @@ Escopo fixo da operacao:
 - Confirmar frete:
   - Para lancamento manual: `SHIPPING_PROVIDER=manual`.
   - Para Melhor Envio homologado: `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
-- Confirmar `INVOICE_PROVIDER=mercado_pago`.
-- Confirmar `MERCADO_PAGO_INVOICE_API_URL` quando o endpoint fiscal Mercado Pago estiver liberado para a conta.
+- Confirmar `INVOICE_PROVIDER=focus_nfe`, `FOCUS_NFE_ENV=homologacao`, `FOCUS_NFE_TOKEN` e `FOCUS_NFE_WEBHOOK_TOKEN`.
+- Rodar `npm run invoice:audit` e corrigir todas as falhas antes do pedido fiscal de teste.
 - Confirmar `PRODUCTION_DAILY_UNIT_CAPACITY` com a capacidade real do dia.
 - Rodar antes do deploy:
 
@@ -167,13 +169,14 @@ Ative apenas depois da homologacao descrita em `docs/ops/shipping-integration.md
 - Manter compra de etiqueta, impressao e rastreio como processo externo/manual, pois ainda nao estao implementados no site.
 - So trocar para `MELHOR_ENVIO_ENV=production` apos comparacao operacional aprovada.
 
-## 9. Nota fiscal Mercado Pago
+## 9. Nota fiscal Focus NFe
 
-- Manter `INVOICE_PROVIDER=mercado_pago`.
-- Em `/admin/operacao`, conferir pedidos pagos que precisam de nota.
-- Confirmar se a NF ficou como emitida ou pendente/falha via Mercado Pago.
-- Se `MERCADO_PAGO_INVOICE_API_URL` ainda nao estiver liberado, tratar a pendencia operacionalmente antes da expedicao.
-- Nao voltar para NF manual sem pedido explicito.
+- Manter `INVOICE_PROVIDER=focus_nfe` e homologar primeiro com `FOCUS_NFE_ENV=homologacao`.
+- Confirmar no painel Focus NFe que o certificado A1 valido foi vinculado ao CNPJ emitente e que NF-e esta habilitada.
+- Registrar e auditar o gancho `nfe` para `https://www.baseforma.com.br/api/webhooks/focus-nfe` com header `Authorization`.
+- Emitir uma NF-e de teste a partir de um pedido pago controlado e conferir destinatario de homologacao, itens, desconto rateado, frete, CFOP, tributos, total, status e DANFE.
+- Validar CFOP, CSOSN e PIS/COFINS com a contabilidade antes de trocar para `FOCUS_NFE_ENV=producao` e usar o token produtivo.
+- Em `/admin/operacao`, conferir pedidos pagos com NF pendente, emitida ou falha. Registro manual permanece apenas como contingencia.
 
 ## 10. Go/no-go
 
@@ -188,7 +191,7 @@ Abrir para pedidos reais somente se todos os itens abaixo estiverem verdadeiros:
 - E-mails essenciais testados ou atendimento manual preparado.
 - Admin acessivel e pedido teste visivel.
 - Frete manual validado ou Melhor Envio homologado.
-- NF Mercado Pago operacionalmente coberta ou pendencia via API explicitamente acompanhada.
+- Auditoria Focus NFe passou e uma emissao completa em homologacao foi conferida antes da virada para producao.
 - Responsavel de atendimento acompanhando a primeira janela.
 
 ## 11. Rollback
