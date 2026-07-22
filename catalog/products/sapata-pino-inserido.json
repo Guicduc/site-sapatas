@@ -1,0 +1,39 @@
+{
+  "productId": "sapata-pino-inserido",
+  "status": "active",
+  "name": "Pino inserido",
+  "description": "Pino inserido de TPU para composicoes e reposicoes por medida.",
+  "category": { "slug": "sapata-pino", "formatSlug": "pino-inserido" },
+  "seo": { "familySlug": "sapata-pino-inserido" },
+  "skuPrefix": "BF-PN-IN",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametro", "alturaBase"],
+    "parameterCodes": { "diametro": "DI", "alturaBase": "AB" },
+    "colorCodes": { "Preta": "PR" }
+  },
+  "material": "TPU",
+  "colors": ["Preta"],
+  "finishes": [],
+  "leadTimeBaseDays": 5,
+  "generationMode": "local_manual",
+  "drawingType": "base-pin",
+  "notes": ["Modelo parametrico, fatiamento e cobertura de preco validados."],
+  "parameters": [
+    { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 1, "max": 15, "step": 0.1, "default": 5.7, "role": "primary-width" },
+    { "key": "alturaBase", "label": "Altura", "type": "dimension", "unit": "mm", "min": 1, "max": 20, "step": 0.1, "default": 5, "role": "base-height" }
+  ],
+  "variants": [
+    {
+      "id": "sem-haste",
+      "code": "SH",
+      "public": true,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_PinoInserido.gh",
+        "modelVersion": "inserted-pin-gh-v1",
+        "sliderOrder": ["diametro", "alturaBase"]
+      },
+      "pricing": { "surfaceId": "sapata-pino:pino-inserido:sem-haste", "strategy": "sliced_dataset", "saleMultiplier": 4 }
+    }
+  ]
+}

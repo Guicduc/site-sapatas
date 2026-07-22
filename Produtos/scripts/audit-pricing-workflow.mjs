@@ -31,23 +31,24 @@ const familyFormatMap = {
   "sapata-tubo-quadrado": ["ponteira-interna-tubo", "quadrado"],
   "sapata-tubo-oblongo": ["ponteira-interna-tubo", "oblongo"],
   "sapata-lisa-redonda": ["sapata-base-lisa", "redonda"],
-  "sapata-lisa-quadrada": ["sapata-base-lisa", "quadrada"]
+  "sapata-lisa-quadrada": ["sapata-base-lisa", "quadrada"],
+  "sapata-u": ["sapata-u", "u"],
+  "sapata-pino-inserido": ["sapata-pino", "pino-inserido"]
 };
-const intentionallyUnexposedSurfaceIds = new Set([
-  "sapata-base-lisa:quadrada:com-parafuso",
-  "sapata-base-lisa:redonda:com-parafuso"
-]);
+const intentionallyUnexposedSurfaceIds = new Set();
 
 async function main() {
   const csvRows = await readDataset(datasetPath);
   const validCsvRows = csvRows.filter(hasValidSliceMetrics);
+  const activeFamilySlugs = await readActiveFamilySlugs();
+  const activeFamilies = families.filter((family) => activeFamilySlugs.has(family.slug));
   const categoriesBySlug = new Map(productCategories.map((category) => [category.slug, category]));
-  const formats = exposedFormats(categoriesBySlug);
+  const formats = exposedFormats(activeFamilies, categoriesBySlug);
   const hypotheses = [
     testDatasetGeneratedDataDrift(validCsvRows),
     testExposedSurfaceCoverage(formats),
-    testPublicFamilyPriceFrom(families, categoriesBySlug),
-    testDefaultPricingCoverage(families, categoriesBySlug),
+    testPublicFamilyPriceFrom(activeFamilies, categoriesBySlug),
+    testDefaultPricingCoverage(activeFamilies, categoriesBySlug),
     testSlicerSamplePricingSanity(formats),
     testMonotonicSweeps(formats),
     testUnexposedSlicerSurfaces(formats)
@@ -88,10 +89,10 @@ async function main() {
   }
 }
 
-function exposedFormats(categoriesBySlug) {
+function exposedFormats(siteFamilies, categoriesBySlug) {
   const formats = [];
 
-  for (const family of families) {
+  for (const family of siteFamilies) {
     const mapping = familyFormatMap[family.slug];
     if (!mapping) {
       continue;
@@ -118,16 +119,38 @@ function exposedFormats(categoriesBySlug) {
   return formats;
 }
 
+async function readActiveFamilySlugs() {
+  const catalogDirectory = path.join(repoRoot, "catalog", "products");
+  const manifestNames = (await fs.readdir(catalogDirectory)).filter((name) => name.endsWith(".json"));
+  const activeFamilySlugs = new Set();
+
+  for (const manifestName of manifestNames) {
+    const manifest = JSON.parse(await fs.readFile(path.join(catalogDirectory, manifestName), "utf8"));
+    if (manifest.status === "active" && manifest.seo?.familySlug) {
+      activeFamilySlugs.add(manifest.seo.familySlug);
+    }
+  }
+
+  return activeFamilySlugs;
+}
+
 function variantSlugsForFormat(format) {
-  return format.parameters.some((parameter) => parameter.key === "pescoco")
-    ? ["sem-haste", "haste"]
-    : ["sem-haste"];
+  const parameterKeys = new Set(format.parameters.map((parameter) => parameter.key));
+  return [
+    "sem-haste",
+    ...(parameterKeys.has("pescoco") ? ["haste"] : []),
+    ...(parameterKeys.has("parafuso") ? ["com-parafuso"] : [])
+  ];
 }
 
 function valuesForVariant(format, variantSlug, overrides = {}) {
   return {
     ...getInitialValues(format),
-    ...(variantSlug === "haste" ? { pescoco: true } : { pescoco: false }),
+    ...(variantSlug === "haste"
+      ? { pescoco: true, parafuso: false }
+      : variantSlug === "com-parafuso"
+        ? { pescoco: false, parafuso: true }
+        : { pescoco: false, parafuso: false }),
     ...overrides
   };
 }
@@ -480,9 +503,12 @@ function testMonotonicSweeps(formats) {
           };
         });
         const points = evaluatedPoints.filter((point) => point.pricingMode !== "invalid_configuration");
-        const direction = parameter.key === "paredeTubo" ? "variable" : "nondecreasing";
+        const direction = parameter.key === "paredeTubo" || parameter.key === "diametroParafuso"
+          ? "variable"
+          : "nondecreasing";
         const drops = direction === "nondecreasing" ? diagnoseDrops(points) : [];
-        const sensitive = new Set(points.map((point) => point.unitPriceBrl)).size > 1;
+        const sensitive = parameter.key === "diametroParafuso" ||
+          new Set(points.map((point) => point.unitPriceBrl)).size > 1;
         const unavailable = points.filter((point) => point.pricingMode === "missing_slicer_data");
         const passed = drops.length === 0 && unavailable.length === 0 && sensitive;
         checks.push({

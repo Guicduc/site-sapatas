@@ -6,6 +6,14 @@ import path from "node:path";
 import test, { after } from "node:test";
 
 import { getGrasshopperPayload } from "../lib/cad-contract.js";
+import {
+  buildConfigurationSku,
+  calculatePriceBreakdown,
+  getCategoryBySlug,
+  getFormat,
+  getInitialValues,
+  validateConfiguration
+} from "../lib/configurator-data.js";
 import { buildPrintJobInputsFromOrder, normalizePrintJobInput } from "../lib/print-job.js";
 import {
   claimNextPrintJob,
@@ -101,6 +109,92 @@ test("traduz medida publica do tubo redondo para o slider usado na precificacao"
   assert.deepEqual(normalizedJob.contract.configurationParameters, payload.items[0].configurationParameters);
   assert.deepEqual(normalizedJob.contract.parameterTransforms, payload.items[0].parameterTransforms);
   assert.deepEqual(normalizedJob.contract.parameters, payload.items[0].parameters);
+});
+
+test("mantem catalogo e contrato CAD da sapata U e do pino inserido alinhados", () => {
+  const uFormat = getFormat(getCategoryBySlug("sapata-u"), "u");
+  const pinFormat = getFormat(getCategoryBySlug("sapata-pino"), "pino-inserido");
+  const uValues = { ...getInitialValues(uFormat), pescoco: true };
+  const pinValues = getInitialValues(pinFormat);
+  const order = {
+    ...buildPaidOrder(),
+    items: [
+      {
+        ...buildPaidOrder().items[0],
+        id: "item-u",
+        sku: buildConfigurationSku(uFormat, uValues, { color: "Preta" }),
+        categorySlug: "sapata-u",
+        formatSlug: "u",
+        values: uValues
+      },
+      {
+        ...buildPaidOrder().items[0],
+        id: "item-pin",
+        sku: buildConfigurationSku(pinFormat, pinValues, { color: "Preta" }),
+        categorySlug: "sapata-pino",
+        formatSlug: "pino-inserido",
+        values: pinValues
+      }
+    ]
+  };
+
+  assert.equal(uFormat.status, "active");
+  assert.equal(pinFormat.status, "active");
+  assert.equal(order.items[0].sku, "BF-SU-V2-HA-DI17P8-ES1P5-CO29P4-PR");
+  assert.equal(order.items[1].sku, "BF-PN-IN-V2-SH-DI5P7-AB5-PR");
+
+  const payload = getGrasshopperPayload(order);
+  assert.deepEqual(payload.items[0].configurationParameters, {
+    diametro: 17.8,
+    espessura: 1.5,
+    comprimento: 29.4
+  });
+  assert.equal(payload.items[0].modelVersion, "base-u-neck-gh-v1");
+  assert.equal(payload.items[0].sourceGh, "Produtos/Scripts-GH/Sapata_U_ComHaste.gh");
+  assert.equal(payload.items[0].technicalDefaults.baseHeightMm, 8);
+  assert.equal(payload.items[0].technicalDefaults.cornerRadiusMm, 4);
+  assert.equal(payload.items[0].technicalDefaults.neckRadiusMm, 2.5);
+  assert.deepEqual(validateConfiguration(uFormat, uValues), []);
+  assert.equal(calculatePriceBreakdown(uFormat, uValues, 1).pricingAvailable, true);
+
+  assert.deepEqual(payload.items[1].configurationParameters, { diametro: 5.7, alturaBase: 5 });
+  assert.equal(payload.items[1].modelVersion, "inserted-pin-gh-v1");
+  assert.equal(payload.items[1].sourceGh, "Produtos/Scripts-GH/Sapata_PinoInserido.gh");
+  assert.equal(payload.items[1].technicalDefaults.filletRadiusMm, 0.5);
+});
+
+test("resolve sapata com furo para parafuso no SKU, CAD e guardrails de fabricacao", () => {
+  const round = getFormat(getCategoryBySlug("sapata-base-lisa"), "redonda");
+  const values = {
+    ...getInitialValues(round),
+    pescoco: false,
+    parafuso: true,
+    diametro: 28,
+    alturaBase: 6,
+    diametroParafuso: 3
+  };
+  const item = {
+    ...buildPaidOrder().items[0],
+    categorySlug: "sapata-base-lisa",
+    formatSlug: "redonda",
+    values,
+    sku: buildConfigurationSku(round, values, { color: "Preta" })
+  };
+  const payload = getGrasshopperPayload({ ...buildPaidOrder(), items: [item] });
+
+  assert.equal(item.sku, "BF-BL-RD-V2-CP-DI28-AB6-DF3-PR");
+  assert.deepEqual(payload.items[0].configurationParameters, {
+    diametro: 28,
+    alturaBase: 6,
+    diametroParafuso: 3
+  });
+  assert.equal(payload.items[0].modelVersion, "base-round-screw-gh-v1");
+  assert.equal(payload.items[0].sourceGh, "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh");
+  assert.deepEqual(validateConfiguration(round, values), []);
+  assert.ok(validateConfiguration(round, { ...values, pescoco: true }).some((issue) => issue.includes("nao podem ser combinadas")));
+  assert.ok(validateConfiguration(round, { ...values, diametro: 8, diametroParafuso: 8 }).some((issue) => issue.includes("material ao redor do furo")));
+  assert.ok(validateConfiguration(round, { ...values, alturaBase: 1 }).some((issue) => issue.includes("ao menos 2 mm")));
+
 });
 
 test("mantem enqueue e callbacks idempotentes com lease, retry e artefatos", async () => {

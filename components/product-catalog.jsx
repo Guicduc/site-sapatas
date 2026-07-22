@@ -79,6 +79,9 @@ const moodIcons = {
 
 export function ProductCatalog({ categories, catalogOnly = false }) {
   const [heroIndex, setHeroIndex] = useState(0);
+  const publicCategories = categories.filter((category) => {
+    return category.formats.some((format) => format.status === "active");
+  });
 
   useEffect(() => {
     if (catalogOnly || homeHeroImages.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -165,7 +168,7 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
         </div>
 
         <div className="category-grid">
-          {categories.map((category) => {
+          {publicCategories.map((category) => {
             const cardImages = getCategoryCardGallery(category.slug, category.image);
 
             return (

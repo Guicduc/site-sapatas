@@ -190,10 +190,10 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
               <h2>{item.formatName}</h2>
               <p>{item.sku}</p>
               <dl>
-                {Object.entries(item.values || {}).map(([key, value]) => (
+                {visibleItemValues(item.values).map(([key, value]) => (
                   <div key={key}>
                     <dt>{formatKey(key)}</dt>
-                    <dd>{value} mm</dd>
+                    <dd>{formatSpecValue(key, value)}</dd>
                   </div>
                 ))}
                 <div>
@@ -293,6 +293,8 @@ function clearStoredPendingCheckout() {
 }
 
 function formatKey(key) {
+  if (key === "diametroParafuso") return "Diâmetro do furo";
+  if (key === "parafuso") return "Furo para parafuso";
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (letter) => letter.toUpperCase())
@@ -300,5 +302,18 @@ function formatKey(key) {
     .replace("Inserção", "inserção")
     .replace("Apoio", "apoio")
     .replace("Aparente", "aparente");
+}
+
+function visibleItemValues(values = {}) {
+  return Object.entries(values).filter(([key]) => {
+    if (key === "alturaPescoco" || key === "diametroPescoco") return Boolean(values.pescoco);
+    if (key === "diametroParafuso") return Boolean(values.parafuso);
+    return true;
+  });
+}
+
+function formatSpecValue(key, value) {
+  if (key === "pescoco" || key === "parafuso") return value ? "Sim" : "Não";
+  return `${value} mm`;
 }
 

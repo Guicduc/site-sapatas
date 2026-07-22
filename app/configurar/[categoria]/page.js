@@ -4,14 +4,14 @@ import { ProductConfigurator } from "@/components/product-configurator";
 import { getCategoryBySlug, productCategories } from "@/lib/configurator-data";
 
 export function generateStaticParams() {
-  return productCategories.map((category) => ({ categoria: category.slug }));
+  return productCategories.filter(hasActiveFormat).map((category) => ({ categoria: category.slug }));
 }
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const category = getCategoryBySlug(resolvedParams.categoria);
 
-  if (!category) {
+  if (!category || !hasActiveFormat(category)) {
     return {};
   }
 
@@ -26,9 +26,13 @@ export default async function ConfigurePage({ params, searchParams }) {
   const resolvedSearchParams = await searchParams;
   const category = getCategoryBySlug(resolvedParams.categoria);
 
-  if (!category) {
+  if (!category || !hasActiveFormat(category)) {
     notFound();
   }
 
   return <ProductConfigurator category={category} initialFormatSlug={resolvedSearchParams?.formato} />;
+}
+
+function hasActiveFormat(category) {
+  return category.formats.some((format) => format.status === "active");
 }

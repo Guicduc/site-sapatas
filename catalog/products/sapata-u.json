@@ -1,0 +1,54 @@
+{
+  "productId": "sapata-u",
+  "status": "active",
+  "name": "Sapata U",
+  "description": "Sapata em U para encaixe por pressao em perfis e chapas, com ou sem haste.",
+  "category": { "slug": "sapata-u", "formatSlug": "u" },
+  "seo": { "familySlug": "sapata-u" },
+  "skuPrefix": "BF-SU",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametro", "espessura", "comprimento"],
+    "parameterCodes": { "diametro": "DI", "espessura": "ES", "comprimento": "CO" },
+    "colorCodes": { "Preta": "PR" }
+  },
+  "material": "TPU",
+  "colors": ["Preta"],
+  "finishes": [],
+  "leadTimeBaseDays": 5,
+  "generationMode": "local_manual",
+  "drawingType": "base-u",
+  "notes": ["Modelos com e sem haste validados em CAD, fatiamento e cobertura de preco."],
+  "parameters": [
+    { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 5, "max": 30, "step": 0.1, "default": 17.8, "role": "primary-width" },
+    { "key": "espessura", "label": "Espessura", "type": "dimension", "unit": "mm", "min": 0.5, "max": 3, "step": 0.1, "default": 1.5, "role": "wall-thickness" },
+    { "key": "comprimento", "label": "Comprimento", "type": "dimension", "unit": "mm", "min": 5, "max": 100, "step": 0.1, "default": 29.4, "role": "secondary-width" },
+    { "key": "pescoco", "label": "Haste", "type": "boolean", "default": false, "role": "toggle" }
+  ],
+  "variants": [
+    {
+      "id": "sem-haste",
+      "code": "SH",
+      "public": true,
+      "condition": { "pescoco": false },
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_U_SemHaste.gh",
+        "modelVersion": "base-u-gh-v1",
+        "sliderOrder": ["diametro", "comprimento", "espessura"]
+      },
+      "pricing": { "surfaceId": "sapata-u:u:sem-haste", "strategy": "sliced_dataset", "saleMultiplier": 4 }
+    },
+    {
+      "id": "haste",
+      "code": "HA",
+      "public": true,
+      "condition": { "pescoco": true },
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_U_ComHaste.gh",
+        "modelVersion": "base-u-neck-gh-v1",
+        "sliderOrder": ["diametro", "comprimento", "espessura"]
+      },
+      "pricing": { "surfaceId": "sapata-u:u:haste", "strategy": "sliced_dataset", "saleMultiplier": 4 }
+    }
+  ]
+}

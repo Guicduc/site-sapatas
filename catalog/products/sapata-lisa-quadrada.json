@@ -8,13 +8,14 @@
   "skuPrefix": "BF-BL-QD",
   "sku": {
     "versionMarker": "V2",
-    "parameterOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"],
+    "parameterOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco", "diametroParafuso"],
     "parameterCodes": {
       "tamanhoBaseX": "BX",
       "tamanhoBaseY": "BY",
       "alturaBase": "AB",
       "alturaPescoco": "AP",
-      "diametroPescoco": "DP"
+      "diametroPescoco": "DP",
+      "diametroParafuso": "DF"
     },
     "colorCodes": { "Preta": "PR" }
   },
@@ -23,6 +24,15 @@
   "finishes": [],
   "leadTimeBaseDays": 5,
   "generationMode": "local_manual",
+  "manufacturing": {
+    "screwClearance": {
+      "sizeKeys": ["tamanhoBaseX", "tamanhoBaseY"],
+      "screwDiameterKey": "diametroParafuso",
+      "minimumWallMm": 3,
+      "baseHeightKey": "alturaBase",
+      "minimumBaseHeightMm": 2
+    }
+  },
   "drawingType": "base-rect",
   "notes": ["Modelo paramétrico disponível para configuração."],
   "parameters": [
@@ -30,6 +40,8 @@
     { "key": "tamanhoBaseY", "label": "Tamanho base Y", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 50, "role": "secondary-width" },
     { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 7, "role": "base-height" },
     { "key": "pescoco", "label": "Haste", "type": "boolean", "default": false, "role": "toggle" },
+    { "key": "parafuso", "label": "Furo para parafuso", "type": "boolean", "default": false, "role": "toggle" },
+    { "key": "diametroParafuso", "label": "Diametro do furo", "type": "dimension", "unit": "mm", "min": 2, "max": 8, "step": 0.1, "default": 3, "dependsOn": "parafuso" },
     { "key": "alturaPescoco", "label": "Altura da haste", "type": "dimension", "unit": "mm", "min": 5, "max": 35, "step": 1, "default": 12, "role": "neck-height", "dependsOn": "pescoco" },
     { "key": "diametroPescoco", "label": "Diâmetro da haste", "type": "dimension", "unit": "mm", "min": 3, "max": 15, "step": 1, "default": 8, "role": "neck-width", "dependsOn": "pescoco" }
   ],
@@ -38,7 +50,7 @@
       "id": "sem-haste",
       "code": "SH",
       "public": true,
-      "condition": { "pescoco": false },
+      "condition": { "pescoco": false, "parafuso": false },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada.gh",
         "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"]
@@ -53,7 +65,7 @@
       "id": "haste",
       "code": "HA",
       "public": true,
-      "condition": { "pescoco": true },
+      "condition": { "pescoco": true, "parafuso": false },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com haste.gh",
         "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"]
@@ -67,10 +79,12 @@
     {
       "id": "com-parafuso",
       "code": "CP",
-      "public": false,
+      "public": true,
+      "condition": { "pescoco": false, "parafuso": true },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com parafuso.gh",
-        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"]
+        "modelVersion": "base-square-screw-gh-v1",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"]
       },
       "pricing": {
         "surfaceId": "sapata-base-lisa:quadrada:com-parafuso",

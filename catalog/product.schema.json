@@ -113,6 +113,22 @@
             "wallThicknessKey": { "type": "string" },
             "minimumMm": { "type": "number", "exclusiveMinimum": 0 }
           }
+        },
+        "screwClearance": {
+          "type": "object",
+          "required": ["sizeKeys", "screwDiameterKey", "minimumWallMm", "baseHeightKey", "minimumBaseHeightMm"],
+          "additionalProperties": false,
+          "properties": {
+            "sizeKeys": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" }
+            },
+            "screwDiameterKey": { "type": "string" },
+            "minimumWallMm": { "type": "number", "exclusiveMinimum": 0 },
+            "baseHeightKey": { "type": "string" },
+            "minimumBaseHeightMm": { "type": "number", "exclusiveMinimum": 0 }
+          }
         }
       }
     },

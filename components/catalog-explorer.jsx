@@ -26,8 +26,9 @@ export function CatalogExplorer({ families }) {
 
   const deferredApplication = useDeferredValue(application);
   const deferredFixation = useDeferredValue(fixation);
+  const publicFamilies = families.filter((family) => family.status !== "draft");
 
-  const filteredFamilies = families.filter((family) => {
+  const filteredFamilies = publicFamilies.filter((family) => {
     const applicationMatch =
       deferredApplication === "all" || family.applications.includes(deferredApplication);
     const fixationMatch =
@@ -36,7 +37,7 @@ export function CatalogExplorer({ families }) {
     return applicationMatch && fixationMatch;
   });
 
-  const selectedFamily = families.find((family) => family.slug === familySlug);
+  const selectedFamily = publicFamilies.find((family) => family.slug === familySlug);
   const measures = selectedFamily
     ? Array.from(
         new Map(
@@ -87,7 +88,7 @@ export function CatalogExplorer({ families }) {
               }}
             >
               <option value="">Selecione um modelo</option>
-              {families.map((family) => (
+              {publicFamilies.map((family) => (
                 <option key={family.slug} value={family.slug}>
                   {family.name}
                 </option>

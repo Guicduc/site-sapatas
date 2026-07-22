@@ -38,6 +38,8 @@ Fluxo resumido: **draft → slice validado → active**.
 ## Variantes
 
 `sem-haste`, `haste` e `com-parafuso` são os mesmos IDs em UI, CAD, dataset, imagens
-e auditoria. `com-parafuso` é `public: false`: os dados podem existir no dataset sem
-aparecer no configurador. A chave `pescoco` segue como entrada do toggle que resolve
-`sem-haste`/`haste` (declarado em `variants[].condition`).
+e auditoria. Nas sapatas lisas redonda e quadrada, `com-parafuso` é público e usa o
+toggle `parafuso` com `diametroParafuso` de 2 a 8 mm. A variante representa a sapata
+com furo de fixação; o parafuso metálico não acompanha a peça. Os toggles `pescoco`
+e `parafuso` são mutuamente exclusivos e resolvem a variante declarada em
+`variants[].condition`.

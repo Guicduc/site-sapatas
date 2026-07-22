@@ -90,7 +90,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 
   useEffect(() => {
     setActiveVisualIndex(0);
-  }, [category.slug, format.slug, values.pescoco]);
+  }, [category.slug, format.slug, values.pescoco, values.parafuso]);
 
   useEffect(() => {
     if (previewMode === "image" && visualImages.length === 0) {
@@ -151,10 +151,12 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   }
 
   function handleValueChange(key, value) {
-    setValues((current) => ({
-      ...current,
-      [key]: value
-    }));
+    setValues((current) => {
+      const next = { ...current, [key]: value };
+      if (key === "parafuso" && value === true) next.pescoco = false;
+      if (key === "pescoco" && value === true) next.parafuso = false;
+      return next;
+    });
 
     if (value === false) {
       const hiddenKeys = new Set(
@@ -608,6 +610,13 @@ function FormatIcon({ type }) {
         <>
           <path d="M10 12 H38 V36 H29 V22 H19 V36 H10 Z" />
           <path d="M24 7 V41 M6 36 H42" />
+        </>
+      )}
+      {type === "base-pin" && (
+        <>
+          <circle cx="24" cy="14" r="7" />
+          <path d="M20 21 V34 M28 21 V34 M15 34 H33 V40 H15 Z" />
+          <path d="M24 5 V43 M8 40 H40" />
         </>
       )}
     </svg>

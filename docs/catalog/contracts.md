@@ -235,3 +235,20 @@ Regras:
 - `SpecialRequest` deve ser acionavel no contexto da familia atual;
 - o contrato deve ser portavel para pedido proprio e Mercado Pago sem mudar a taxonomia base.
 
+## Novos produtos e variante com parafuso
+
+O Pino inserido e a Sapata U estao ativos porque possuem STL/3MF valido, slices Orca e cobertura aprovada. As sapatas lisas redonda e quadrada tambem publicam a variante `com-parafuso`, que representa o furo de fixacao parametrico e nao inclui o parafuso metalico.
+
+| Familia | Estado | Categoria / formato | `drawingType` | Parametros publicos | Variantes |
+| --- | --- | --- | --- | --- | --- |
+| Sapata U | `active` | `sapata-u` / `u` | `base-u` | `diametro`, `espessura`, `comprimento`, `pescoco` | `sem-haste`, `haste` |
+| Sapata com pino inserido | `active` | `sapata-pino` / `pino-inserido` | `base-pin` | `diametro`, `alturaBase` | unica |
+| Sapata lisa redonda com furo | `active` | `sapata-base-lisa` / `redonda` | `base-round` | `diametro`, `alturaBase`, `parafuso`, `diametroParafuso` | `com-parafuso` |
+| Sapata lisa quadrada com furo | `active` | `sapata-base-lisa` / `quadrada` | `base-square` | `tamanhoBaseX`, `tamanhoBaseY`, `alturaBase`, `parafuso`, `diametroParafuso` | `com-parafuso` |
+
+`pescoco` e o toggle que resolve a variante da Sapata U. Nas sapatas lisas, `pescoco` e `parafuso` sao mutuamente exclusivos. O furo aceita 2 a 8 mm, exige parede radial minima de 3 mm e altura de base minima de 2 mm. Esses valores salvos no pedido determinam a variante e o arquivo CAD operacional.
+
+O dataset canonico contem 577 slices validos para a sapata quadrada com furo, 356 para a redonda com furo, 1.225 para a Sapata U sem haste e 1.226 para a Sapata U com haste. O modelo de preco trata `diametroParafuso` como dimensao de efeito variavel, pois ela remove material e nao deve ser forçada a aumentar monotonicamente o custo.
+
+Para ativar uma variante, o manifesto, o contrato CAD e a configuracao do exportador devem usar exatamente essas chaves. So depois de haver STL/3MF valido, slice Orca com `material_grams` e `print_minutes`, e aprovacoes de `pricing:check` e `pricing:audit`, a variante pode deixar `draft` e ter preco publico. O motor de preco tambem bloqueia formatos fora de `active`, mesmo que existam linhas residuais de dataset.
+

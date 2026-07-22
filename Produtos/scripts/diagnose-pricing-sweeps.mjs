@@ -14,7 +14,7 @@ const repoRoot = path.resolve(scriptDir, "../..");
 const outputPath = path.join(repoRoot, "Produtos", "logs", "pricing-sweep-diagnostics.json");
 const checkMode = process.argv.includes("--check");
 const monotonicToleranceBrl = Number(process.env.PRICING_MONOTONIC_TOLERANCE_BRL || 0.05);
-const inverseDimensionKeys = new Set(["paredeTubo"]);
+const variableCostDimensionKeys = new Set(["paredeTubo", "diametroParafuso"]);
 
 async function main() {
   const sweepSummary = [];
@@ -48,11 +48,14 @@ async function main() {
             });
             const validPoints = points.filter((point) => point.configurationValid);
             const unexpectedUnavailable = validPoints.filter((point) => !point.pricingAvailable);
-            const direction = inverseDimensionKeys.has(parameter.key) ? "variable" : "nondecreasing";
+            const direction = variableCostDimensionKeys.has(parameter.key) ? "variable" : "nondecreasing";
             const drops = direction === "nondecreasing" ? findDrops(validPoints) : [];
             const uniquePrices = new Set(validPoints.map((point) => point.unitPriceBrl)).size;
             const plateaus = findPlateaus(validPoints);
-            const sensitivityRequired = context.id === "default" && validPoints.length > 1;
+            const sensitivityRequired =
+              context.id === "default" &&
+              validPoints.length > 1 &&
+              parameter.key !== "diametroParafuso";
             const sensitive = !sensitivityRequired || uniquePrices > 1;
             const status =
               drops.length === 0 &&
@@ -128,15 +131,22 @@ async function main() {
 }
 
 function variantsForFormat(format) {
-  return format.parameters.some((parameter) => parameter.key === "pescoco")
-    ? ["sem-haste", "haste"]
-    : ["sem-haste"];
+  const parameterKeys = new Set(format.parameters.map((parameter) => parameter.key));
+  return [
+    "sem-haste",
+    ...(parameterKeys.has("pescoco") ? ["haste"] : []),
+    ...(parameterKeys.has("parafuso") ? ["com-parafuso"] : [])
+  ];
 }
 
 function valuesForVariant(format, variant) {
   return {
     ...getInitialValues(format),
-    ...(variant === "haste" ? { pescoco: true } : { pescoco: false })
+    ...(variant === "haste"
+      ? { pescoco: true, parafuso: false }
+      : variant === "com-parafuso"
+        ? { pescoco: false, parafuso: true }
+        : { pescoco: false, parafuso: false })
   };
 }
 

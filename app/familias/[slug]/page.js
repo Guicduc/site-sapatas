@@ -13,14 +13,14 @@ import {
 } from "@/lib/site-data";
 
 export function generateStaticParams() {
-  return families.map((family) => ({ slug: family.slug }));
+  return families.filter(isPublicFamily).map((family) => ({ slug: family.slug }));
 }
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const family = getFamilyBySlug(resolvedParams.slug);
 
-  if (!family) {
+  if (!family || !isPublicFamily(family)) {
     return {};
   }
 
@@ -37,11 +37,12 @@ export default async function FamilyPage({ params }) {
   const resolvedParams = await params;
   const family = getFamilyBySlug(resolvedParams.slug);
 
-  if (!family) {
+  if (!family || !isPublicFamily(family)) {
     notFound();
   }
 
   const relatedFamilies = getRelatedFamilies(family.slug);
+  const hasPublicPricing = Number.isFinite(Number(family.priceFromBrl)) && Number(family.priceFromBrl) > 0;
   const whatsappMessage = `Oi, quero comprar a família ${family.name} e confirmar a melhor variante para o meu projeto.`;
 
   return (
@@ -57,13 +58,15 @@ export default async function FamilyPage({ params }) {
           },
           category: "Sapata para mobiliário",
           description: family.seoDescription,
-          offers: {
-            "@type": "AggregateOffer",
-            priceCurrency: "BRL",
-            lowPrice: family.priceFromBrl,
-            highPrice: Math.max(...family.variants.map((variant) => variant.priceBrl)),
-            offerCount: family.variants.length
-          }
+          ...(hasPublicPricing ? {
+            offers: {
+              "@type": "AggregateOffer",
+              priceCurrency: "BRL",
+              lowPrice: family.priceFromBrl,
+              highPrice: Math.max(...family.variants.map((variant) => variant.priceBrl)),
+              offerCount: family.variants.length
+            }
+          } : {})
         }}
       />
 
@@ -97,8 +100,9 @@ export default async function FamilyPage({ params }) {
             </article>
             <article className="surface-card spec-card">
               <strong>Venda</strong>
-              <p>
-                A partir de {formatCurrency(family.priceFromBrl)} por {family.salesUnit}
+              <p>{hasPublicPricing
+                ? `A partir de ${formatCurrency(family.priceFromBrl)} por ${family.salesUnit}`
+                : "Em validação técnica, sem preço publicado."}
               </p>
             </article>
           </div>
@@ -147,11 +151,7 @@ export default async function FamilyPage({ params }) {
                       <td>{variant.dimensions.compatibleRangeMm}</td>
                       <td>{variant.dimensions.heightMm} mm</td>
                       <td>{variant.color}</td>
-                      <td>
-                        <strong>{formatCurrency(variant.priceBrl)}</strong>
-                        <br />
-                        {variant.salesUnit}
-                      </td>
+                      <td>{hasPublicPricing ? <><strong>{formatCurrency(variant.priceBrl)}</strong><br />{variant.salesUnit}</> : "Em validação"}</td>
                       <td>{variant.leadTimeDays} dias úteis</td>
                     </tr>
                   ))}
@@ -209,4 +209,8 @@ export default async function FamilyPage({ params }) {
       </section>
     </>
   );
+}
+
+function isPublicFamily(family) {
+  return family.status !== "draft";
 }

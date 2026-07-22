@@ -4,6 +4,8 @@ import { ProductImageCarousel } from "@/components/product-image-carousel";
 import { formatCurrency } from "@/lib/format";
 
 export function FamilyCard({ family }) {
+  const hasPublicPricing = Number.isFinite(Number(family.priceFromBrl)) && Number(family.priceFromBrl) > 0;
+
   return (
     <article className="family-card surface-card">
       {family.images?.length > 0 || family.image ? (
@@ -21,9 +23,19 @@ export function FamilyCard({ family }) {
           <p>{family.tagline}</p>
         </div>
         <div className="price-note">
-          <span>A partir de</span>
-          <strong>{formatCurrency(family.priceFromBrl)}</strong>
-          <small>{family.salesUnit}</small>
+          {hasPublicPricing ? (
+            <>
+              <span>A partir de</span>
+              <strong>{formatCurrency(family.priceFromBrl)}</strong>
+              <small>{family.salesUnit}</small>
+            </>
+          ) : (
+            <>
+              <span>Disponibilidade</span>
+              <strong>Em validação</strong>
+              <small>sem preço publicado</small>
+            </>
+          )}
         </div>
       </div>
 

@@ -152,6 +152,26 @@ for (const { file, data } of manifests) {
     }
   }
 
+  const screwClearance = data.manufacturing?.screwClearance;
+  if (screwClearance) {
+    for (const key of screwClearance.sizeKeys || []) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `manufacturing.screwClearance referencia tamanho inexistente: ${key}`);
+      }
+    }
+    for (const key of [screwClearance.screwDiameterKey, screwClearance.baseHeightKey]) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `manufacturing.screwClearance referencia parametro inexistente: ${key}`);
+      }
+    }
+    if (!(Number(screwClearance.minimumWallMm) > 0)) {
+      fail(id, "manufacturing.screwClearance.minimumWallMm deve ser positivo");
+    }
+    if (!(Number(screwClearance.minimumBaseHeightMm) > 0)) {
+      fail(id, "manufacturing.screwClearance.minimumBaseHeightMm deve ser positivo");
+    }
+  }
+
   // Composição do SKU cobre todos os parâmetros numéricos.
   const numericKeys = (data.parameters || [])
     .filter((parameter) => parameter.type === "dimension")

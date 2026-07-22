@@ -50,8 +50,11 @@ PARAMETER_COLUMNS = [
     "alturaBase",
     "alturaPescoco",
     "diametroPescoco",
+    "diametroParafuso",
     "paredeTubo",
     "pescoco",
+    "comprimento",
+    "espessura",
 ]
 
 SLICE_COLUMNS = [
@@ -252,10 +255,31 @@ PRODUCT_CONFIGS = [
         "format_slug": "redonda",
         "variant_slug": "com-parafuso",
         "has_neck": False,
-        "slider_order": ["diametro", "alturaBase"],
+        "slider_order": ["diametro", "alturaBase", "diametroParafuso"],
+        "sample_strategy": "screw_clearance_low_discrepancy_ranges",
+        "sampling": {
+            "force_axis_keys": ["diametro", "alturaBase", "diametroParafuso"],
+            "target_count": 360,
+            "required_samples": [
+                {"diametro": 28, "alturaBase": 6, "diametroParafuso": 3},
+                {"diametro": 8, "alturaBase": 2, "diametroParafuso": 2},
+                {"diametro": 14, "alturaBase": 2, "diametroParafuso": 8},
+                {"diametro": 150, "alturaBase": 10, "diametroParafuso": 8},
+            ],
+        },
+        "manufacturing": {
+            "screw_clearance": {
+                "size_keys": ["diametro"],
+                "screw_diameter_key": "diametroParafuso",
+                "minimum_wall_mm": 3,
+                "base_height_key": "alturaBase",
+                "minimum_base_height_mm": 2,
+            },
+        },
         "parameters": {
-            "diametro": parameter(3, 150, 28),
-            "alturaBase": parameter(1, 10, 6),
+            "diametro": parameter(8, 150, 28),
+            "alturaBase": parameter(2, 10, 6),
+            "diametroParafuso": parameter(2, 8, 3, 0.1),
         },
     },
     {
@@ -327,11 +351,117 @@ PRODUCT_CONFIGS = [
         "format_slug": "quadrada",
         "variant_slug": "com-parafuso",
         "has_neck": False,
-        "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+        "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"],
+        "sample_strategy": "screw_clearance_low_discrepancy_ranges",
+        "sampling": {
+            "force_axis_keys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"],
+            "target_count": 600,
+            "required_samples": [
+                {"tamanhoBaseX": 50, "tamanhoBaseY": 50, "alturaBase": 7, "diametroParafuso": 3},
+                {"tamanhoBaseX": 8, "tamanhoBaseY": 8, "alturaBase": 2, "diametroParafuso": 2},
+                {"tamanhoBaseX": 14, "tamanhoBaseY": 14, "alturaBase": 2, "diametroParafuso": 8},
+                {"tamanhoBaseX": 150, "tamanhoBaseY": 150, "alturaBase": 10, "diametroParafuso": 8},
+            ],
+        },
+        "manufacturing": {
+            "screw_clearance": {
+                "size_keys": ["tamanhoBaseX", "tamanhoBaseY"],
+                "screw_diameter_key": "diametroParafuso",
+                "minimum_wall_mm": 3,
+                "base_height_key": "alturaBase",
+                "minimum_base_height_mm": 2,
+            },
+        },
         "parameters": {
-            "tamanhoBaseX": parameter(3, 150, 50),
-            "tamanhoBaseY": parameter(3, 150, 50),
-            "alturaBase": parameter(1, 10, 7),
+            "tamanhoBaseX": parameter(8, 150, 50),
+            "tamanhoBaseY": parameter(8, 150, 50),
+            "alturaBase": parameter(2, 10, 7),
+            "diametroParafuso": parameter(2, 8, 3, 0.1),
+        },
+    },
+    {
+        "source_gh": "Produtos/Scripts-GH/Sapata_PinoInserido.gh",
+        "product_family": "sapata-pino",
+        "category_slug": "sapata-pino",
+        "format_slug": "pino-inserido",
+        "variant_slug": "sem-haste",
+        "has_neck": False,
+        # Ordem visual real: Diametro, Altura, slider anonimo de raio de filete.
+        # O terceiro controle permanece tecnico e nao entra no catalogo publico.
+        "slider_order": ["diametro", "alturaBase"],
+        "generic_slider_order": ["diametro", "alturaBase", "raio_filete_tecnico"],
+        "sampling": {
+            "force_axis_keys": ["diametro", "alturaBase"],
+            "target_count": 320,
+            "required_samples": [
+                {"diametro": 5.7, "alturaBase": 5},
+            ],
+        },
+        "parameters": {
+            "diametro": parameter(1, 15, 5.7, 0.1),
+            "alturaBase": parameter(1, 20, 5, 0.1),
+        },
+    },
+    {
+        "source_gh": "Produtos/Scripts-GH/Sapata_U_SemHaste.gh",
+        "product_family": "sapata-u",
+        "category_slug": "sapata-u",
+        "format_slug": "u",
+        "variant_slug": "sem-haste",
+        "has_neck": False,
+        # Ordem visual real: Diametro, Comprimento, indice anonimo, Espessura, indice anonimo.
+        # Os indices selecionam itens de listas internas e devem ficar fixos no valor do GH.
+        "slider_order": ["diametro", "comprimento", "espessura"],
+        "generic_slider_order": [
+            "diametro",
+            "comprimento",
+            "indice_lista_curva_superior_tecnico",
+            "espessura",
+            "indice_lista_curva_inferior_tecnico",
+        ],
+        "sampling": {
+            "force_axis_keys": ["diametro", "comprimento", "espessura"],
+            "target_count": 480,
+            "required_samples": [
+                {"diametro": 17.8, "comprimento": 29.4, "espessura": 1.5},
+            ],
+        },
+        "parameters": {
+            "diametro": parameter(5, 30, 17.8, 0.1),
+            "comprimento": parameter(5, 100, 29.4, 0.1),
+            "espessura": parameter(0.5, 3, 1.5, 0.1),
+        },
+    },
+    {
+        "source_gh": "Produtos/Scripts-GH/Sapata_U_ComHaste.gh",
+        "product_family": "sapata-u",
+        "category_slug": "sapata-u",
+        "format_slug": "u",
+        "variant_slug": "haste",
+        "has_neck": True,
+        # Ordem visual real: raio tecnico da haste, Diametro, Comprimento,
+        # indice anonimo, Espessura, indice anonimo. A haste esta acoplada ao
+        # diametro no GH; seu raio e um controle tecnico e nao publico.
+        "slider_order": ["diametro", "comprimento", "espessura"],
+        "generic_slider_order": [
+            "raio_haste_tecnico",
+            "diametro",
+            "comprimento",
+            "indice_lista_curva_superior_tecnico",
+            "espessura",
+            "indice_lista_curva_inferior_tecnico",
+        ],
+        "sampling": {
+            "force_axis_keys": ["diametro", "comprimento", "espessura"],
+            "target_count": 480,
+            "required_samples": [
+                {"diametro": 17.8, "comprimento": 29.4, "espessura": 1.5},
+            ],
+        },
+        "parameters": {
+            "diametro": parameter(5, 30, 17.8, 0.1),
+            "comprimento": parameter(5, 100, 29.4, 0.1),
+            "espessura": parameter(0.5, 3, 1.5, 0.1),
         },
     },
 ]
@@ -607,9 +737,14 @@ def aliased_slider_name(raw_name, product_config):
 
     aliases = {
         "paredetubo": "paredeTubo",
+        "espessura": "espessura",
+        "comprimento": "comprimento",
+        "altura": "alturaBase",
         "alturabase": "alturaBase",
         "alturapescoco": "alturaPescoco",
         "diametrohaste": "diametroPescoco",
+        "diamparafuso": "diametroParafuso",
+        "diametroparafuso": "diametroParafuso",
         "alturahaste": "alturaPescoco",
         "x": "tamanhoBaseX",
         "y": "tamanhoBaseY",
@@ -1297,6 +1432,18 @@ def slicer_unsafe_sample_reason(base_name, slider_values, product_config=None):
         if inner_span < minimum - 0.0001:
             return "tube_inner_span_below_{}mm".format(format_input_value(minimum))
 
+    screw_constraint = (product_config or {}).get("manufacturing", {}).get("screw_clearance")
+    if screw_constraint:
+        screw_diameter = numeric_slider_value(slider_values, screw_constraint.get("screw_diameter_key"), 0)
+        minimum_wall = float(screw_constraint.get("minimum_wall_mm", 0))
+        minimum_size = screw_diameter + minimum_wall * 2
+        sizes = [numeric_slider_value(slider_values, key, 0) for key in screw_constraint.get("size_keys", [])]
+        if sizes and min(sizes) < minimum_size - 0.0001:
+            return "screw_clearance_below_{}mm_wall".format(format_input_value(minimum_wall))
+        base_height = numeric_slider_value(slider_values, screw_constraint.get("base_height_key"), 0)
+        if base_height < float(screw_constraint.get("minimum_base_height_mm", 0)) - 0.0001:
+            return "screw_base_height_below_minimum"
+
     if base_name == "Sapata_Interna_Tubo-Oblongo":
         if (
             value_matches(slider_values, "tamanhoBaseX", 109)
@@ -1332,9 +1479,33 @@ def slicer_unsafe_sample_reason(base_name, slider_values, product_config=None):
     return ""
 
 
-def generated_geometry_issue(product_config, slider_values, metric_values):
+def generated_geometry_issue(product_config, slider_values, metric_values, selection_source=""):
     if not product_config:
         return ""
+
+    if product_config.get("category_slug") == "sapata-u":
+        expected_length = numeric_slider_value(slider_values, "comprimento", 0)
+        expected_span = (
+            numeric_slider_value(slider_values, "diametro", 0)
+            + numeric_slider_value(slider_values, "espessura", 0) * 2
+        )
+        actual_length = float(metric_values.get("bbox_x", 0))
+        actual_span = max(
+            float(metric_values.get("bbox_y", 0)),
+            float(metric_values.get("bbox_z", 0)),
+        )
+        if expected_length > 0 and actual_length + 0.1 < expected_length:
+            return "incomplete_u_body_length_expected_{}mm_got_{}mm".format(
+                format_input_value(expected_length),
+                format_input_value(actual_length),
+            )
+        if expected_span > 0 and actual_span + 0.1 < expected_span:
+            return "incomplete_u_body_span_expected_{}mm_got_{}mm".format(
+                format_input_value(expected_span),
+                format_input_value(actual_span),
+            )
+        if not (selection_source or "").startswith("export_3mf:"):
+            return "grasshopper_runtime_error_missing_export_3mf"
 
     requires_neck = (
         product_config.get("category_slug") == "ponteira-interna-tubo"
@@ -1513,7 +1684,12 @@ def process_file(Grasshopper, gh_path):
             log("Rhino nao adicionou solido valido no {}: {} tentativa {}".format(selection_source, base_name, attempt_index + 1))
             continue
         metric_values = metrics(rhino_object)
-        geometry_issue = generated_geometry_issue(product_config, slider_values, metric_values)
+        geometry_issue = generated_geometry_issue(
+            product_config,
+            slider_values,
+            metric_values,
+            selection_source,
+        )
         if geometry_issue:
             log("Amostra descartada apos gerar geometria: {} ({})".format(sample_id, geometry_issue))
             continue
@@ -1568,6 +1744,21 @@ def write_dataset(rows):
         rows = preserved_rows + rows
 
     mode = "ab" if APPEND_DATASET and not REPLACE_EXISTING and os.path.isfile(DATASET_PATH) else "wb"
+    if mode == "ab" and rows:
+        with open(DATASET_PATH, "rb") as handle:
+            reader = csv.reader(handle)
+            try:
+                existing_headers = next(reader)
+            except TypeError:
+                existing_headers = reader.next()
+            except StopIteration:
+                existing_headers = []
+
+        if existing_headers != CANONICAL_HEADERS:
+            log("Cabecalho canonico evoluiu; regravando dataset existente antes do append.")
+            rows = existing_dataset_rows() + rows
+            mode = "wb"
+
     with open(DATASET_PATH, mode) as handle:
         writer = csv.DictWriter(handle, fieldnames=CANONICAL_HEADERS)
         if mode == "wb":

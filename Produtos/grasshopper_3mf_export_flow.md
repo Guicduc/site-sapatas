@@ -227,11 +227,34 @@ npm run pricing:audit
 ```
 
 - `pricing:model-check` detecta parametros impossiveis e geometrias incompletas no CSV canonico; use `node Produtos/scripts/audit-pricing-models.mjs --fix` somente para classificar mecanicamente linhas ja invalidas.
-- `pricing:check` percorre todos os valores de todos os sliders das superficies publicas com o mesmo motor usado pela loja. Alem do contexto padrao, cobre os extremos dos demais parametros e as espessuras de parede 0,8/2/4/6/8 mm (245 varreduras no catalogo atual).
+- `pricing:check` percorre todos os valores de todos os sliders das superficies publicas com o mesmo motor usado pela loja. Alem do contexto padrao, cobre os extremos dos demais parametros e as espessuras de parede 0,8/2/4/6/8 mm (324 varreduras no catalogo atual).
 - `pricing:audit` confere sincronismo do CSV, precos publicados, configuracoes padrao e duas medidas de cobertura: leave-one-out IDW-8 e validacao cruzada em cinco folds do modelo usado no site. Os limites seguem a referencia operacional: mediana de erro de ate 8% e no maximo 10% das amostras acima de 25% de erro por superficie.
 
-O site ajusta, para cada superficie, um polinomio de grau 3 com coeficientes nao negativos sobre as dimensoes normalizadas. Essa restricao torna o custo nao decrescente quando largura, altura ou diametro aumentam. A parede do tubo usa bases lineares separadas porque seu efeito geometrico pode variar nas duas direcoes. O ajuste e gerado por `pricing:build-data` a partir dos slices reais e nunca deve ser editado manualmente.
+O site ajusta, para cada superficie, um polinomio de grau 3 com coeficientes nao negativos sobre as dimensoes normalizadas. Essa restricao torna o custo nao decrescente quando largura, altura ou diametro aumentam. A parede do tubo e o diametro de um furo usam bases lineares separadas porque seus efeitos geometricos podem variar nas duas direcoes. O ajuste e gerado por `pricing:build-data` a partir dos slices reais e nunca deve ser editado manualmente.
 
 As premissas de material, perda, maquina, energia, manutencao e desgaste vivem em `lib/pricing-cost.js`; site, gerador do CSV e auditorias importam a mesma funcao para impedir divergencia silenciosa de formula.
 
 O texto publico "a partir de" significa o menor preco de uma configuracao fabricavel e vendavel. Nos tubos, a auditoria percorre todo o range de parede e ajusta os tamanhos minimos para preservar o vao interno exigido; nas demais familias, usa as menores dimensoes ativas de cada variante.
+
+## Novas familias e fixacao por parafuso
+
+O Pino inserido, a Sapata U e as variantes com furo para parafuso das sapatas lisas redonda e quadrada estao ativos depois da exportacao, do slice e da cobertura de preco validados. Os contratos sao:
+
+| Familia | Script | Parametros do catalogo | Variantes |
+| --- | --- | --- | --- |
+| Sapata U | `Sapata_U_SemHaste.gh` / `Sapata_U_ComHaste.gh` | `diametro`, `espessura`, `comprimento`, `pescoco` | `sem-haste` / `haste` |
+| Sapata com pino inserido | `Sapata_PinoInserido.gh` | `diametro`, `alturaBase` | unica |
+| Sapata lisa redonda com furo | `Sapata_Lisa_Redonda-com parafuso.gh` | `diametro`, `alturaBase`, `diametroParafuso` | `com-parafuso` |
+| Sapata lisa quadrada com furo | `Sapata_Lisa_Quadrada-com parafuso.gh` | `tamanhoBaseX`, `tamanhoBaseY`, `alturaBase`, `diametroParafuso` | `com-parafuso` |
+
+As variantes `com-parafuso` entregam somente o furo de fixacao; o parafuso metalico nao esta incluido. O exportador limita o furo a 2--8 mm, a altura da base a pelo menos 2 mm e preserva 3 mm de parede radial. Foram aprovados 577 slices da variante quadrada e 356 da redonda.
+
+O defeito original dos dois arquivos da Sapata U era o Panel `6ab4986f-3863-4ae8-beb1-6d30cc676b36`, que convertia em texto as cinco fontes de pontos antes da entrada `Vertices` do Nurbs. `repair-sapata-u-gh-archive.py` troca apenas a classe serializada desse objeto por um parametro `Point`, preserva GUIDs e conexoes e renomeia a saida final para `EXPORT_3MF` (`SDiff` sem haste e `SUnion` com haste). Os candidatos foram validados isoladamente antes da promocao. O lote aprovado contem 1.225 slices sem haste e 1.226 com haste.
+
+Use o Orca Slicer 2.3.1 portatil usado pelo dataset canonico. A instalacao mais nova encontrada em `Program Files` apresentou `APPCRASH` em `OrcaSlicer.dll`; misturar versoes invalida a comparabilidade e pode perder o lote. Para preservar linhas ja validadas ao acrescentar um produto, use `ORCA_SLICE_ONLY_MISSING=true`.
+
+As entradas explicitas dessas familias vivem em `PRODUCT_CONFIGS`, com `source_gh`, `slider_order`, ranges, defaults, variantes e selecao da saida final. Nao deixe os sliders sem nome serem interpretados como amostragem generica: isso pode produzir dados sem correspondencia com o configurador.
+
+Use `GH_APPEND_DATASET=true` para preservar o CSV atual e filtre o arquivo com `GH_ONLY`. A exportacao deve ocorrer no repositorio escolhido por `TRACO_BASE_REPO`; sem essa variavel, o runner PowerShell usa o repositorio padrao da Area de Trabalho. Para um teste de Orca isolado, use um diretorio novo de saida e nao execute `slice:dataset` no CSV canonico: esse runner regrava o arquivo informado em `ORCA_DATASET_PATH`.
+
+O gate para promover uma variante de `draft` e: geometria exportada valida, slice com `material_grams` e `print_minutes`, `pricing:build-data`, `pricing:check` e `pricing:audit` aprovados. Os limites de cobertura continuam mediana de erro de ate 8% e no maximo 10% de amostras acima de 25% de erro.

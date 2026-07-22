@@ -18,14 +18,40 @@
       "slug": "sapata-base-lisa",
       "name": "Sapata lisa",
       "eyebrow": "Apoio plano customizável",
-      "description": "Sapatas lisas customizáveis em formatos redondo e quadrado, com ou sem pescoço.",
+      "description": "Sapatas lisas customizáveis em formatos redondo e quadrado, com haste ou furo para parafuso.",
       "baseType": "base lisa",
-      "primaryFixation": "apoio plano",
+      "primaryFixation": "apoio plano ou parafuso",
       "image": {
         "src": "/brand/categoria-sapata-base-lisa.png",
         "alt": "Sapatas Baseforma para bases lisas redondas e quadradas"
       },
       "applications": ["poltronas", "banquinhos", "bases metálicas", "móveis autorais"]
+    },
+    {
+      "slug": "sapata-u",
+      "name": "Sapata U",
+      "eyebrow": "Encaixe por pressao em perfil",
+      "description": "Sapatas em U para perfis e chapas, com ou sem haste.",
+      "baseType": "perfil em U",
+      "primaryFixation": "encaixe por pressao",
+      "image": {
+        "src": "/brand/categoria-sapata-base-lisa.png",
+        "alt": "Sapata Baseforma em U para perfis e chapas"
+      },
+      "applications": ["estruturas metalicas", "mobiliario", "perfis e chapas"]
+    },
+    {
+      "slug": "sapata-pino",
+      "name": "Sapata com pino",
+      "eyebrow": "Pino de encaixe por medida",
+      "description": "Pinos inseridos para composicoes e reposicoes sob medida.",
+      "baseType": "pino inserido",
+      "primaryFixation": "encaixe",
+      "image": {
+        "src": "/brand/categoria-sapata-base-lisa.png",
+        "alt": "Pino inserido Baseforma"
+      },
+      "applications": ["mobiliario", "reposicao", "componentes de encaixe"]
     }
   ]
 }

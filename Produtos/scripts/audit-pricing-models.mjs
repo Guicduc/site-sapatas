@@ -107,6 +107,26 @@ function exportedGeometryIssue(row) {
   const height = Number(row.bbox_z);
   const hasGeometryMetrics = row.object_type && row.volume_model_units3 !== "" && row.bbox_z !== "";
 
+  if (
+    row.category_slug === "sapata-pino" &&
+    (row.slice_status === "error" ||
+      (row.slice_status === "invalid_geometry" && row.slice_error === "orca_slice_failed_for_geometry")) &&
+    Number(row.material_grams || 0) <= 0 &&
+    Number(row.print_minutes || 0) <= 0
+  ) {
+    return "orca_slice_failed_for_geometry";
+  }
+
+  if (
+    row.category_slug === "sapata-base-lisa" &&
+    row.variant_slug === "com-parafuso" &&
+    (row.slice_status === "error" || row.slice_status === "invalid_geometry") &&
+    Number(row.material_grams || 0) <= 0 &&
+    Number(row.print_minutes || 0) <= 0
+  ) {
+    return "orca_slice_failed_for_geometry";
+  }
+
   if (hasGeometryMetrics && (volume <= 0.0001 || height <= 0.0001)) {
     return "empty_or_invalid_export_geometry";
   }
@@ -152,6 +172,23 @@ function tubeConfigurationIssue(contract, row) {
 }
 
 function generatedGeometryIssue(contract, row) {
+  if (contract.categorySlug === "sapata-u") {
+    const expectedLength = Number(row.comprimento || 0);
+    const expectedSpan = Number(row.diametro || 0) + Number(row.espessura || 0) * 2;
+    const actualLength = Number(row.bbox_x || 0);
+    const actualSpan = Math.max(Number(row.bbox_y || 0), Number(row.bbox_z || 0));
+
+    if (expectedLength > 0 && actualLength + 0.1 < expectedLength) {
+      return `incomplete_u_body_length_expected_${formatNumber(expectedLength)}mm_got_${formatNumber(actualLength)}mm`;
+    }
+    if (expectedSpan > 0 && actualSpan + 0.1 < expectedSpan) {
+      return `incomplete_u_body_span_expected_${formatNumber(expectedSpan)}mm_got_${formatNumber(actualSpan)}mm`;
+    }
+    if (!String(row.export_selection || "").startsWith("export_3mf:")) {
+      return "grasshopper_runtime_error_missing_export_3mf";
+    }
+  }
+
   if (!contract.requiresNeck || row.slice_status !== "ok") {
     return "";
   }

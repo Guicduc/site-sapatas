@@ -1253,9 +1253,11 @@ const PARAMETER_LABELS = {
   diametro: "Diametro",
   diametroBase: "Diametro da base",
   diametroInterno: "Diametro interno",
+  diametroParafuso: "Diametro do furo",
   distanciaFuros: "Distancia entre furos",
   largura: "Largura",
   larguraInterna: "Largura interna",
+  espessura: "Espessura",
   parede: "Parede",
   paredeTubo: "Parede do tubo",
   profundidadeInsercao: "Profundidade de insercao",
@@ -1298,6 +1300,7 @@ function formatOrderProducts(order) {
 }
 
 function formatProductName(item) {
+  const hasScrew = Boolean(item.values?.parafuso);
   const hasStem = Boolean(
     item.values?.haste ||
     item.values?.pescoco ||
@@ -1310,10 +1313,12 @@ function formatProductName(item) {
     "ponteira-interna-tubo:quadrado": "Sapata interna tubo quadrado",
     "ponteira-interna-tubo:retangular": "Sapata interna tubo retangular",
     "ponteira-interna-tubo:oblongo": "Sapata interna tubo oblongo",
-    "sapata-base-lisa:redonda": `Sapata lisa redonda${hasStem ? " com haste" : ""}`,
-    "sapata-base-lisa:quadrada": `Sapata lisa quadrada${hasStem ? " com haste" : ""}`,
+    "sapata-base-lisa:redonda": `Sapata lisa redonda${hasScrew ? " com furo para parafuso" : hasStem ? " com haste" : ""}`,
+    "sapata-base-lisa:quadrada": `Sapata lisa quadrada${hasScrew ? " com furo para parafuso" : hasStem ? " com haste" : ""}`,
     "sapata-base-lisa:oblonga": `Sapata lisa oblonga${hasStem ? " com haste" : ""}`,
-    "sapata-base-lisa:retangular": `Sapata lisa retangular${hasStem ? " com haste" : ""}`
+    "sapata-base-lisa:retangular": `Sapata lisa retangular${hasStem ? " com haste" : ""}`,
+    "sapata-u:u": `Sapata U${hasStem ? " com haste" : " sem haste"}`,
+    "sapata-pino:pino-inserido": "Sapata com pino inserido"
   };
 
   const key = `${item.categorySlug}:${item.formatSlug}`;

@@ -49,8 +49,11 @@ const canonicalHeaders = [
   "alturaBase",
   "alturaPescoco",
   "diametroPescoco",
+  "diametroParafuso",
   "paredeTubo",
   "pescoco",
+  "comprimento",
+  "espessura",
   "object_type",
   "area_model_units2",
   "volume_model_units3",
@@ -81,8 +84,11 @@ const parameterHeaders = [
   "alturaBase",
   "alturaPescoco",
   "diametroPescoco",
+  "diametroParafuso",
   "paredeTubo",
-  "pescoco"
+  "pescoco",
+  "comprimento",
+  "espessura"
 ];
 
 const args = new Set(process.argv.slice(2));

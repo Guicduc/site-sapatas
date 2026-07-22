@@ -89,6 +89,10 @@ As familias atuais publicadas sao:
 - `sapata-tubo-oblongo`
 - `sapata-lisa-redonda`
 - `sapata-lisa-quadrada`
+- `sapata-pino-inserido`
+- `sapata-u`
+
+`sapata-u` e `sapata-pino-inserido` estao ativos com CAD, slice e cobertura de preco validados. As sapatas lisas redonda e quadrada oferecem a variante publica `com-parafuso`; ela produz o furo de fixacao, sem incluir o parafuso metalico.
 
 ## Componentes centrais
 
@@ -175,6 +179,8 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 5. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
 6. Rode `npm run export:gh`, `npm run slice:dataset`, `npm run pricing:build-data`, `npm run pricing:check` e `npm run pricing:audit`.
 7. Valide o configurador, o carrinho e o payload manual no admin (`/admin/pedidos`, secao "Dados para Grasshopper").
+
+As familias `sapata-u:u` e `sapata-pino:pino-inserido` estao ativas. Os desenhos tecnicos ficam, respectivamente, em `base-u` e `base-pin`; a operacao reconhece os nomes e dimensoes no admin, e `lib/shipping.js` calcula a embalagem efemera a partir das chaves publicas.
 
 ## Cuidados ao alterar
 
