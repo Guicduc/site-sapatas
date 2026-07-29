@@ -7,18 +7,16 @@ const faqSections = [
     id: "medidas",
     eyebrow: "Antes de configurar",
     title: "Medidas e compatibilidade",
-    description:
-      "Use estas respostas para escolher a família certa e evitar peça folgada, apertada ou fora da faixa validada.",
     items: [
       {
         question: "Como escolho a família certa?",
         answer:
-          "Comece pelo tipo de apoio e pela forma de encaixe. Depois escolha o formato, confira a faixa publicada e informe as medidas reais do seu projeto."
+          "Comece pelo ponto de instalação: dentro de um tubo redondo, quadrado ou oblongo, ou sob uma base lisa. Depois escolha o formato e informe as medidas reais da peça."
       },
       {
         question: "Como devo medir antes de configurar?",
         answer:
-          "Meça a peça real, não apenas a medida nominal do móvel. Use a dimensão do ponto de encaixe ou da área de apoio que receberá o componente."
+          "Meça a peça real, não apenas a medida nominal do móvel. Use as dimensões internas do tubo ou a área de apoio que receberá a sapata."
       },
       {
         question: "Qual é o limite de medida?",
@@ -36,8 +34,6 @@ const faqSections = [
     id: "compra",
     eyebrow: "Pedido e pagamento",
     title: "Compra, preço e pagamento",
-    description:
-      "O checkout cria um pedido próprio da Baseforma antes de encaminhar o pagamento pelo Mercado Pago.",
     items: [
       {
         question: "Existe quantidade mínima?",
@@ -47,12 +43,12 @@ const faqSections = [
       {
         question: "Quais formas de pagamento estão disponíveis?",
         answer:
-          "O pagamento ativo é Mercado Pago. Depois que o pedido local é criado, você é encaminhado para o checkout do Mercado Pago com as opções disponíveis naquele ambiente."
+          "O pagamento é feito pelo Mercado Pago. Depois de revisar e criar o pedido, você segue para o ambiente seguro de pagamento e escolhe uma das opções disponíveis."
       },
       {
         question: "O pedido já sai com nota fiscal?",
         answer:
-          "A nota fiscal é acompanhada pelo fluxo operacional via Mercado Pago após a aprovação do pagamento. Informe os dados corretos no pedido para evitar pendência antes da expedição."
+          "A nota fiscal é emitida após a aprovação do pagamento. Confira os dados de faturamento no pedido para evitar pendências antes do envio."
       }
     ]
   },
@@ -60,8 +56,6 @@ const faqSections = [
     id: "prazo",
     eyebrow: "Produção e entrega",
     title: "Prazo e entrega",
-    description:
-      "Separe prazo de produção e prazo de transporte: os dois entram na expectativa final de entrega.",
     items: [
       {
         question: "Qual é o prazo de produção?",
@@ -76,7 +70,7 @@ const faqSections = [
       {
         question: "Como o frete é calculado?",
         answer:
-          "O carrinho estima o frete a partir do CEP e dos itens configurados. Quando a integração de frete real estiver ativa, a cotação usa o Melhor Envio; sem credenciais, o site preserva o cálculo manual."
+          "Informe o CEP no carrinho para ver o valor e o prazo estimado de entrega. O cálculo considera o destino e os itens configurados antes da criação do pedido."
       }
     ]
   },
@@ -84,13 +78,11 @@ const faqSections = [
     id: "material",
     eyebrow: "Material",
     title: "Material e acabamento",
-    description:
-      "As respostas abaixo indicam o padrão atual da linha e quando vale tratar o pedido como projeto técnico.",
     items: [
       {
         question: "O material serve para área interna e externa?",
         answer:
-          "Sim. O material pode ser usado em áreas internas e externas e pode substituir o feltro quando a aplicação pede uma solução sob medida, mais estável e com encaixe definido."
+          "A linha atual pode atender áreas internas e externas, mas a escolha depende da carga, do piso e da exposição. Para uso crítico, envie o contexto como projeto especial."
       },
       {
         question: "Quando devo abrir um projeto especial?",
@@ -101,32 +93,8 @@ const faqSections = [
   }
 ];
 
-const faqPaths = [
-  {
-    step: "01",
-    title: "Configurador",
-    href: "/catalogo",
-    label: "Abrir catálogo",
-    body: "Use quando a família, o formato e as medidas estiverem dentro da faixa publicada."
-  },
-  {
-    step: "02",
-    title: "Carrinho",
-    href: "/carrinho",
-    label: "Revisar carrinho",
-    body: "Revise quantidade, preço, frete estimado e dados do pedido antes do pagamento."
-  },
-  {
-    step: "03",
-    title: "Projeto especial",
-    href: "/projeto-especial",
-    label: "Enviar briefing",
-    body: "Use para medidas fora da matriz, geometria nova ou aplicação crítica."
-  }
-];
-
 export const metadata = {
-  title: "FAQ técnico e comercial",
+  title: "Perguntas frequentes",
   description:
     "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, pagamento, frete, produção, material e projeto especial.",
   alternates: {
@@ -156,36 +124,28 @@ export default function FaqPage() {
         }}
       />
 
-      <section className="faq-hero">
-        <div>
-          <p className="eyebrow">FAQ técnico-comercial</p>
-          <h1>FAQ para medir, configurar e comprar sapatas sob medida.</h1>
+      <section className="faq-hero" aria-labelledby="faq-title">
+        <div className="faq-hero__copy">
+          <p className="eyebrow">Perguntas frequentes</p>
+          <h1 id="faq-title">O que você precisa saber antes de pedir.</h1>
           <p className="lead">
-            Respostas práticas para decidir se o pedido segue pelo configurador, pelo carrinho ou
-            pelo fluxo de projeto especial.
+            Encontre respostas sobre medidas, pagamento, prazo, frete e material. Se a peça sair
+            da faixa do catálogo, mostramos quando abrir um projeto especial.
           </p>
-          <div className="faq-hero__actions" aria-label="Ações principais">
-            <Link className="button button-primary" href="/catalogo">
-              Abrir catálogo
-            </Link>
-            <Link className="button button-secondary" href="/projeto-especial">
-              Projeto especial
-            </Link>
-          </div>
         </div>
-      </section>
 
-      <section className="faq-routing" aria-label="Caminhos principais">
-        {faqPaths.map((path) => (
-          <article key={path.title}>
-            <span>{path.step}</span>
-            <strong>{path.title}</strong>
-            <p>{path.body}</p>
-            <Link className="faq-routing__link" href={path.href}>
-              {path.label}
-            </Link>
-          </article>
-        ))}
+        <nav className="faq-topic-nav" aria-label="Assuntos da FAQ">
+          <p className="eyebrow">Encontre por assunto</p>
+          <div className="faq-topic-nav__links">
+            {faqSections.map((section, index) => (
+              <a key={section.id} href={`#${section.id}`}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{section.title}</strong>
+                <span aria-hidden="true">↓</span>
+              </a>
+            ))}
+          </div>
+        </nav>
       </section>
 
       <section className="faq-layout">
@@ -193,9 +153,11 @@ export default function FaqPage() {
           {faqSections.map((section, sectionIndex) => (
             <article key={section.title} id={section.id} className="faq-section">
               <div className="faq-section__heading">
-                <p className="eyebrow">{section.eyebrow}</p>
+                <div className="faq-section__label">
+                  <span>{String(sectionIndex + 1).padStart(2, "0")}</span>
+                  <p className="eyebrow">{section.eyebrow}</p>
+                </div>
                 <h2>{section.title}</h2>
-                <p>{section.description}</p>
               </div>
               <div className="faq-stack">
                 {section.items.map((item, index) => (
@@ -212,11 +174,11 @@ export default function FaqPage() {
 
       <section className="cta-banner">
         <div>
-          <p className="eyebrow">Ficou em dúvida?</p>
-          <h2>Precisa de um desenho específico?</h2>
+          <p className="eyebrow">Próximo passo</p>
+          <h2>Não encontrou a peça que precisa?</h2>
           <p>
-            O configurador resolve os casos da matriz atual. Casos com tolerância crítica, carga
-            incomum ou requisito estético específico devem entrar pelo briefing.
+            Configure uma opção do catálogo ou envie as medidas e o contexto do seu projeto para
+            avaliarmos uma solução especial.
           </p>
         </div>
         <div className="action-row">
