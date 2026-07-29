@@ -12,29 +12,23 @@ import { calculateUnitProductionCost } from "../../lib/pricing-cost.js";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, "../..");
 const catalogDir = path.join(repoRoot, "catalog", "products");
+const outputPath = path.join(repoRoot, "Produtos", "logs", "pricing-coverage-audit.json");
 const neighborCount = 8;
 const highErrorThreshold = 0.25;
 const maxMedianRelativeError = Number(process.env.PRICING_COVERAGE_MAX_MEDIAN_ERROR || 0.08);
 const maxHighErrorRate = Number(process.env.PRICING_COVERAGE_MAX_HIGH_ERROR_RATE || 0.1);
 const checkMode = process.argv.includes("--check");
-const includeDrafts = process.argv.includes("--include-drafts");
-const outputPath = path.join(
-  repoRoot,
-  "Produtos",
-  "logs",
-  includeDrafts ? "pricing-coverage-audit-drafts.json" : "pricing-coverage-audit.json"
-);
 
 async function main() {
-  const products = await readProducts();
+  const products = await readActiveProducts();
   const surfaces = publicSurfaces(products);
   const reports = surfaces.map((surface) => auditSurface(surface));
   const modelReports = surfaces.map((surface) => auditRuntimeModel(surface));
   const failingSurfaces = reports.filter((report) => {
-    return report.insufficientSamples || report.medianRelativeError > maxMedianRelativeError || report.highErrorRate > maxHighErrorRate;
+    return report.medianRelativeError > maxMedianRelativeError || report.highErrorRate > maxHighErrorRate;
   });
   const failingModels = modelReports.filter((report) => {
-    return report.insufficientSamples || report.medianRelativeError > maxMedianRelativeError || report.highErrorRate > maxHighErrorRate;
+    return report.medianRelativeError > maxMedianRelativeError || report.highErrorRate > maxHighErrorRate;
   });
   const summary = {
     surfaces: reports.length,
@@ -78,10 +72,10 @@ async function main() {
       [
         report.surfaceId,
         `n=${report.sampleCount}`,
-        `mediana=${coveragePercent(report, report.medianRelativeError)}`,
-        `p90=${coveragePercent(report, report.p90RelativeError)}`,
-        `p95=${coveragePercent(report, report.p95RelativeError)}`,
-        `>25%=${report.highErrorSamples} (${coveragePercent(report, report.highErrorRate)})`
+        `mediana=${percent(report.medianRelativeError)}`,
+        `p90=${percent(report.p90RelativeError)}`,
+        `p95=${percent(report.p95RelativeError)}`,
+        `>25%=${report.highErrorSamples} (${percent(report.highErrorRate)})`
       ].join(" | ")
     );
   }
@@ -91,9 +85,9 @@ async function main() {
       [
         report.surfaceId,
         `n=${report.sampleCount}`,
-        `mediana=${coveragePercent(report, report.medianRelativeError)}`,
-        `p95=${coveragePercent(report, report.p95RelativeError)}`,
-        `>25%=${report.highErrorSamples} (${coveragePercent(report, report.highErrorRate)})`
+        `mediana=${percent(report.medianRelativeError)}`,
+        `p95=${percent(report.p95RelativeError)}`,
+        `>25%=${report.highErrorSamples} (${percent(report.highErrorRate)})`
       ].join(" | ")
     );
   }
@@ -110,15 +104,9 @@ function auditRuntimeModel(surface) {
   const samples = slicerPricingSamples.filter((sample) => {
     return sampleSurfaceId(sample) === surface.surfaceId && isManufacturableSample(surface, sample);
   });
-  const wallKey = surface.parameterKeys.find((key) => {
-    return key === "paredeTubo" || key === "diametroParafuso";
-  }) || "";
+  const wallKey = surface.parameterKeys.includes("paredeTubo") ? "paredeTubo" : "";
   const parameterKeys = surface.parameterKeys.filter((key) => key !== wallKey);
   const sampleErrors = [];
-
-  if (samples.length < 5) {
-    return insufficientSurfaceReport(surface, samples.length, parameterKeys, wallKey);
-  }
 
   for (let fold = 0; fold < 5; fold += 1) {
     const trainingSamples = samples.filter((_, index) => index % 5 !== fold);
@@ -164,13 +152,13 @@ function auditRuntimeModel(surface) {
   };
 }
 
-async function readProducts() {
+async function readActiveProducts() {
   const names = (await fs.readdir(catalogDir)).filter((name) => name.endsWith(".json")).sort();
   const products = [];
 
   for (const name of names) {
     const product = JSON.parse(await fs.readFile(path.join(catalogDir, name), "utf8"));
-    if (product.status === "active" || (includeDrafts && product.status === "draft")) {
+    if (product.status === "active") {
       products.push(product);
     }
   }
@@ -184,8 +172,6 @@ function publicSurfaces(products) {
       .filter((variant) => variant.public)
       .map((variant) => ({
         productId: product.productId,
-        productStatus: product.status,
-        variantId: variant.id,
         surfaceId: variant.pricing.surfaceId,
         parameterKeys: variant.cad.sliderOrder,
         saleMultiplier: Number(variant.pricing.saleMultiplier || 1),
@@ -199,7 +185,7 @@ function auditSurface(surface) {
     return sampleSurfaceId(sample) === surface.surfaceId && isManufacturableSample(surface, sample);
   });
   if (samples.length < neighborCount + 1) {
-    return insufficientSurfaceReport(surface, samples.length, surface.parameterKeys, "");
+    throw new Error(`${surface.surfaceId}: amostras insuficientes para LOO-IDW (${samples.length}).`);
   }
 
   const ranges = parameterRanges(samples, surface.parameterKeys);
@@ -257,51 +243,19 @@ function auditSurface(surface) {
   };
 }
 
-function insufficientSurfaceReport(surface, sampleCount, parameterKeys, wallKey) {
-  return {
-    productId: surface.productId,
-    productStatus: surface.productStatus,
-    surfaceId: surface.surfaceId,
-    parameterKeys,
-    wallKey,
-    sampleCount,
-    insufficientSamples: true,
-    requiredSamples: neighborCount + 1,
-    medianRelativeError: null,
-    p90RelativeError: null,
-    p95RelativeError: null,
-    maxRelativeError: null,
-    highErrorSamples: 0,
-    highErrorRate: null,
-    worstSamples: [],
-    sampleErrors: []
-  };
-}
-
 function isManufacturableSample(surface, sample) {
   const constraint = surface.manufacturing?.tubeInnerSpan;
-  if (constraint) {
-    const wall = Number(sample.params?.[constraint.wallThicknessKey]);
-    const innerSpan = Math.min(
-      ...constraint.sizeKeys.map((key) => {
-        return Number(sample.params?.[key]) + Number(constraint.sizeOffsetsMm?.[key] || 0) - wall * 2;
-      })
-    );
-    if (!Number.isFinite(innerSpan) || innerSpan + 0.0001 < Number(constraint.minimumMm)) return false;
+  if (!constraint) {
+    return true;
   }
 
-  const screw = surface.manufacturing?.screwClearance;
-  if (screw && surface.variantId === "com-parafuso") {
-    const diameter = Number(sample.params?.[screw.screwDiameterKey]);
-    const minimumSize = diameter + Number(screw.minimumWallMm) * 2;
-    const sizes = screw.sizeKeys.map((key) => Number(sample.params?.[key]));
-    const height = Number(sample.params?.[screw.baseHeightKey]);
-    return Number.isFinite(diameter) &&
-      sizes.every((size) => Number.isFinite(size) && size + 0.0001 >= minimumSize) &&
-      Number.isFinite(height) && height + 0.0001 >= Number(screw.minimumBaseHeightMm);
-  }
-
-  return true;
+  const wall = Number(sample.params?.[constraint.wallThicknessKey]);
+  const innerSpan = Math.min(
+    ...constraint.sizeKeys.map((key) => {
+      return Number(sample.params?.[key]) + Number(constraint.sizeOffsetsMm?.[key] || 0) - wall * 2;
+    })
+  );
+  return Number.isFinite(innerSpan) && innerSpan + 0.0001 >= Number(constraint.minimumMm);
 }
 
 function nearestNeighbors(samples, excludedIndex, requestedParams, parameterKeys, ranges) {
@@ -406,10 +360,6 @@ function ratio(value, total) {
 
 function percent(value) {
   return `${(Number(value || 0) * 100).toFixed(1)}%`;
-}
-
-function coveragePercent(report, value) {
-  return report.insufficientSamples ? "insuficiente" : percent(value);
 }
 
 function round(value, decimals = 2) {

@@ -354,21 +354,18 @@ function firstName(value) {
 }
 
 function formatKey(key) {
-  if (key === "diametroParafuso") return "Diâmetro do furo";
-  if (key === "parafuso") return "Furo para parafuso";
   return key.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase());
 }
 
 function visibleItemValues(values = {}) {
   return Object.entries(values).filter(([key]) => {
-    if (key === "alturaPescoco" || key === "diametroPescoco") return Boolean(values.pescoco);
-    if (key === "diametroParafuso") return Boolean(values.parafuso);
-    return true;
+    if (values.pescoco) return true;
+    return key !== "alturaPescoco" && key !== "diametroPescoco";
   });
 }
 
 function formatSpecValue(key, value) {
-  if (key === "pescoco" || key === "parafuso") return value ? "Sim" : "Não";
+  if (key === "pescoco") return value ? "Sim" : "Não";
   return `${value} mm`;
 }
 

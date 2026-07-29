@@ -8,13 +8,12 @@
   "skuPrefix": "BF-BL-RD",
   "sku": {
     "versionMarker": "V2",
-    "parameterOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco", "diametroParafuso"],
+    "parameterOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"],
     "parameterCodes": {
       "diametro": "DI",
       "alturaBase": "AB",
       "alturaPescoco": "AP",
-      "diametroPescoco": "DP",
-      "diametroParafuso": "DF"
+      "diametroPescoco": "DP"
     },
     "colorCodes": { "Preta": "PR" }
   },
@@ -23,23 +22,12 @@
   "finishes": [],
   "leadTimeBaseDays": 4,
   "generationMode": "local_manual",
-  "manufacturing": {
-    "screwClearance": {
-      "sizeKeys": ["diametro"],
-      "screwDiameterKey": "diametroParafuso",
-      "minimumWallMm": 3,
-      "baseHeightKey": "alturaBase",
-      "minimumBaseHeightMm": 2
-    }
-  },
   "drawingType": "base-round",
   "notes": ["Modelo paramétrico disponível para configuração."],
   "parameters": [
     { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
     { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
     { "key": "pescoco", "label": "Haste", "type": "boolean", "default": false, "role": "toggle" },
-    { "key": "parafuso", "label": "Furo para parafuso", "type": "boolean", "default": false, "role": "toggle" },
-    { "key": "diametroParafuso", "label": "Diametro do furo", "type": "dimension", "unit": "mm", "min": 2, "max": 8, "step": 0.1, "default": 3, "dependsOn": "parafuso" },
     { "key": "alturaPescoco", "label": "Altura da haste", "type": "dimension", "unit": "mm", "min": 5, "max": 35, "step": 1, "default": 12, "role": "neck-height", "dependsOn": "pescoco" },
     { "key": "diametroPescoco", "label": "Diâmetro da haste", "type": "dimension", "unit": "mm", "min": 3, "max": 15, "step": 1, "default": 8, "role": "neck-width", "dependsOn": "pescoco" }
   ],
@@ -48,7 +36,7 @@
       "id": "sem-haste",
       "code": "SH",
       "public": true,
-      "condition": { "pescoco": false, "parafuso": false },
+      "condition": { "pescoco": false },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda.gh",
         "sliderOrder": ["diametro", "alturaBase"]
@@ -63,7 +51,7 @@
       "id": "haste",
       "code": "HA",
       "public": true,
-      "condition": { "pescoco": true, "parafuso": false },
+      "condition": { "pescoco": true },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com Haste.gh",
         "sliderOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"]
@@ -77,12 +65,10 @@
     {
       "id": "com-parafuso",
       "code": "CP",
-      "public": true,
-      "condition": { "pescoco": false, "parafuso": true },
+      "public": false,
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
-        "modelVersion": "base-round-screw-gh-v1",
-        "sliderOrder": ["diametro", "alturaBase", "diametroParafuso"]
+        "sliderOrder": ["diametro", "alturaBase"]
       },
       "pricing": {
         "surfaceId": "sapata-base-lisa:redonda:com-parafuso",
