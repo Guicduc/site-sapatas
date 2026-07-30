@@ -47,7 +47,7 @@ export function ParametricDrawing({
         {type === "base-round" && <BaseRound format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-oblong" && <BaseOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-rect" && <BaseRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-u" && <BaseU values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {type === "base-u" && <BaseU format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-pin" && <BasePin format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         </svg>
       </div>
@@ -706,34 +706,101 @@ function parameterMax(format, key, fallback) {
   return format?.parameters?.find((parameter) => parameter.key === key)?.max ?? fallback;
 }
 
-function BaseU({ values, activeKey, onSelect }) {
+function BaseU({ format, values, activeKey, onSelect }) {
   const diameterValue = Number(values.diametro || values.profundidadeCanal || 8);
   const thicknessValue = Number(values.espessura || values.espessuraChapa || 1.5);
   const lengthValue = Number(values.comprimento || 25);
   const hasNeck = values.pescoco === true || values.pescoco === "true";
-  const channel = clamp(diameterValue * 12, 42, 150);
-  const wall = clamp(thicknessValue * 17, 8, 38);
-  const length = clamp(lengthValue * 5.8, 170, 380);
-  const height = Math.max(channel + wall * 2, 108);
-  const left = 320 - length / 2;
-  const right = 320 + length / 2;
-  const channelLeft = 320 - channel / 2;
-  const channelRight = 320 + channel / 2;
-  const top = 118;
-  const bottom = top + height;
+  const innerRadius = scaleReadableAxis(diameterValue, {
+    maxValue: parameterMax(format, "diametro", 60),
+    maxSize: 72,
+    minSize: 34,
+    curve: 22
+  });
+  const wall = scaleReadableAxis(thicknessValue, {
+    maxValue: parameterMax(format, "espessura", 3),
+    maxSize: 18,
+    minSize: 7,
+    curve: 1.4
+  });
+  const outerRadius = innerRadius + wall;
+  const sectionCx = 238;
+  const sectionCy = 224;
+  const openingAngle = Math.PI * 0.29;
+  const outerStartX = sectionCx - outerRadius * Math.cos(openingAngle);
+  const outerStartY = sectionCy - outerRadius * Math.sin(openingAngle);
+  const outerEndX = sectionCx + outerRadius * Math.cos(openingAngle);
+  const outerEndY = outerStartY;
+  const innerStartX = sectionCx - innerRadius * Math.cos(openingAngle);
+  const innerStartY = sectionCy - innerRadius * Math.sin(openingAngle);
+  const innerEndX = sectionCx + innerRadius * Math.cos(openingAngle);
+  const innerEndY = innerStartY;
+  const sectionBottom = sectionCy + outerRadius;
+  const sectionPath = [
+    `M ${outerStartX} ${outerStartY}`,
+    `A ${outerRadius} ${outerRadius} 0 1 0 ${outerEndX} ${outerEndY}`,
+    `L ${innerEndX} ${innerEndY}`,
+    `A ${innerRadius} ${innerRadius} 0 1 1 ${innerStartX} ${innerStartY}`,
+    "Z"
+  ].join(" ");
+  const sideLength = scaleReadableAxis(lengthValue, {
+    maxValue: parameterMax(format, "comprimento", 100),
+    maxSize: 212,
+    minSize: 104,
+    curve: 38
+  });
+  const sideLeft = 446;
+  const sideRight = sideLeft + sideLength;
+  const sideTop = sectionCy - outerRadius;
+  const sideShoulder = sideTop + clamp(outerRadius * 0.38, 18, 34);
+  const sideBottom = sectionBottom;
+  const sidePath = [
+    `M ${sideLeft} ${sideBottom}`,
+    `L ${sideLeft} ${sideShoulder}`,
+    `C ${sideLeft + 8} ${sideTop}, ${sideRight - 8} ${sideTop}, ${sideRight} ${sideShoulder}`,
+    `L ${sideRight} ${sideBottom}`,
+    "Z"
+  ].join(" ");
+  const stemWidth = clamp(innerRadius * 0.42, 22, 38);
+  const stemTop = sectionCy;
+  const stemBottom = sectionCy + innerRadius + wall * 0.65;
+  const lengthDimensionY = sideBottom + 38;
+  const diameterDimensionY = lengthDimensionY;
+  const viewTitleY = lengthDimensionY + 38;
+  const sectionGuideTop = Math.max(104, sectionCy - outerRadius - 18);
+  const thicknessDimensionX = outerEndX + 52;
 
   return (
     <>
-      <ViewTitle x={viewLabelX} y={top + 8} lines={["Vista", "frontal"]} />
-      <line className="technical-centerline" x1="320" x2="320" y1={top - 34} y2={bottom + 22} />
-      <path className="technical-section base-section" d={`M ${left} ${top} H ${right} V ${bottom} H ${channelRight + wall} V ${top + wall} H ${channelLeft - wall} V ${bottom} H ${left} Z`} />
-      <rect className="void" x={channelLeft} y={top} width={channel} height={Math.max(12, height - wall)} rx="5" />
-      <line className="technical-datum" x1={left - 34} x2={right + 34} y1={bottom} y2={bottom} />
-      <line className="technical-outline-heavy" x1={left} x2={right} y1={bottom} y2={bottom} />
-      <Dimension x1={channelLeft} y1={top - 30} x2={channelRight} y2={top - 30} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={channelRight} y1={top + wall / 2} x2={channelRight + wall} y2={top + wall / 2} label={`${thicknessValue} mm`} paramKey="espessura" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={left} y1={bottom + 28} x2={right} y2={bottom + 28} label={`${lengthValue} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
-      {hasNeck && <text className="drawing-view-title" x={320} y={bottom + 56} style={{ textAnchor: "middle" }}>variante com haste</text>}
+      <ViewTitle x={sectionCx} y={viewTitleY} lines={["Vista", "de seção"]} />
+      <ViewTitle x={(sideLeft + sideRight) / 2} y={viewTitleY} lines={["Vista", "lateral"]} />
+      <line className="technical-centerline" x1={sectionCx} x2={sectionCx} y1={sectionGuideTop} y2={sectionBottom + 18} />
+      {hasNeck && (
+        <rect
+          className="part muted"
+          x={sectionCx - stemWidth / 2}
+          y={stemTop}
+          width={stemWidth}
+          height={stemBottom - stemTop}
+          rx="2"
+        />
+      )}
+      <path className="technical-section base-section" d={sectionPath} />
+      <path className="part" d={sidePath} />
+      <path
+        className="technical-hidden"
+        d={`M ${sideLeft + wall} ${sideShoulder} C ${sideLeft + wall + 8} ${sideTop + wall}, ${sideRight - wall - 8} ${sideTop + wall}, ${sideRight - wall} ${sideShoulder}`}
+      />
+      <line className="technical-centerline" x1={sideLeft - 12} x2={sideRight + 12} y1={sectionCy} y2={sectionCy} />
+      {hasNeck && (
+        <>
+          <line className="technical-hidden" x1={(sideLeft + sideRight - stemWidth) / 2} x2={(sideLeft + sideRight - stemWidth) / 2} y1={stemTop} y2={sideBottom - wall * 0.35} />
+          <line className="technical-hidden" x1={(sideLeft + sideRight + stemWidth) / 2} x2={(sideLeft + sideRight + stemWidth) / 2} y1={stemTop} y2={sideBottom - wall * 0.35} />
+        </>
+      )}
+      <Dimension x1={sectionCx - innerRadius} y1={diameterDimensionY} x2={sectionCx + innerRadius} y2={diameterDimensionY} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={thicknessDimensionX} y1={outerEndY} x2={thicknessDimensionX} y2={innerEndY} label={`${thicknessValue} mm`} paramKey="espessura" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={sideLeft} y1={lengthDimensionY} x2={sideRight} y2={lengthDimensionY} label={`${lengthValue} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }

@@ -427,7 +427,7 @@ PRODUCT_CONFIGS = [
             ],
         },
         "parameters": {
-            "diametro": parameter(5, 30, 17.8, 0.1),
+            "diametro": parameter(5, 60, 17.8, 0.1),
             "comprimento": parameter(5, 100, 29.4, 0.1),
             "espessura": parameter(0.5, 3, 1.5, 0.1),
         },
@@ -459,7 +459,7 @@ PRODUCT_CONFIGS = [
             ],
         },
         "parameters": {
-            "diametro": parameter(5, 30, 17.8, 0.1),
+            "diametro": parameter(5, 60, 17.8, 0.1),
             "comprimento": parameter(5, 100, 29.4, 0.1),
             "espessura": parameter(0.5, 3, 1.5, 0.1),
         },
@@ -1724,6 +1724,10 @@ def process_file(Grasshopper, gh_path):
 
 
 def write_dataset(rows):
+    if APPEND_DATASET and REPLACE_EXISTING and not rows:
+        log("Nenhuma linha valida gerada; dataset existente preservado.")
+        return
+
     if APPEND_DATASET and REPLACE_EXISTING and os.path.isfile(DATASET_PATH) and rows:
         replace_keys = set([
             (
