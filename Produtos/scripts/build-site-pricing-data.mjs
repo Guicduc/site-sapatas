@@ -23,7 +23,6 @@ const parameterKeys = [
   "alturaBase",
   "alturaPescoco",
   "diametroPescoco",
-  "diametroParafuso",
   "paredeTubo",
   "pescoco",
   "comprimento",
@@ -120,47 +119,21 @@ async function buildPricingModels(samples) {
 
       const surfaceId = variant.pricing.surfaceId;
       const surfaceSamples = samples.filter((sample) => {
-        return `${sample.categorySlug}:${sample.formatSlug}:${sample.variantSlug}` === surfaceId &&
-          isManufacturableSample(manifest, variant, sample);
+        return `${sample.categorySlug}:${sample.formatSlug}:${sample.variantSlug}` === surfaceId;
       });
-      const variableKey = variant.cad?.sliderOrder?.find((key) => {
-        return key === "paredeTubo" || key === "diametroParafuso";
-      }) || "";
-      const progressiveKeys = (variant.cad?.sliderOrder || []).filter((key) => key !== variableKey);
+      const wallKey = variant.cad?.sliderOrder?.includes("paredeTubo") ? "paredeTubo" : "";
+      const progressiveKeys = (variant.cad?.sliderOrder || []).filter((key) => key !== wallKey);
 
       models[surfaceId] = fitMonotonePricingModel(surfaceSamples, {
         surfaceId,
         parameterKeys: progressiveKeys,
-        wallKey: variableKey,
+        wallKey,
         degree: 3
       });
     }
   }
 
   return models;
-}
-
-function isManufacturableSample(manifest, variant, sample) {
-  const tube = manifest.manufacturing?.tubeInnerSpan;
-  if (tube) {
-    const wall = Number(sample.params?.[tube.wallThicknessKey]);
-    const innerSpan = Math.min(
-      ...tube.sizeKeys.map((key) => Number(sample.params?.[key]) + Number(tube.sizeOffsetsMm?.[key] || 0) - wall * 2)
-    );
-    if (!Number.isFinite(innerSpan) || innerSpan + 0.0001 < Number(tube.minimumMm)) return false;
-  }
-
-  const screw = manifest.manufacturing?.screwClearance;
-  if (screw && variant.id === "com-parafuso") {
-    const diameter = Number(sample.params?.[screw.screwDiameterKey]);
-    const minimumSize = diameter + Number(screw.minimumWallMm) * 2;
-    const sizes = screw.sizeKeys.map((key) => Number(sample.params?.[key]));
-    const height = Number(sample.params?.[screw.baseHeightKey]);
-    if (!Number.isFinite(diameter) || sizes.some((size) => !Number.isFinite(size) || size + 0.0001 < minimumSize)) return false;
-    if (!Number.isFinite(height) || height + 0.0001 < Number(screw.minimumBaseHeightMm)) return false;
-  }
-
-  return true;
 }
 
 function toSiteSample(row) {

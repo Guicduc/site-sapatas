@@ -19,14 +19,14 @@ export default function sitemap() {
     priority: path === "" ? 1 : 0.8
   }));
 
-  const familyPages = families.filter((family) => family.status !== "draft").map((family) => ({
+  const familyPages = families.map((family) => ({
     url: `${siteUrl}${family.url}`,
     lastModified,
     changeFrequency: "weekly",
     priority: 0.9
   }));
 
-  const configuratorPages = productCategories.filter(hasActiveFormat).map((category) => ({
+  const configuratorPages = productCategories.map((category) => ({
     url: `${siteUrl}/configurar/${category.slug}`,
     lastModified,
     changeFrequency: "weekly",
@@ -34,8 +34,4 @@ export default function sitemap() {
   }));
 
   return [...staticPages, ...familyPages, ...configuratorPages];
-}
-
-function hasActiveFormat(category) {
-  return category.formats.some((format) => format.status === "active");
 }

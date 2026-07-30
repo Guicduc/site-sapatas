@@ -48,7 +48,6 @@ export function ParametricDrawing({
         {type === "base-oblong" && <BaseOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-rect" && <BaseRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-u" && <BaseU format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-pin" && <BasePin format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         </svg>
       </div>
     </MeasurementSystemContext.Provider>
@@ -323,13 +322,11 @@ function TubeOblong({ format, values, activeKey, onSelect }) {
 }
 
 function BaseRound({ format, values, activeKey, onSelect }) {
-  const hasScrew = values.parafuso === true || values.parafuso === "true";
-  const hasNeck = !hasScrew && (values.pescoco === true || values.pescoco === "true");
+  const hasNeck = values.pescoco === true || values.pescoco === "true";
   const baseDiameterValue = Number(values.diametroBase ?? values.diametro ?? 28);
   const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 6);
   const neckDiameterValue = Number(values.diametroPescoco ?? 8);
   const neckHeightValue = Number(values.alturaPescoco ?? 12);
-  const screwDiameterValue = Number(values.diametroParafuso ?? 3);
   const diameterKey = values.diametroBase !== undefined ? "diametroBase" : "diametro";
   const diameter = scaleRangeDimension(baseDiameterValue, {
     maxValue: parameterMax(format, diameterKey, 150),
@@ -338,7 +335,6 @@ function BaseRound({ format, values, activeKey, onSelect }) {
     readableCurve: 40
   });
   const height = scaleBaseHeight(baseHeightValue, { scale: 6, max: 60 });
-  const screwHoleRadius = clamp((diameter * screwDiameterValue) / Math.max(baseDiameterValue, 1) / 2, 4, 16);
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, diameter - 18));
   const neckHeight = clamp(neckHeightValue * 2.8, 24, 96);
   const topCx = 360;
@@ -370,12 +366,6 @@ function BaseRound({ format, values, activeKey, onSelect }) {
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 20} y2={topCy + diameter / 2 + 20} />
       <line className="technical-centerline" x1={topCx - diameter / 2 - 20} x2={topCx + diameter / 2 + 20} y1={topCy} y2={topCy} />
       <circle className="part" cx={topCx} cy={topCy} r={diameter / 2} />
-      {hasScrew && (
-        <>
-          <circle className="void" cx={topCx} cy={topCy} r={screwHoleRadius} />
-          <Dimension x1={topCx - screwHoleRadius} y1={topCy + 16} x2={topCx + screwHoleRadius} y2={topCy + 16} label={`${screwDiameterValue} mm`} paramKey="diametroParafuso" activeKey={activeKey} onSelect={onSelect} />
-        </>
-      )}
       {hasNeck && (
         <>
           <circle className="void" cx={topCx} cy={topCy} r={neckDiameter / 2} />
@@ -402,7 +392,6 @@ function BaseRound({ format, values, activeKey, onSelect }) {
       )}
 
       <path className="part muted" d={basePath} />
-      {hasScrew && <rect className="void" x={frontCx - screwHoleRadius} y={baseTopY} width={screwHoleRadius * 2} height={height} />}
       <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
       <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={sideLeft - 48} y1={baseTopY} x2={sideLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey={values.alturaBase !== undefined ? "alturaBase" : "altura"} activeKey={activeKey} onSelect={onSelect} />
@@ -452,14 +441,12 @@ function BaseOblong({ format, values, activeKey, onSelect }) {
 }
 
 function BaseRect({ format, values, activeKey, onSelect }) {
-  const hasScrew = values.parafuso === true || values.parafuso === "true";
-  const hasNeck = !hasScrew && (values.pescoco === true || values.pescoco === "true");
+  const hasNeck = values.pescoco === true || values.pescoco === "true";
   const sizeXValue = Number(values.tamanhoBaseX || values.comprimento || 50);
   const sizeYValue = Number(values.tamanhoBaseY || values.largura || 50);
   const baseHeightValue = Number(values.alturaBase || values.altura || 7);
   const neckDiameterValue = Number(values.diametroPescoco || 8);
   const neckHeightValue = Number(values.alturaPescoco || 12);
-  const screwDiameterValue = Number(values.diametroParafuso || 3);
   const sizeXKey = values.tamanhoBaseX !== undefined ? "tamanhoBaseX" : "comprimento";
   const sizeYKey = values.tamanhoBaseY !== undefined ? "tamanhoBaseY" : "largura";
   const { width: sizeX, height: sizeY } = scalePlanDimensions(sizeXValue, sizeYValue, {
@@ -475,11 +462,6 @@ function BaseRect({ format, values, activeKey, onSelect }) {
   const neckDiameter = clamp(neckDiameterValue * 4, 18, Math.max(20, Math.min(sizeX, sizeY) - 16));
   const neckHeight = clamp(neckHeightValue * 2.4, 24, 90);
   const radius = cornerRadius(sizeX, sizeY, { max: 10, ratio: 0.15 });
-  const screwHoleRadius = clamp(
-    (Math.min(sizeX, sizeY) * screwDiameterValue) / Math.max(Math.min(sizeXValue, sizeYValue), 1) / 2,
-    4,
-    16
-  );
   const guideX = 145;
   const topCx = 300;
   const frontCx = 300;
@@ -516,12 +498,6 @@ function BaseRect({ format, values, activeKey, onSelect }) {
       <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 20} y2={topBottom + 20} />
       <line className="technical-centerline" x1={topLeft - 20} x2={topRight + 20} y1={topCy} y2={topCy} />
       <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx={radius} />
-      {hasScrew && (
-        <>
-          <circle className="void" cx={topCx} cy={topCy} r={screwHoleRadius} />
-          <Dimension x1={topCx - screwHoleRadius} y1={topCy + 15} x2={topCx + screwHoleRadius} y2={topCy + 15} label={`${screwDiameterValue} mm`} paramKey="diametroParafuso" activeKey={activeKey} onSelect={onSelect} />
-        </>
-      )}
       {hasNeck && (
         <>
           <circle className="void" cx={topCx} cy={topCy} r={neckDiameter / 2} />
@@ -541,7 +517,6 @@ function BaseRect({ format, values, activeKey, onSelect }) {
         </>
       )}
       <path className="part muted" d={frontPath} />
-      {hasScrew && <rect className="void" x={frontCx - screwHoleRadius} y={baseTopY} width={screwHoleRadius * 2} height={baseHeight} />}
       <line className="technical-outline-heavy" x1={frontLeft} x2={frontRight} y1={baseTopY} y2={baseTopY} />
       <line className="technical-outline-heavy" x1={frontLeft + frontBottomRadius} x2={frontRight - frontBottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={frontLeft} y1={baseBottomY + 28} x2={frontRight} y2={baseBottomY + 28} label={`${sizeXValue} mm`} paramKey="tamanhoBaseX" activeKey={activeKey} onSelect={onSelect} />
@@ -556,7 +531,6 @@ function BaseRect({ format, values, activeKey, onSelect }) {
         </>
       )}
       <path className="part muted" d={sidePath} />
-      {hasScrew && <rect className="void" x={sideCx - screwHoleRadius} y={baseTopY} width={screwHoleRadius * 2} height={baseHeight} />}
       <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
       <line className="technical-outline-heavy" x1={sideLeft + sideBottomRadius} x2={sideRight - sideBottomRadius} y1={baseBottomY} y2={baseBottomY} />
       <Dimension x1={sideLeft} y1={baseBottomY + 28} x2={sideRight} y2={baseBottomY + 28} label={`${sizeYValue} mm`} paramKey="tamanhoBaseY" activeKey={activeKey} onSelect={onSelect} />
@@ -801,41 +775,6 @@ function BaseU({ format, values, activeKey, onSelect }) {
       <Dimension x1={sectionCx - innerRadius} y1={diameterDimensionY} x2={sectionCx + innerRadius} y2={diameterDimensionY} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={thicknessDimensionX} y1={outerEndY} x2={thicknessDimensionX} y2={innerEndY} label={`${thicknessValue} mm`} paramKey="espessura" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={sideLeft} y1={lengthDimensionY} x2={sideRight} y2={lengthDimensionY} label={`${lengthValue} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
-    </>
-  );
-}
-
-function BasePin({ format, values, activeKey, onSelect }) {
-  const diameterValue = Number(values.diametro || 6);
-  const heightValue = Number(values.alturaBase || 5);
-  const diameter = scaleRangeDimension(diameterValue, {
-    maxValue: parameterMax(format, "diametro", 40),
-    maxSize: 150,
-    minSize: 34,
-    readableCurve: 12
-  });
-  const height = clamp(heightValue * 22, 64, 190);
-  const topCx = 250;
-  const topCy = 175;
-  const frontCx = 500;
-  const pinTop = baseBottomY - height;
-  const pinLeft = frontCx - diameter / 2;
-  const pinRight = frontCx + diameter / 2;
-
-  return (
-    <>
-      <ViewTitle x={viewLabelX} y={topCy - diameter / 2 - 18} lines={["Vista", "superior"]} />
-      <ViewTitle x={viewLabelX} y={baseBottomY + 20} lines={["Vista", "frontal"]} />
-      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 18} y2={topCy + diameter / 2 + 18} />
-      <line className="technical-centerline" x1={topCx - diameter / 2 - 18} x2={topCx + diameter / 2 + 18} y1={topCy} y2={topCy} />
-      <circle className="part" cx={topCx} cy={topCy} r={diameter / 2} />
-      <Dimension x1={topCx - diameter / 2} y1={topCy + diameter / 2 + 28} x2={topCx + diameter / 2} y2={topCy + diameter / 2 + 28} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
-
-      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={pinTop - 22} y2={baseBottomY + 20} />
-      <rect className="part" x={pinLeft} y={pinTop} width={diameter} height={height} rx={diameter / 4} />
-      <line className="technical-datum" x1={pinLeft - 20} x2={pinRight + 20} y1={baseBottomY} y2={baseBottomY} />
-      <Dimension x1={pinLeft - 42} y1={pinTop} x2={pinLeft - 42} y2={baseBottomY} label={`${heightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={pinLeft} y1={pinTop - 22} x2={pinRight} y2={pinTop - 22} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }

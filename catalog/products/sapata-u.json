@@ -20,7 +20,7 @@
   "drawingType": "base-u",
   "notes": ["Modelos com e sem haste validados em CAD, fatiamento e cobertura de preco."],
   "parameters": [
-    { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 5, "max": 30, "step": 0.1, "default": 17.8, "role": "primary-width" },
+    { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 5, "max": 60, "step": 0.1, "default": 17.8, "role": "primary-width" },
     { "key": "espessura", "label": "Espessura", "type": "dimension", "unit": "mm", "min": 0.5, "max": 3, "step": 0.1, "default": 1.5, "role": "wall-thickness" },
     { "key": "comprimento", "label": "Comprimento", "type": "dimension", "unit": "mm", "min": 5, "max": 100, "step": 0.1, "default": 29.4, "role": "secondary-width" },
     { "key": "pescoco", "label": "Haste", "type": "boolean", "default": false, "role": "toggle" }

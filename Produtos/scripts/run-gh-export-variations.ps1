@@ -2,9 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $repo = $env:TRACO_BASE_REPO
 if (-not $repo) {
-  $repo = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+  $repo = "C:\Users\Administrador\Desktop\SCRIPTS\site-sapatas"
 }
-$env:TRACO_BASE_REPO = $repo
 
 $rhinoPath = $env:RHINO_EXE
 if (-not $rhinoPath) {
@@ -22,13 +21,9 @@ if (-not (Test-Path -LiteralPath $script)) {
 }
 
 $rhino = New-Object -ComObject Rhino.Application
-try {
-  $rhino.Visible = $false
-  Start-Sleep -Seconds 5
-  $command = '-_RunPythonScript ("' + $script + '")'
-  $rhino.RunScript($command, 0) | Out-Null
-} finally {
-  $rhino.RunScript('-_Exit _No', 0) | Out-Null
-}
+$rhino.Visible = $true
+Start-Sleep -Seconds 5
+$command = '-_RunPythonScript ("' + $script + '")'
+$rhino.RunScript($command, 0) | Out-Null
 
-Write-Host "Exportacao concluida. Verifique Produtos\logs\slicer_pricing_dataset.log"
+Write-Host "Exportacao iniciada no Rhino. Verifique Produtos\logs\slicer_pricing_dataset.log"
