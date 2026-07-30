@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "node --test",
+    "test": "node --test \"test/**/*.test.js\" \"lib/**/*.test.js\"",
     "start": "next start",
     "test:cookie-consent": "node --test lib/cookie-consent.test.js",
     "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
@@ -22,8 +22,7 @@
     "next": "16.2.10",
     "pg": "^8.20.0",
     "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "three": "^0.184.0"
+    "react-dom": "19.2.5"
   },
   "overrides": {
     "next": {

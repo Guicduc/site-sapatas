@@ -79,8 +79,9 @@ Use `lib/site-data.js` para conteudo editorial e SEO:
 
 - `brand`: nome, descricao, contatos e localidade.
 - `navigation`: links do header.
-- `faqSections`: perguntas frequentes.
 - `families`: paginas de familias em `/familias/[slug]`.
+
+O FAQ publicado vive em `app/faq/page.js` (conteudo local a pagina), nao em `lib/site-data.js`.
 
 As familias atuais publicadas sao:
 
@@ -95,7 +96,6 @@ As familias atuais publicadas sao:
 - `components/product-catalog.jsx`: lista categorias e formatos.
 - `components/product-configurator.jsx`: controla selecao de formato, medidas, cor, quantidade, preco e envio ao carrinho.
 - `components/parametric-drawing.jsx`: desenho 2D interativo do produto configurado.
-- `components/parametric-model-viewer.jsx`: visualizacao 3D com Three.js quando usada.
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
