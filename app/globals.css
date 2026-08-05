@@ -992,6 +992,10 @@ section {
   fill: none;
 }
 
+.format-icon--base-u {
+  stroke-width: 1.55;
+}
+
 .format-selector button:hover {
   border-color: var(--primary);
   background: oklch(0.985 0.012 176);

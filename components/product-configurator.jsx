@@ -564,7 +564,7 @@ function FormatSelector({ category, selectedSlug, onChange }) {
 
 function FormatIcon({ type }) {
   return (
-    <svg className="format-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+    <svg className={`format-icon format-icon--${type}`} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
       {type === "tube-round" && (
         <>
           <circle cx="24" cy="24" r="16" />
@@ -605,11 +605,7 @@ function FormatIcon({ type }) {
         </>
       )}
       {type === "base-u" && (
-        <>
-          <path d="M12 13 C5 21 6 34 14 41 C20 46 29 46 36 40 C44 32 43 20 36 13" />
-          <path d="M18 18 C14 23 14 31 19 35 C22 38 27 39 31 35 C36 30 35 23 31 18" />
-          <path d="M12 13 L18 18 M31 18 L36 13" />
-        </>
+        <path d="M12 13 C5 21 6 34 14 41 C20 46 29 46 36 40 C44 32 43 20 36 13 Q33.5 11 31 18 C35 23 36 30 31 35 C27 39 22 38 19 35 C14 31 14 23 18 18 Q15 11 12 13 Z" />
       )}
     </svg>
   );
