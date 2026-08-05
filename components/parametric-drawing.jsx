@@ -710,17 +710,13 @@ function BaseU({ format, values, activeKey, onSelect }) {
   const innerEndX = sectionCx + innerRadius * Math.cos(openingAngle);
   const innerEndY = innerStartY;
   const sectionBottom = sectionCy + outerRadius;
-  const endCapLift = clamp(wall * 0.25, 1.5, 4);
-  const leftCapX = (outerStartX + innerStartX) / 2;
-  const rightCapX = (outerEndX + innerEndX) / 2;
-  const leftCapY = Math.min(outerStartY, innerStartY) - endCapLift;
-  const rightCapY = Math.min(outerEndY, innerEndY) - endCapLift;
+  const endRadius = wall / 2;
   const sectionPath = [
     `M ${outerStartX} ${outerStartY}`,
     `A ${outerRadius} ${outerRadius} 0 1 0 ${outerEndX} ${outerEndY}`,
-    `Q ${rightCapX} ${rightCapY} ${innerEndX} ${innerEndY}`,
+    `A ${endRadius} ${endRadius} 0 0 0 ${innerEndX} ${innerEndY}`,
     `A ${innerRadius} ${innerRadius} 0 1 1 ${innerStartX} ${innerStartY}`,
-    `Q ${leftCapX} ${leftCapY} ${outerStartX} ${outerStartY}`,
+    `A ${endRadius} ${endRadius} 0 0 0 ${outerStartX} ${outerStartY}`,
     "Z"
   ].join(" ");
   const sideLength = scaleReadableAxis(lengthValue, {
