@@ -710,11 +710,17 @@ function BaseU({ format, values, activeKey, onSelect }) {
   const innerEndX = sectionCx + innerRadius * Math.cos(openingAngle);
   const innerEndY = innerStartY;
   const sectionBottom = sectionCy + outerRadius;
+  const endCapLift = clamp(wall * 0.25, 1.5, 4);
+  const leftCapX = (outerStartX + innerStartX) / 2;
+  const rightCapX = (outerEndX + innerEndX) / 2;
+  const leftCapY = Math.min(outerStartY, innerStartY) - endCapLift;
+  const rightCapY = Math.min(outerEndY, innerEndY) - endCapLift;
   const sectionPath = [
     `M ${outerStartX} ${outerStartY}`,
     `A ${outerRadius} ${outerRadius} 0 1 0 ${outerEndX} ${outerEndY}`,
-    `L ${innerEndX} ${innerEndY}`,
+    `Q ${rightCapX} ${rightCapY} ${innerEndX} ${innerEndY}`,
     `A ${innerRadius} ${innerRadius} 0 1 1 ${innerStartX} ${innerStartY}`,
+    `Q ${leftCapX} ${leftCapY} ${outerStartX} ${outerStartY}`,
     "Z"
   ].join(" ");
   const sideLength = scaleReadableAxis(lengthValue, {
@@ -772,6 +778,8 @@ function BaseU({ format, values, activeKey, onSelect }) {
           <line className="technical-hidden" x1={(sideLeft + sideRight + stemWidth) / 2} x2={(sideLeft + sideRight + stemWidth) / 2} y1={stemTop} y2={sideBottom - wall * 0.35} />
         </>
       )}
+      <line className="technical-projection" x1={sectionCx - innerRadius} x2={sectionCx - innerRadius} y1={sectionCy} y2={diameterDimensionY - 5} />
+      <line className="technical-projection" x1={sectionCx + innerRadius} x2={sectionCx + innerRadius} y1={sectionCy} y2={diameterDimensionY - 5} />
       <Dimension x1={sectionCx - innerRadius} y1={diameterDimensionY} x2={sectionCx + innerRadius} y2={diameterDimensionY} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={sectionCx} y1={innerBottom} x2={sectionCx} y2={sectionBottom} label={`${thicknessValue} mm`} paramKey="espessura" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={sideLeft} y1={lengthDimensionY} x2={sideRight} y2={lengthDimensionY} label={`${lengthValue} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
