@@ -742,7 +742,7 @@ function BaseU({ format, values, activeKey, onSelect }) {
   const diameterDimensionY = lengthDimensionY;
   const viewTitleY = lengthDimensionY + 38;
   const sectionGuideTop = Math.max(104, sectionCy - outerRadius - 18);
-  const thicknessDimensionX = outerEndX + 52;
+  const innerBottom = sectionCy + innerRadius;
 
   return (
     <>
@@ -773,7 +773,7 @@ function BaseU({ format, values, activeKey, onSelect }) {
         </>
       )}
       <Dimension x1={sectionCx - innerRadius} y1={diameterDimensionY} x2={sectionCx + innerRadius} y2={diameterDimensionY} label={`${diameterValue} mm`} paramKey="diametro" activeKey={activeKey} onSelect={onSelect} />
-      <Dimension x1={thicknessDimensionX} y1={outerEndY} x2={thicknessDimensionX} y2={innerEndY} label={`${thicknessValue} mm`} paramKey="espessura" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={sectionCx} y1={innerBottom} x2={sectionCx} y2={sectionBottom} label={`${thicknessValue} mm`} paramKey="espessura" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={sideLeft} y1={lengthDimensionY} x2={sideRight} y2={lengthDimensionY} label={`${lengthValue} mm`} paramKey="comprimento" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
