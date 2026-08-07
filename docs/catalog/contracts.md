@@ -137,6 +137,8 @@ Historico de versoes do contrato tecnico:
 
 - `rhino-gh-v1`: cobria apenas tubo redondo, com chaves do catalogo legado (`diametroInterno`, `profundidadeInsercao`, `alturaApoio`).
 - `rhino-gh-v2`: cobre os 5 formatos ativos, chaves alinhadas ao catalogo atual, campo `sourceGh` apontando o script Grasshopper e variantes de haste resolvidas pelo toggle `pescoco`.
+
+Para `sapata-com-parafuso`, os scripts redondo e quadrado aceitam somente as dimensoes publicas da base. O controle interno `Diam_Parafuso` permanece fixo em 3 mm e nao compoe SKU nem superficie de preco. A geometria homologada usa furo passante de 3 mm, escareado inferior de 6 mm e parede radial/lateral minima de 3 mm; por isso todas as dimensoes de planta tem minimo publico de 12 mm.
 - `tube-round-gh-v2`: aplica ao slider `diametroBase` o mesmo offset de flange de `+10 mm` usado para gerar e fatiar o dataset, preservando a medida externa publica em `configurationParameters`.
 
 ### Como adicionar um produto ao contrato CAD

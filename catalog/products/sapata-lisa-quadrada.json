@@ -63,20 +63,6 @@
         "strategy": "sliced_dataset",
         "saleMultiplier": 4
       }
-    },
-    {
-      "id": "com-parafuso",
-      "code": "CP",
-      "public": false,
-      "cad": {
-        "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com parafuso.gh",
-        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"]
-      },
-      "pricing": {
-        "surfaceId": "sapata-base-lisa:quadrada:com-parafuso",
-        "strategy": "sliced_dataset",
-        "saleMultiplier": 4
-      }
     }
   ]
 }

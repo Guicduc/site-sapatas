@@ -45,8 +45,10 @@ export function ParametricDrawing({
         {type === "tube-rect" && <TubeRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "tube-oblong" && <TubeOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-round" && <BaseRound format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {(type === "base-round-screw" || type === "screw-round") && <BaseRoundScrew format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-oblong" && <BaseOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-rect" && <BaseRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {(type === "base-rect-screw" || type === "screw-square") && <BaseRectScrew format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         {type === "base-u" && <BaseU format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
         </svg>
       </div>
@@ -399,6 +401,73 @@ function BaseRound({ format, values, activeKey, onSelect }) {
   );
 }
 
+function BaseRoundScrew({ format, values, activeKey, onSelect }) {
+  const baseDiameterValue = Number(values.diametroBase ?? values.diametro ?? 28);
+  const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 6);
+  const diameterKey = values.diametroBase !== undefined ? "diametroBase" : "diametro";
+  const heightKey = values.alturaBase !== undefined ? "alturaBase" : "altura";
+  const diameter = scaleRangeDimension(baseDiameterValue, {
+    maxValue: parameterMax(format, diameterKey, 150),
+    maxSize: 230,
+    minSize: 24,
+    readableCurve: 40
+  });
+  const height = scaleBaseHeight(baseHeightValue, { scale: 6, max: 60 });
+  const holeDiameter = scaleFixedFeature(3, baseDiameterValue, diameter, {
+    minSize: 8,
+    maxSize: Math.min(22, diameter * 0.72)
+  });
+  const countersinkDiameter = Math.min(diameter * 0.78, holeDiameter * 2);
+  const topCx = 360;
+  const topCy = topViewY;
+  const frontCx = topCx;
+  const baseTopY = baseBottomY - height;
+  const sideLeft = frontCx - diameter / 2;
+  const sideRight = frontCx + diameter / 2;
+  const bottomRadius = Math.min(height, diameter / 2);
+  const basePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, bottomRadius);
+  const countersinkDepth = Math.min(height, 1.5 * (height / Math.max(baseHeightValue, 0.1)));
+  const holePath = countersunkHoleSection(
+    frontCx,
+    baseTopY,
+    baseBottomY,
+    holeDiameter,
+    countersinkDiameter,
+    countersinkDepth
+  );
+
+  return (
+    <>
+      <ViewTitle x={viewLabelX} y={topCy - 8} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={baseBottomY + 20} lines={["Corte", "A-A"]} />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - diameter / 2 - 20} y2={topCy + diameter / 2 + 20} />
+      <line className="technical-centerline" x1={topCx - diameter / 2 - 20} x2={topCx + diameter / 2 + 20} y1={topCy} y2={topCy} />
+      <circle className="part" cx={topCx} cy={topCy} r={diameter / 2} />
+      <circle className="cut-line" cx={topCx} cy={topCy} r={countersinkDiameter / 2} fill="none" />
+      <circle className="void" cx={topCx} cy={topCy} r={holeDiameter / 2} />
+      <Dimension x1={topCx - diameter / 2} y1={topCy - diameter / 2 - 28} x2={topCx + diameter / 2} y2={topCy - diameter / 2 - 28} label={`${baseDiameterValue} mm`} paramKey={diameterKey} activeKey={activeKey} onSelect={onSelect} />
+      <FixedFeatureCallout
+        anchorX={topCx + holeDiameter / 2}
+        anchorY={topCy - holeDiameter / 2}
+        elbowX={500}
+        elbowY={94}
+        textX={508}
+        textY={89}
+      />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={baseTopY - 26} y2={baseBottomY + 24} />
+      <path className="part muted" d={basePath} />
+      <path className="section-hatch-fill" d={basePath} />
+      <path className="void" d={holePath} />
+      <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-outline-heavy" x1={sideLeft + bottomRadius} x2={frontCx - countersinkDiameter / 2} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={frontCx + countersinkDiameter / 2} x2={sideRight - bottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={sideLeft - 48} y1={baseTopY} x2={sideLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey={heightKey} activeKey={activeKey} onSelect={onSelect} />
+    </>
+  );
+}
+
 function BaseOblong({ format, values, activeKey, onSelect }) {
   const lengthValue = Number(values.comprimento || 50);
   const widthValue = Number(values.largura || 20);
@@ -538,6 +607,105 @@ function BaseRect({ format, values, activeKey, onSelect }) {
   );
 }
 
+function BaseRectScrew({ format, values, activeKey, onSelect }) {
+  const sizeXValue = Number(values.tamanhoBaseX ?? values.comprimento ?? 50);
+  const sizeYValue = Number(values.tamanhoBaseY ?? values.largura ?? 50);
+  const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 7);
+  const sizeXKey = values.tamanhoBaseX !== undefined ? "tamanhoBaseX" : "comprimento";
+  const sizeYKey = values.tamanhoBaseY !== undefined ? "tamanhoBaseY" : "largura";
+  const heightKey = values.alturaBase !== undefined ? "alturaBase" : "altura";
+  const { width: sizeX, height: sizeY } = scalePlanDimensions(sizeXValue, sizeYValue, {
+    maxWidth: 230,
+    maxHeight: 230,
+    maxWidthValue: parameterMax(format, sizeXKey, 150),
+    maxHeightValue: parameterMax(format, sizeYKey, 150),
+    preferredScale: 3.1,
+    minReadableSize: 24,
+    readableCurve: 40
+  });
+  const baseHeight = scaleBaseHeight(baseHeightValue);
+  const radius = cornerRadius(sizeX, sizeY, { max: 10, ratio: 0.15 });
+  const planScale = Math.min(sizeX / Math.max(sizeXValue, 0.1), sizeY / Math.max(sizeYValue, 0.1));
+  const holeDiameter = clamp(3 * planScale, 8, Math.min(22, Math.min(sizeX, sizeY) * 0.72));
+  const countersinkDiameter = Math.min(Math.min(sizeX, sizeY) * 0.78, holeDiameter * 2);
+  const guideX = 145;
+  const topCx = 300;
+  const frontCx = 300;
+  const sideCx = 585;
+  const baseTopY = baseBottomY - baseHeight;
+  const frontLeft = frontCx - sizeX / 2;
+  const frontRight = frontCx + sizeX / 2;
+  const sideLeft = sideCx - sizeY / 2;
+  const sideRight = sideCx + sizeY / 2;
+  const frontBottomRadius = Math.min(baseHeight, sizeX / 2, 14);
+  const sideBottomRadius = Math.min(baseHeight, sizeY / 2, 14);
+  const topBottom = topViewY + sizeY / 2;
+  const topTop = topBottom - sizeY;
+  const topCy = topTop + sizeY / 2;
+  const topLeft = topCx - sizeX / 2;
+  const topRight = topCx + sizeX / 2;
+  const frontPath = roundedBaseSection(frontLeft, frontRight, baseTopY, baseBottomY, frontBottomRadius);
+  const sidePath = roundedBaseSection(sideLeft, sideRight, baseTopY, baseBottomY, sideBottomRadius);
+  const countersinkDepth = Math.min(baseHeight, 1.5 * (baseHeight / Math.max(baseHeightValue, 0.1)));
+  const frontHolePath = countersunkHoleSection(
+    frontCx,
+    baseTopY,
+    baseBottomY,
+    holeDiameter,
+    countersinkDiameter,
+    countersinkDepth
+  );
+  const sideHolePath = countersunkHoleSection(
+    sideCx,
+    baseTopY,
+    baseBottomY,
+    holeDiameter,
+    countersinkDiameter,
+    countersinkDepth
+  );
+
+  return (
+    <>
+      <ViewTitle x={viewLabelX} y={topCy - 34} lines={["Vista", "superior"]} />
+      <ViewTitle x={frontCx} y={baseBottomY + 48} lines={["Corte A-A"]} />
+      <ViewTitle x={sideCx} y={baseBottomY + 48} lines={["Corte B-B"]} />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topTop - 20} y2={topBottom + 20} />
+      <line className="technical-centerline" x1={topLeft - 20} x2={topRight + 20} y1={topCy} y2={topCy} />
+      <rect className="part" x={topLeft} y={topTop} width={sizeX} height={sizeY} rx={radius} />
+      <circle className="cut-line" cx={topCx} cy={topCy} r={countersinkDiameter / 2} fill="none" />
+      <circle className="void" cx={topCx} cy={topCy} r={holeDiameter / 2} />
+      <Dimension x1={topLeft} y1={topTop - 30} x2={topRight} y2={topTop - 30} label={`${sizeXValue} mm`} paramKey={sizeXKey} activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={guideX} y1={topTop} x2={guideX} y2={topBottom} label={`${sizeYValue} mm`} paramKey={sizeYKey} activeKey={activeKey} onSelect={onSelect} />
+      <FixedFeatureCallout
+        anchorX={topCx + holeDiameter / 2}
+        anchorY={topCy - holeDiameter / 2}
+        elbowX={448}
+        elbowY={94}
+        textX={456}
+        textY={89}
+      />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={baseTopY - 24} y2={baseBottomY + 20} />
+      <path className="part muted" d={frontPath} />
+      <path className="section-hatch-fill" d={frontPath} />
+      <path className="void" d={frontHolePath} />
+      <line className="technical-outline-heavy" x1={frontLeft} x2={frontRight} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-outline-heavy" x1={frontLeft + frontBottomRadius} x2={frontCx - countersinkDiameter / 2} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={frontCx + countersinkDiameter / 2} x2={frontRight - frontBottomRadius} y1={baseBottomY} y2={baseBottomY} />
+      <Dimension x1={guideX} y1={baseTopY} x2={guideX} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey={heightKey} activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={sideCx} x2={sideCx} y1={baseTopY - 24} y2={baseBottomY + 20} />
+      <path className="part muted" d={sidePath} />
+      <path className="section-hatch-fill" d={sidePath} />
+      <path className="void" d={sideHolePath} />
+      <line className="technical-outline-heavy" x1={sideLeft} x2={sideRight} y1={baseTopY} y2={baseTopY} />
+      <line className="technical-outline-heavy" x1={sideLeft + sideBottomRadius} x2={sideCx - countersinkDiameter / 2} y1={baseBottomY} y2={baseBottomY} />
+      <line className="technical-outline-heavy" x1={sideCx + countersinkDiameter / 2} x2={sideRight - sideBottomRadius} y1={baseBottomY} y2={baseBottomY} />
+    </>
+  );
+}
+
 function roundedBaseSection(left, right, top, bottom, bottomRadius) {
   return `
     M ${left} ${top}
@@ -547,6 +715,27 @@ function roundedBaseSection(left, right, top, bottom, bottomRadius) {
     H ${left + bottomRadius}
     Q ${left} ${bottom} ${left} ${bottom - bottomRadius}
     Z`;
+}
+
+function countersunkHoleSection(cx, top, bottom, shaftDiameter, countersinkDiameter, countersinkDepth) {
+  const shaftHalf = shaftDiameter / 2;
+  const countersinkHalf = countersinkDiameter / 2;
+  const countersinkTop = bottom - countersinkDepth;
+
+  return `
+    M ${cx - shaftHalf} ${top}
+    V ${countersinkTop}
+    L ${cx - countersinkHalf} ${bottom}
+    H ${cx + countersinkHalf}
+    L ${cx + shaftHalf} ${countersinkTop}
+    V ${top}
+    Z`;
+}
+
+function scaleFixedFeature(featureValue, referenceValue, referenceSize, { minSize, maxSize }) {
+  const proportionalSize = (Number(featureValue) / Math.max(Number(referenceValue), 0.1)) * Number(referenceSize);
+
+  return clamp(proportionalSize, Math.min(minSize, maxSize), maxSize);
 }
 
 function capsulePath(cx, cy, width, height) {
@@ -836,6 +1025,32 @@ function Dimension({ x1, y1, x2, y2, label, paramKey, activeKey, onSelect }) {
     >
       <line x1={lineX1} y1={lineY1} x2={lineX2} y2={lineY2} markerStart="url(#arrow)" markerEnd="url(#arrow)" />
       <text x={labelX} y={labelY} style={{ textAnchor }}>{displayLabel}</text>
+    </g>
+  );
+}
+
+function FixedFeatureCallout({ anchorX, anchorY, elbowX, elbowY, textX, textY }) {
+  const measurementSystem = useContext(MeasurementSystemContext);
+  const fixedDiameter = formatMeasurement(3, "mm", measurementSystem);
+
+  return (
+    <g aria-label={`Furo passante fixo de ${fixedDiameter}`}>
+      <path
+        className="technical-projection"
+        d={`M ${anchorX} ${anchorY} L ${elbowX} ${elbowY} H ${textX + 112}`}
+        fill="none"
+      />
+      <circle cx={anchorX} cy={anchorY} r="2.5" fill="#314044" />
+      <text
+        x={textX}
+        y={textY}
+        fill="#314044"
+        fontFamily="Arial, Helvetica, sans-serif"
+        fontSize="12"
+        fontWeight="700"
+      >
+        Furo Ø{fixedDiameter} · fixo
+      </text>
     </g>
   );
 }

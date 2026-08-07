@@ -245,17 +245,28 @@ function auditSurface(surface) {
 
 function isManufacturableSample(surface, sample) {
   const constraint = surface.manufacturing?.tubeInnerSpan;
-  if (!constraint) {
-    return true;
+  if (constraint) {
+    const wall = Number(sample.params?.[constraint.wallThicknessKey]);
+    const innerSpan = Math.min(
+      ...constraint.sizeKeys.map((key) => {
+        return Number(sample.params?.[key]) + Number(constraint.sizeOffsetsMm?.[key] || 0) - wall * 2;
+      })
+    );
+    if (!Number.isFinite(innerSpan) || innerSpan + 0.0001 < Number(constraint.minimumMm)) {
+      return false;
+    }
   }
 
-  const wall = Number(sample.params?.[constraint.wallThicknessKey]);
-  const innerSpan = Math.min(
-    ...constraint.sizeKeys.map((key) => {
-      return Number(sample.params?.[key]) + Number(constraint.sizeOffsetsMm?.[key] || 0) - wall * 2;
-    })
-  );
-  return Number.isFinite(innerSpan) && innerSpan + 0.0001 >= Number(constraint.minimumMm);
+  const screw = surface.manufacturing?.screwClearance;
+  if (screw) {
+    const minimumSize = Number(screw.countersinkDiameterMm || 0) + Number(screw.minimumWallMm || 0) * 2;
+    const sizes = screw.sizeKeys.map((key) => Number(sample.params?.[key]));
+    if (sizes.some((size) => !Number.isFinite(size) || size + 0.0001 < minimumSize)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function nearestNeighbors(samples, excludedIndex, requestedParams, parameterKeys, ranges) {

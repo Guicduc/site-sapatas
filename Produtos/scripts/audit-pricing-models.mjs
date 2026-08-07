@@ -46,7 +46,9 @@ async function main() {
       continue;
     }
 
-    const configurationIssue = contract ? tubeConfigurationIssue(contract, row) : "";
+    const configurationIssue = contract
+      ? tubeConfigurationIssue(contract, row) || screwConfigurationIssue(contract, row)
+      : "";
     const geometryIssue = exportIssue || (contract ? generatedGeometryIssue(contract, row) : "");
     const issue = configurationIssue || geometryIssue;
 
@@ -124,7 +126,8 @@ async function readSurfaceContracts() {
         categorySlug: product.category.slug,
         variantId: variant.id,
         requiresNeck: product.category.slug === "ponteira-interna-tubo" || variant.id === "haste",
-        tubeInnerSpan: product.manufacturing?.tubeInnerSpan || null
+        tubeInnerSpan: product.manufacturing?.tubeInnerSpan || null,
+        screwClearance: product.manufacturing?.screwClearance || null
       });
     }
   }
@@ -149,6 +152,22 @@ function tubeConfigurationIssue(contract, row) {
   }
 
   return `tube_inner_span_below_${formatNumber(constraint.minimumMm)}mm`;
+}
+
+function screwConfigurationIssue(contract, row) {
+  const constraint = contract.screwClearance;
+  if (!constraint) {
+    return "";
+  }
+
+  const minimumSize =
+    Number(constraint.countersinkDiameterMm || 0) + Number(constraint.minimumWallMm || 0) * 2;
+  const sizes = constraint.sizeKeys.map((key) => Number(row[key]));
+  const undersized = sizes.some((size) => !Number.isFinite(size) || size + 0.0001 < minimumSize);
+
+  return undersized
+    ? `screw_countersink_clearance_below_${formatNumber(constraint.minimumWallMm)}mm_wall`
+    : "";
 }
 
 function generatedGeometryIssue(contract, row) {
