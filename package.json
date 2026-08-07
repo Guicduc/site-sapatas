@@ -8,7 +8,7 @@
     "build": "next build",
     "test": "node --test",
     "start": "next start",
-    "test:cookie-consent": "node --test lib/cookie-consent.test.js",
+    "test:cookie-consent": "node --test test/cookie-consent.test.js",
     "export:gh": "powershell -ExecutionPolicy Bypass -File Produtos/scripts/run-gh-export-variations.ps1",
     "product:check": "node Produtos/scripts/product-check.mjs",
     "slice:dataset": "node Produtos/scripts/orca-slice-dataset.mjs",
@@ -25,8 +25,7 @@
     "next": "16.2.10",
     "pg": "^8.20.0",
     "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "three": "^0.184.0"
+    "react-dom": "19.2.5"
   },
   "overrides": {
     "next": {
