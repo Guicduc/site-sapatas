@@ -103,6 +103,37 @@ test("traduz medida publica do tubo redondo para o slider usado na precificacao"
   assert.deepEqual(normalizedJob.contract.parameters, payload.items[0].parameters);
 });
 
+test("seleciona o contrato CAD correto da Sapata U com e sem haste", () => {
+  const order = buildPaidOrder();
+  const baseItem = {
+    ...order.items[0],
+    sku: "BF-SU-V2-SH-DI17P8-ES1P5-CO29P4-PR",
+    categorySlug: "sapata-u",
+    formatSlug: "u",
+    values: { diametro: 17.8, comprimento: 29.4, espessura: 1.5, pescoco: false }
+  };
+  const withoutStem = getGrasshopperPayload({ ...order, items: [baseItem] }).items[0];
+  const withStem = getGrasshopperPayload({
+    ...order,
+    items: [{
+      ...baseItem,
+      sku: "BF-SU-V2-HA-DI17P8-ES1P5-CO29P4-PR",
+      values: { ...baseItem.values, pescoco: true }
+    }]
+  }).items[0];
+
+  assert.equal(withoutStem.modelVersion, "base-u-gh-v1");
+  assert.equal(withoutStem.sourceGh, "Produtos/Scripts-GH/Sapata_U_SemHaste.gh");
+  assert.deepEqual(withoutStem.configurationParameters, {
+    diametro: 17.8,
+    comprimento: 29.4,
+    espessura: 1.5
+  });
+  assert.equal(withStem.modelVersion, "base-u-neck-gh-v1");
+  assert.equal(withStem.sourceGh, "Produtos/Scripts-GH/Sapata_U_ComHaste.gh");
+  assert.deepEqual(withStem.configurationParameters, withoutStem.configurationParameters);
+});
+
 test("mantem enqueue e callbacks idempotentes com lease, retry e artefatos", async () => {
   const [input] = buildPrintJobInputsFromOrder(buildPaidOrder(), {
     contractPayload: getGrasshopperPayload(buildPaidOrder()),

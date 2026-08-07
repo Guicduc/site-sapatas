@@ -333,6 +333,67 @@ PRODUCT_CONFIGS = [
             "tamanhoBaseY": parameter(3, 150, 50),
             "alturaBase": parameter(1, 10, 7),
         },
+    },    {
+        "source_gh": "Produtos/Scripts-GH/Sapata_U_SemHaste.gh",
+        "product_family": "sapata-u",
+        "category_slug": "sapata-u",
+        "format_slug": "u",
+        "variant_slug": "sem-haste",
+        "has_neck": False,
+        # Ordem visual real: Diametro, Comprimento, indice anonimo, Espessura, indice anonimo.
+        # Os indices selecionam itens de listas internas e devem ficar fixos no valor do GH.
+        "slider_order": ["diametro", "comprimento", "espessura"],
+        "generic_slider_order": [
+            "diametro",
+            "comprimento",
+            "indice_lista_curva_superior_tecnico",
+            "espessura",
+            "indice_lista_curva_inferior_tecnico",
+        ],
+        "sampling": {
+            "force_axis_keys": ["diametro", "comprimento", "espessura"],
+            "target_count": 480,
+            "required_samples": [
+                {"diametro": 17.8, "comprimento": 29.4, "espessura": 1.5},
+            ],
+        },
+        "parameters": {
+            "diametro": parameter(5, 60, 17.8, 0.1),
+            "comprimento": parameter(5, 100, 29.4, 0.1),
+            "espessura": parameter(0.5, 3, 1.5, 0.1),
+        },
+    },
+    {
+        "source_gh": "Produtos/Scripts-GH/Sapata_U_ComHaste.gh",
+        "product_family": "sapata-u",
+        "category_slug": "sapata-u",
+        "format_slug": "u",
+        "variant_slug": "haste",
+        "has_neck": True,
+        # Ordem visual real: raio tecnico da haste, Diametro, Comprimento,
+        # indice anonimo, Espessura, indice anonimo. A haste esta acoplada ao
+        # diametro no GH; seu raio e um controle tecnico e nao publico.
+        "slider_order": ["diametro", "comprimento", "espessura"],
+        "generic_slider_order": [
+            "raio_haste_tecnico",
+            "diametro",
+            "comprimento",
+            "indice_lista_curva_superior_tecnico",
+            "espessura",
+            "indice_lista_curva_inferior_tecnico",
+        ],
+        "sampling": {
+            "force_axis_keys": ["diametro", "comprimento", "espessura"],
+            "target_count": 480,
+            "required_samples": [
+                {"diametro": 17.8, "comprimento": 29.4, "espessura": 1.5},
+            ],
+        },
+        "parameters": {
+            "diametro": parameter(5, 60, 17.8, 0.1),
+            "comprimento": parameter(5, 100, 29.4, 0.1),
+            "espessura": parameter(0.5, 3, 1.5, 0.1),
+        },
     },
 ]
 
@@ -1548,6 +1609,10 @@ def process_file(Grasshopper, gh_path):
 
 
 def write_dataset(rows):
+    if APPEND_DATASET and REPLACE_EXISTING and not rows:
+        log("Nenhuma linha valida gerada; dataset existente preservado.")
+        return
+
     if APPEND_DATASET and REPLACE_EXISTING and os.path.isfile(DATASET_PATH) and rows:
         replace_keys = set([
             (

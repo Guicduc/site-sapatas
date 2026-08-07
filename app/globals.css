@@ -983,11 +983,17 @@ section {
   fill: none;
   stroke: var(--primary-dark);
   stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   opacity: 0.82;
 }
 
 .format-icon path {
   fill: none;
+}
+
+.format-icon--base-u {
+  stroke-width: 1.55;
 }
 
 .format-selector button:hover {
@@ -1297,6 +1303,14 @@ section {
   stroke: var(--primary);
   stroke-width: 1.5;
   stroke-dasharray: 12 8 2 8;
+  vector-effect: non-scaling-stroke;
+}
+
+.technical-hidden {
+  fill: none;
+  stroke: #6d7976;
+  stroke-width: 1.35;
+  stroke-dasharray: 6 5;
   vector-effect: non-scaling-stroke;
 }
 
