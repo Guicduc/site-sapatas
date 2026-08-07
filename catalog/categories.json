@@ -26,6 +26,19 @@
         "alt": "Sapatas Baseforma para bases lisas redondas e quadradas"
       },
       "applications": ["poltronas", "banquinhos", "bases metálicas", "móveis autorais"]
+    },
+    {
+      "slug": "sapata-com-parafuso",
+      "name": "Sapata com parafuso",
+      "eyebrow": "Fixação mecânica central",
+      "description": "Sapatas sob medida com furo central técnico para fixação por parafuso, em formatos redondo e quadrado.",
+      "baseType": "base com parafuso",
+      "primaryFixation": "parafuso central",
+      "image": {
+        "src": "/products/final/sapata-com-parafuso-quadrada-family.png",
+        "alt": "Sapatas Baseforma redondas e quadradas com furo central para parafuso"
+      },
+      "applications": ["cadeiras", "mesas", "poltronas", "bases de madeira e metal"]
     }
   ]
 }

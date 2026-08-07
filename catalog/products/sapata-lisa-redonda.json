@@ -61,20 +61,6 @@
         "strategy": "sliced_dataset",
         "saleMultiplier": 4
       }
-    },
-    {
-      "id": "com-parafuso",
-      "code": "CP",
-      "public": false,
-      "cad": {
-        "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
-        "sliderOrder": ["diametro", "alturaBase"]
-      },
-      "pricing": {
-        "surfaceId": "sapata-base-lisa:redonda:com-parafuso",
-        "strategy": "sliced_dataset",
-        "saleMultiplier": 4
-      }
     }
   ]
 }

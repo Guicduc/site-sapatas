@@ -1,0 +1,50 @@
+{
+  "productId": "sapata-com-parafuso-redonda",
+  "status": "active",
+  "name": "Com parafuso redonda",
+  "description": "Sapata redonda sob medida com furo central técnico para fixação mecânica.",
+  "category": { "slug": "sapata-com-parafuso", "formatSlug": "redonda" },
+  "seo": { "familySlug": "sapata-com-parafuso-redonda" },
+  "skuPrefix": "BF-SP-RD",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametro", "alturaBase"],
+    "parameterCodes": { "diametro": "DI", "alturaBase": "AB" },
+    "colorCodes": { "Preta": "PR", "Areia": "AR", "Terracota": "TE", "Verde mineral": "VM" }
+  },
+  "material": "TPU",
+  "colors": ["Preta", "Areia", "Terracota", "Verde mineral"],
+  "finishes": [],
+  "leadTimeBaseDays": 4,
+  "generationMode": "local_manual",
+  "manufacturing": {
+    "screwClearance": {
+      "sizeKeys": ["diametro"],
+      "fixedScrewDiameterMm": 3,
+      "countersinkDiameterMm": 6,
+      "minimumWallMm": 3
+    }
+  },
+  "drawingType": "base-round-screw",
+  "notes": [
+    "Furo central técnico fixo em 3 mm e escareamento inferior de 6 mm; o parafuso metálico não está incluso.",
+    "O controle Grasshopper Diam_Parafuso permanece no valor técnico padrão 3 e não integra o configurador nem a superfície de preço."
+  ],
+  "parameters": [
+    { "key": "diametro", "label": "Diâmetro", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
+    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" }
+  ],
+  "variants": [
+    {
+      "id": "com-parafuso",
+      "code": "CP",
+      "public": true,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
+        "modelVersion": "base-screw-round-gh-v1",
+        "sliderOrder": ["diametro", "alturaBase"]
+      },
+      "pricing": { "surfaceId": "sapata-com-parafuso:redonda:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4 }
+    }
+  ]
+}

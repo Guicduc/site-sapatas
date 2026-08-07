@@ -247,14 +247,27 @@ PRODUCT_CONFIGS = [
     },
     {
         "source_gh": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
-        "product_family": "sapata-base-lisa",
-        "category_slug": "sapata-base-lisa",
+        "product_family": "sapata-com-parafuso",
+        "category_slug": "sapata-com-parafuso",
         "format_slug": "redonda",
         "variant_slug": "com-parafuso",
         "has_neck": False,
         "slider_order": ["diametro", "alturaBase"],
+        # `Diam_Parafuso` existe no GH com faixa bruta 0-10 e default 3.
+        # Sem sweep homologado, apply_variation o mantem fixo no default tecnico.
+        "sampling": {
+            "force_axis_keys": ["diametro", "alturaBase"],
+            "target_count": 320,
+        },
+        "manufacturing": {
+            "screw_clearance": {
+                "size_keys": ["diametro"],
+                "countersink_diameter_mm": 6,
+                "minimum_wall_mm": 3,
+            },
+        },
         "parameters": {
-            "diametro": parameter(3, 150, 28),
+            "diametro": parameter(12, 150, 28),
             "alturaBase": parameter(1, 10, 6),
         },
     },
@@ -322,15 +335,32 @@ PRODUCT_CONFIGS = [
     },
     {
         "source_gh": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com parafuso.gh",
-        "product_family": "sapata-base-lisa",
-        "category_slug": "sapata-base-lisa",
+        "product_family": "sapata-com-parafuso",
+        "category_slug": "sapata-com-parafuso",
         "format_slug": "quadrada",
         "variant_slug": "com-parafuso",
         "has_neck": False,
         "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+        # `Diam_Parafuso` existe no GH com faixa bruta 0-10 e default 3.
+        # Sem sweep homologado, apply_variation o mantem fixo no default tecnico.
+        "sampling": {
+            "force_axis_keys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+            "target_count": 480,
+            "required_samples": [
+                {"tamanhoBaseX": 12},
+                {"tamanhoBaseY": 12},
+            ],
+        },
+        "manufacturing": {
+            "screw_clearance": {
+                "size_keys": ["tamanhoBaseX", "tamanhoBaseY"],
+                "countersink_diameter_mm": 6,
+                "minimum_wall_mm": 3,
+            },
+        },
         "parameters": {
-            "tamanhoBaseX": parameter(3, 150, 50),
-            "tamanhoBaseY": parameter(3, 150, 50),
+            "tamanhoBaseX": parameter(12, 150, 50),
+            "tamanhoBaseY": parameter(12, 150, 50),
             "alturaBase": parameter(1, 10, 7),
         },
     },
@@ -1296,6 +1326,15 @@ def slicer_unsafe_sample_reason(base_name, slider_values, product_config=None):
         minimum = float(span_constraint.get("minimum_mm", 0))
         if inner_span < minimum - 0.0001:
             return "tube_inner_span_below_{}mm".format(format_input_value(minimum))
+
+    screw_constraint = (product_config or {}).get("manufacturing", {}).get("screw_clearance")
+    if screw_constraint:
+        countersink_diameter = float(screw_constraint.get("countersink_diameter_mm", 0))
+        minimum_wall = float(screw_constraint.get("minimum_wall_mm", 0))
+        minimum_size = countersink_diameter + minimum_wall * 2
+        sizes = [numeric_slider_value(slider_values, key, 0) for key in screw_constraint.get("size_keys", [])]
+        if sizes and min(sizes) < minimum_size - 0.0001:
+            return "screw_clearance_below_{}mm_wall".format(format_input_value(minimum_wall))
 
     if base_name == "Sapata_Interna_Tubo-Oblongo":
         if (

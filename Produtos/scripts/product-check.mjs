@@ -153,6 +153,24 @@ for (const { file, data } of manifests) {
   }
 
   // Composição do SKU cobre todos os parâmetros numéricos.
+  const screwClearance = data.manufacturing?.screwClearance;
+  if (screwClearance) {
+    if (!(Number(screwClearance.fixedScrewDiameterMm) > 0)) {
+      fail(id, "manufacturing.screwClearance.fixedScrewDiameterMm deve ser positivo");
+    }
+    if (!(Number(screwClearance.countersinkDiameterMm) >= Number(screwClearance.fixedScrewDiameterMm))) {
+      fail(id, "manufacturing.screwClearance.countersinkDiameterMm deve cobrir o furo passante");
+    }
+    if (!(Number(screwClearance.minimumWallMm) > 0)) {
+      fail(id, "manufacturing.screwClearance.minimumWallMm deve ser positivo");
+    }
+    for (const key of screwClearance.sizeKeys || []) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `manufacturing.screwClearance referencia tamanho inexistente: ${key}`);
+      }
+    }
+  }
+
   const numericKeys = (data.parameters || [])
     .filter((parameter) => parameter.type === "dimension")
     .map((parameter) => parameter.key);

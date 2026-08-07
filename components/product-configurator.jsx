@@ -592,10 +592,24 @@ function FormatIcon({ type }) {
           <path d="M24 7 V41 M7 24 H41" />
         </>
       )}
+      {(type === "base-round-screw" || type === "screw-round") && (
+        <>
+          <circle cx="24" cy="24" r="15" />
+          <circle cx="24" cy="24" r="4" />
+          <path d="M24 7 V18 M24 30 V41 M7 24 H18 M30 24 H41" />
+        </>
+      )}
       {type === "base-rect" && (
         <>
           <rect x="9" y="13" width="30" height="22" rx="5" />
           <path d="M24 7 V41 M6 24 H42" />
+        </>
+      )}
+      {(type === "base-rect-screw" || type === "screw-square") && (
+        <>
+          <rect x="9" y="13" width="30" height="22" rx="5" />
+          <circle cx="24" cy="24" r="4" />
+          <path d="M24 7 V18 M24 30 V41 M6 24 H18 M30 24 H42" />
         </>
       )}
       {type === "base-oblong" && (
