@@ -33,7 +33,8 @@ const familyFormatMap = {
   "sapata-lisa-redonda": ["sapata-base-lisa", "redonda"],
   "sapata-lisa-quadrada": ["sapata-base-lisa", "quadrada"],
   "sapata-com-parafuso-redonda": ["sapata-com-parafuso", "redonda"],
-  "sapata-com-parafuso-quadrada": ["sapata-com-parafuso", "quadrada"]
+  "sapata-com-parafuso-quadrada": ["sapata-com-parafuso", "quadrada"],
+  "sapata-u": ["sapata-u", "u"]
 };
 const intentionallyUnexposedSurfaceIds = new Set();
 

@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { fitMonotonePricingModel } from "../../lib/monotone-pricing-model.js";
 
@@ -24,7 +24,9 @@ const parameterKeys = [
   "alturaPescoco",
   "diametroPescoco",
   "paredeTubo",
-  "pescoco"
+  "pescoco",
+  "comprimento",
+  "espessura"
 ];
 
 async function main() {
@@ -46,7 +48,7 @@ async function main() {
     }
   }
 
-  const samples = rows
+  let samples = rows
     .filter((row) => {
       return (
         row.slice_status === "ok" &&
@@ -58,6 +60,17 @@ async function main() {
 
   if (samples.length === 0) {
     throw new Error("Nenhuma amostra Orca valida encontrada para o site.");
+  }
+
+  if (process.env.PRICING_MERGE_EXISTING === "true") {
+    const existing = await import(pathToFileURL(outputPath).href);
+    const replacedSurfaces = new Set(samples.map(sampleSurfaceId));
+    samples = [
+      ...(existing.slicerPricingSamples || []).filter(
+        (sample) => !replacedSurfaces.has(sampleSurfaceId(sample))
+      ),
+      ...samples
+    ];
   }
 
   const surfaceCounts = samples.reduce((counts, sample) => {
@@ -82,6 +95,10 @@ async function main() {
   console.log(`Dados de slice para o site: ${outputPath}`);
   console.log(`Amostras: ${samples.length}`);
   console.log(`Modelos monotonos: ${Object.keys(pricingModels).length}`);
+}
+
+function sampleSurfaceId(sample) {
+  return `${sample.categorySlug}:${sample.formatSlug}:${sample.variantSlug}`;
 }
 
 async function buildPricingModels(samples) {

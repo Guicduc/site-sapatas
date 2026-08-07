@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildConfigurationSku,
   calculatePriceBreakdown,
   getCategoryBySlug,
   getFormat,
@@ -121,4 +122,17 @@ test("modelo monotono nao volta ao custo IDW quando a previsao parte de zero", (
 
   assert.deepEqual(diameterPrices, [...diameterPrices].sort((left, right) => left - right));
   assert.deepEqual(heightPrices, [...heightPrices].sort((left, right) => left - right));
+});
+
+test("Sapata U alterna SKU e superficie de preco junto com a haste", () => {
+  const category = getCategoryBySlug("sapata-u");
+  const format = getFormat(category, "u");
+  const defaults = getInitialValues(format);
+  const withoutStem = { ...defaults, pescoco: false };
+  const withStem = { ...defaults, pescoco: true };
+
+  assert.match(buildConfigurationSku(format, withoutStem, { color: "Preta" }), /-SH-/);
+  assert.match(buildConfigurationSku(format, withStem, { color: "Preta" }), /-HA-/);
+  assert.equal(calculatePriceBreakdown(format, withoutStem).coverage.requestedSurfaceId, "sapata-u:u:sem-haste");
+  assert.equal(calculatePriceBreakdown(format, withStem).coverage.requestedSurfaceId, "sapata-u:u:haste");
 });
