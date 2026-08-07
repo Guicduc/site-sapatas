@@ -9,13 +9,12 @@ import { useCart } from "@/components/cart-provider";
 import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
 import {
-  INCH_DECIMAL_PLACES,
   MEASUREMENT_SYSTEMS,
   formatMeasurement,
   formatMeasurementValue,
   getDisplayRange,
   measurementSystemReducer,
-  normalizeMeasurementInput,
+  parseMeasurementInput,
   toDisplayMeasurement
 } from "@/lib/measurement-units";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
@@ -40,13 +39,17 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [finish, setFinish] = useState(category.finishes[0] || "não se aplica");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [invalidMeasurementKeys, setInvalidMeasurementKeys] = useState({});
   const [previewMode, setPreviewMode] = useState("drawing");
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
+  const [orderDocked, setOrderDocked] = useState(false);
   const [measurementSystem, setMeasurementSystem] = useReducer(
     measurementSystemReducer,
     MEASUREMENT_SYSTEMS.METRIC
   );
   const fieldsRef = useRef({});
+  const orderDockRef = useRef(null);
+  const orderDockSlotRef = useRef(null);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -56,6 +59,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setColor(category.colors[0]);
     setFinish(category.finishes[0] || "não se aplica");
     setAdded(false);
+    setInvalidMeasurementKeys({});
   }, [category, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
@@ -64,7 +68,10 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     [format, values, quantity]
   );
   const pricingAvailable = priceBreakdown.pricingAvailable !== false;
-  const validForCart = issues.length === 0 && pricingAvailable;
+  const hasInvalidMeasurementInput = Object.keys(invalidMeasurementKeys).length > 0;
+  const validForCart = issues.length === 0
+    && !hasInvalidMeasurementInput
+    && pricingAvailable;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
   const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
@@ -93,6 +100,51 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setActiveVisualIndex((current) => Math.min(current, Math.max(visualImages.length - 1, 0)));
   }, [previewMode, visualImages.length]);
 
+  useEffect(() => {
+    const dock = orderDockRef.current;
+    const slot = orderDockSlotRef.current;
+
+    if (!dock || !slot) {
+      return undefined;
+    }
+
+    const desktopQuery = window.matchMedia("(min-width: 981px)");
+    let frameId = 0;
+
+    function updateDockPosition() {
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        if (!desktopQuery.matches) {
+          slot.style.removeProperty("--configurator-order-height");
+          setOrderDocked(false);
+          return;
+        }
+
+        const dockHeight = dock.offsetHeight;
+        const dockingBoundary = window.innerHeight - dockHeight - 12;
+        const shouldDock = slot.getBoundingClientRect().top > dockingBoundary;
+
+        slot.style.setProperty("--configurator-order-height", `${dockHeight}px`);
+        setOrderDocked((current) => current === shouldDock ? current : shouldDock);
+      });
+    }
+
+    const resizeObserver = new ResizeObserver(updateDockPosition);
+    resizeObserver.observe(dock);
+    desktopQuery.addEventListener?.("change", updateDockPosition);
+    window.addEventListener("resize", updateDockPosition);
+    window.addEventListener("scroll", updateDockPosition, { passive: true });
+    updateDockPosition();
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+      desktopQuery.removeEventListener?.("change", updateDockPosition);
+      window.removeEventListener("resize", updateDockPosition);
+      window.removeEventListener("scroll", updateDockPosition);
+    };
+  }, []);
+
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
     router.replace(`/configurar/${category.slug}?formato=${nextSlug}`, { scroll: false });
@@ -103,8 +155,39 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
       ...current,
       [key]: value
     }));
+
+    if (value === false) {
+      const hiddenKeys = new Set(
+        format.parameters
+          .filter((parameter) => parameter.dependsOn === key)
+          .map((parameter) => parameter.key)
+      );
+      setInvalidMeasurementKeys((current) => Object.fromEntries(
+        Object.entries(current).filter(([parameterKey]) => !hiddenKeys.has(parameterKey))
+      ));
+    }
+
     setActiveKey(key);
     setAdded(false);
+  }
+
+  function handleMeasurementValidityChange(key, isValid) {
+    setInvalidMeasurementKeys((current) => {
+      const isCurrentlyInvalid = Boolean(current[key]);
+
+      if (isCurrentlyInvalid === !isValid) {
+        return current;
+      }
+
+      const next = { ...current };
+      if (isValid) {
+        delete next[key];
+      } else {
+        next[key] = true;
+      }
+
+      return next;
+    });
   }
 
   function handleSelectParameter(key) {
@@ -161,11 +244,13 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               format={format}
               values={values}
               issues={issues}
+              hasInvalidInput={hasInvalidMeasurementInput}
               activeKey={activeKey}
               fieldsRef={fieldsRef}
               measurementSystem={measurementSystem}
               onMeasurementSystemChange={setMeasurementSystem}
               onChange={handleValueChange}
+              onInputValidityChange={handleMeasurementValidityChange}
               onFocus={setActiveKey}
             />
             <ParametricPreview
@@ -183,8 +268,12 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
           </div>
         </div>
 
-        <aside className="configurator-side">
-          <div className={`option-panel${!hasColorChoices && !hasFinishChoices ? " option-panel--compact" : ""}`}>
+        <div
+          ref={orderDockSlotRef}
+          className={`configurator-order-slot${orderDocked ? " is-docked" : ""}`}
+        >
+          <aside ref={orderDockRef} className="configurator-side">
+            <div className={`option-panel${!hasColorChoices && !hasFinishChoices ? " option-panel--compact" : ""}`}>
             <p className="eyebrow">{hasColorChoices || hasFinishChoices ? "Escolhas" : "Pedido"}</p>
             {hasColorChoices ? (
               <ColorSelector colors={category.colors} value={color} onChange={setColor} />
@@ -214,7 +303,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                   aria-label="Diminuir quantidade"
                   onClick={() => setQuantity((current) => Math.max(1, Number(current) - 1))}
                 >
-                  -
+                  −
                 </button>
                 <input
                   type="number"
@@ -232,21 +321,21 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                 </button>
               </div>
             </div>
-          </div>
+            </div>
 
-          <ConfigurationSummary
-            format={{ ...format, name: getSummaryProductName(category, format) }}
-            sku={sku}
-            issues={issues}
-            unitPrice={unitPrice}
-            totalPrice={totalPrice}
-            priceBreakdown={priceBreakdown}
-            leadTime={leadTime}
-            validForCart={validForCart}
-            added={added}
-            onAddToCart={handleAddToCart}
-          />
-        </aside>
+            <ConfigurationSummary
+              format={{ ...format, name: getSummaryProductName(category, format) }}
+              sku={sku}
+              issues={issues}
+              unitPrice={unitPrice}
+              totalPrice={totalPrice}
+              priceBreakdown={priceBreakdown}
+              validForCart={validForCart}
+              added={added}
+              onAddToCart={handleAddToCart}
+            />
+          </aside>
+        </div>
       </div>
 
       {relatedCategories.length > 0 && (
@@ -260,8 +349,7 @@ function RelatedProducts({ categories }) {
   return (
     <section className="configurator-related" aria-labelledby="configurator-related-title">
       <div className="configurator-related__heading">
-        <p className="eyebrow">Produtos semelhantes</p>
-        <h2 id="configurator-related-title">Outras sapatas para comparar</h2>
+        <h2 id="configurator-related-title" className="eyebrow">Produtos semelhantes</h2>
       </div>
       <div className="configurator-related__grid">
         {categories.map((item) => (
@@ -303,24 +391,46 @@ function getSummaryProductName(category, format) {
 }
 
 function ColorSelector({ colors, value, onChange }) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="field color-field">
       <span>Cor</span>
-      <div className="color-swatch-list" role="group" aria-label="Cor">
-        {colors.map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={`color-swatch${item === value ? " is-selected" : ""}`}
-            style={{ "--swatch": colorMap[item] || "#808784" }}
-            aria-label={item}
-            aria-pressed={item === value}
-            title={item}
-            onClick={() => onChange(item)}
-          >
-            <span className="visually-hidden">{item}</span>
-          </button>
-        ))}
+      <div className={`color-picker${open ? " is-open" : ""}`}>
+        {open && (
+          <div className="color-picker__options" role="group" aria-label="Cores disponíveis">
+            {colors.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`color-swatch${item === value ? " is-selected" : ""}`}
+                style={{ "--swatch": colorMap[item] || "#808784" }}
+                aria-label={item}
+                aria-pressed={item === value}
+                title={item}
+                onClick={() => {
+                  onChange(item);
+                  setOpen(false);
+                }}
+              >
+                <span className="visually-hidden">{item}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          className="color-picker__trigger"
+          aria-label={`Cor ${value}. ${open ? "Fechar" : "Abrir"} opções de cor`}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span
+            className="color-picker__current"
+            style={{ "--swatch": colorMap[value] || "#808784" }}
+            aria-hidden="true"
+          />
+        </button>
       </div>
       <span className="color-field__value">{value}</span>
     </div>
@@ -366,7 +476,7 @@ function ParametricPreview({
             disabled={!hasVisualImages}
             onClick={() => onPreviewModeChange("image")}
           >
-            Foto
+            Imagens
           </button>
         </div>
       </div>
@@ -392,31 +502,40 @@ function ParametricPreview({
 }
 
 function ProductVisualPreview({ images, activeImage, activeIndex, onChange }) {
+  const isCarousel = images.length > 1;
+
+  function selectImage(nextIndex) {
+    onChange((nextIndex + images.length) % images.length);
+  }
+
   return (
     <figure className="product-visual">
       <div className="product-visual__stage">
         <img className="product-visual__image" src={activeImage.src} alt={activeImage.alt} />
-      </div>
-      <figcaption>
-        <span>{activeImage.label}</span>
-      </figcaption>
-      {images.length > 1 && (
-        <div className="product-visual__thumbs" aria-label="Imagens disponíveis">
-          {images.map((image, index) => (
+        {isCarousel && (
+          <div className="product-visual__controls">
             <button
-              key={image.src}
+              className="product-image-carousel__control"
               type="button"
-              className={index === activeIndex ? "is-selected" : ""}
-              aria-label={`Ver ${image.label}`}
-              aria-pressed={index === activeIndex}
-              onClick={() => onChange(index)}
+              aria-label="Imagem anterior"
+              onClick={() => selectImage(activeIndex - 1)}
             >
-              <img src={image.src} alt="" aria-hidden="true" />
-              <span>{image.label}</span>
+              <span aria-hidden="true">←</span>
             </button>
-          ))}
-        </div>
-      )}
+            <button
+              className="product-image-carousel__control"
+              type="button"
+              aria-label="Próxima imagem"
+              onClick={() => selectImage(activeIndex + 1)}
+            >
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        )}
+      </div>
+      <figcaption className="visually-hidden" aria-live="polite">
+        {activeImage.label}
+      </figcaption>
     </figure>
   );
 }
@@ -445,7 +564,7 @@ function FormatSelector({ category, selectedSlug, onChange }) {
 
 function FormatIcon({ type }) {
   return (
-    <svg className="format-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+    <svg className={`format-icon format-icon--${type}`} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
       {type === "tube-round" && (
         <>
           <circle cx="24" cy="24" r="16" />
@@ -486,10 +605,7 @@ function FormatIcon({ type }) {
         </>
       )}
       {type === "base-u" && (
-        <>
-          <path d="M10 12 H38 V36 H29 V22 H19 V36 H10 Z" />
-          <path d="M24 7 V41 M6 36 H42" />
-        </>
+        <path d="M12 13 C5 21 6 34 14 41 C20 46 29 46 36 40 C44 32 43 20 36 13 Q33.5 11 31 18 C35 23 36 30 31 35 C27 39 22 38 19 35 C14 31 14 23 18 18 Q15 11 12 13 Z" />
       )}
     </svg>
   );
@@ -499,11 +615,13 @@ function ConfiguratorFields({
   format,
   values,
   issues,
+  hasInvalidInput,
   activeKey,
   fieldsRef,
   measurementSystem,
   onMeasurementSystemChange,
   onChange,
+  onInputValidityChange,
   onFocus
 }) {
   const measurementUnitLabelId = useId();
@@ -585,8 +703,8 @@ function ConfiguratorFields({
       </div>
       <p className="measurement-unit-note">
         {measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL
-          ? `Polegadas com até ${INCH_DECIMAL_PLACES} casas; ao confirmar, a medida segue o passo técnico e é salva em mm.`
-          : "As medidas técnicas e o pedido são salvos em milímetros."}
+          ? "Aceita ponto, vírgula ou fração, como 1,25 ou 1 1/4. O pedido é salvo em mm sem alterar a medida informada."
+          : "Aceita medidas exatas com ponto ou vírgula, como 30,5. O pedido é salvo em milímetros."}
       </p>
       {format.parameters.map((parameter) => {
         if (parameter.dependsOn && !values[parameter.dependsOn]) {
@@ -597,7 +715,7 @@ function ConfiguratorFields({
         const displayRange = isBoolean ? null : getDisplayRange(parameter, measurementSystem);
 
         return (
-        <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={parameter.key}>
+        <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={`${format.slug}:${parameter.key}`}>
           <div className="parameter-field__copy">
             <span>
               <span className="parameter-label">{parameter.label}</span>
@@ -655,6 +773,7 @@ function ConfiguratorFields({
                 fieldsRef.current[parameter.key] = element;
               }}
               onChange={(nextValue) => onChange(parameter.key, nextValue)}
+              onValidityChange={(isValid) => onInputValidityChange(parameter.key, isValid)}
               onFocus={() => onFocus(parameter.key)}
             />
           </div>
@@ -662,10 +781,12 @@ function ConfiguratorFields({
         </label>
       );
       })}
-      <div className={`validation-note${issues.length > 0 ? " has-issues" : ""}`}>
+      <div className={`validation-note${issues.length > 0 || hasInvalidInput ? " has-issues" : ""}`}>
         {issues.length > 0
           ? issues.map((issue) => <span key={issue}>{issue}</span>)
-          : <span>Medidas dentro dos limites.</span>}
+          : hasInvalidInput
+            ? <span>Confirme ou revise a medida em edição.</span>
+            : <span>Medidas dentro dos limites.</span>}
       </div>
     </div>
   );
@@ -678,58 +799,156 @@ function MeasurementInput({
   disabled,
   inputRef,
   onChange,
+  onValidityChange,
   onFocus
 }) {
-  const [draftValue, setDraftValue] = useState(null);
-  const displayRange = getDisplayRange(parameter, measurementSystem);
-  const displayValue = draftValue ?? formatMeasurementValue(
+  const validationMessageId = useId();
+  const [draftValue, setDraftValue] = useState(() => formatMeasurementValue(
     value ?? parameter.defaultValue ?? parameter.min,
     parameter.unit,
     measurementSystem
-  );
+  ));
+  const [inputError, setInputError] = useState("");
+  const [inputPending, setInputPending] = useState(false);
+  const lastCommittedValueRef = useRef(null);
+  const lastValidValueRef = useRef(String(value ?? parameter.defaultValue ?? parameter.min));
+  const previousMeasurementSystemRef = useRef(measurementSystem);
+  const skipNextBlurRef = useRef(false);
+  const displayRange = getDisplayRange(parameter, measurementSystem);
 
   useEffect(() => {
-    setDraftValue(null);
+    const measurementSystemChanged = previousMeasurementSystemRef.current !== measurementSystem;
+    const valueCameFromThisInput = !measurementSystemChanged
+      && lastCommittedValueRef.current === String(value ?? "");
+
+    if (!valueCameFromThisInput) {
+      setDraftValue(formatMeasurementValue(
+        value ?? parameter.defaultValue ?? parameter.min,
+        parameter.unit,
+        measurementSystem
+      ));
+      setInputError("");
+      setInputPending(false);
+      onValidityChange(true);
+
+      if (String(value ?? "") !== "") {
+        lastValidValueRef.current = String(value);
+      }
+    }
+
+    lastCommittedValueRef.current = null;
+    previousMeasurementSystemRef.current = measurementSystem;
   }, [measurementSystem, value]);
 
-  function commitValue(rawValue) {
-    setDraftValue(null);
+  function invalidateValue(message) {
+    setInputError(message);
+    setInputPending(false);
+    onValidityChange(false);
+  }
 
-    if (String(rawValue).trim() === "") {
+  function updateDraftValue(rawValue) {
+    setDraftValue(rawValue);
+    const result = parseMeasurementInput(rawValue, parameter, measurementSystem);
+
+    if (result.error) {
+      invalidateValue(String(rawValue).trim() === "" ? "Informe a medida." : result.error);
       return;
     }
 
-    const nextValue = normalizeMeasurementInput(rawValue, parameter, measurementSystem);
+    setInputError("");
+    setInputPending(true);
+    onValidityChange(false);
+  }
 
-    if (nextValue && String(value ?? "") !== nextValue) {
-      onChange(nextValue);
+  function commitValue(rawValue) {
+    if (String(rawValue).trim() === "") {
+      invalidateValue("Informe a medida.");
+      return;
+    }
+
+    const result = parseMeasurementInput(rawValue, parameter, measurementSystem);
+
+    if (result.error) {
+      invalidateValue(result.error);
+      return;
+    }
+
+    setInputError("");
+    setInputPending(false);
+    onValidityChange(true);
+    lastValidValueRef.current = result.value;
+
+    if (result.value && String(value ?? "") !== result.value) {
+      lastCommittedValueRef.current = result.value;
+      onChange(result.value);
     }
   }
 
   return (
-    <input
-      className="parameter-value"
-      ref={inputRef}
-      type="number"
-      inputMode="decimal"
-      min={displayRange.min}
-      max={displayRange.max}
-      step={displayRange.step}
-      value={displayValue}
-      disabled={disabled}
-      onChange={(event) => setDraftValue(event.target.value)}
-      onBlur={(event) => commitValue(event.target.value)}
-      onFocus={(event) => {
-        onFocus();
-        event.target.select();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.currentTarget.blur();
-        }
-      }}
-      aria-label={`${parameter.label} em ${displayRange.unit}`}
-    />
+    <div className="measurement-input">
+      <div className={`measurement-input__control${inputError ? " has-error" : ""}${inputPending ? " is-pending" : ""}`}>
+        <input
+          className="parameter-value"
+          ref={inputRef}
+          type="text"
+          inputMode={measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL ? "text" : "decimal"}
+          value={draftValue}
+          disabled={disabled}
+          onChange={(event) => updateDraftValue(event.target.value)}
+          onBlur={(event) => {
+            if (skipNextBlurRef.current) {
+              skipNextBlurRef.current = false;
+              return;
+            }
+
+            commitValue(event.target.value);
+          }}
+          onFocus={(event) => {
+            onFocus();
+            event.target.select();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "Escape") {
+              const restoredValue = lastValidValueRef.current;
+              skipNextBlurRef.current = true;
+              setDraftValue(formatMeasurementValue(
+                restoredValue,
+                parameter.unit,
+                measurementSystem
+              ));
+              setInputError("");
+              setInputPending(false);
+              onValidityChange(true);
+
+              if (String(value ?? "") !== restoredValue) {
+                lastCommittedValueRef.current = restoredValue;
+                onChange(restoredValue);
+              }
+
+              event.currentTarget.blur();
+            }
+          }}
+          aria-label={`${parameter.label} em ${displayRange.unit}`}
+          aria-invalid={inputError ? "true" : undefined}
+          aria-describedby={inputError || inputPending ? validationMessageId : undefined}
+        />
+        <span aria-hidden="true">{displayRange.unit}</span>
+      </div>
+      {inputError && (
+        <small className="measurement-input__error" id={validationMessageId} role="alert">
+          {inputError}
+        </small>
+      )}
+      {inputPending && (
+        <small className="measurement-input__hint" id={validationMessageId}>
+          Confirme com Enter ou saindo do campo.
+        </small>
+      )}
+    </div>
   );
 }
 
@@ -780,7 +999,6 @@ function ConfigurationSummary({
   unitPrice,
   totalPrice,
   priceBreakdown,
-  leadTime,
   validForCart,
   added,
   onAddToCart
@@ -802,10 +1020,6 @@ function ConfigurationSummary({
         <article className="summary-total">
           <strong>Total</strong>
           <span>{pricingAvailable ? formatCurrency(totalPrice) : "Sob avaliação"}</span>
-        </article>
-        <article>
-          <strong>Prazo</strong>
-          <span>{leadTime} dias úteis</span>
         </article>
       </div>
       {!pricingAvailable && (

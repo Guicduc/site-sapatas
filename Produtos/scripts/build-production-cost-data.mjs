@@ -2,6 +2,8 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { calculateUnitProductionCost, pricingCostAssumptions } from "../../lib/pricing-cost.js";
+
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = process.env.TRACO_BASE_REPO
   ? path.resolve(process.env.TRACO_BASE_REPO)
@@ -12,16 +14,7 @@ const datasetPath = path.resolve(
     path.join(repoRoot, "Produtos", "datasets", "slicer_pricing_dataset.csv")
 );
 
-const assumptions = {
-  tpuFilamentBrlPerKg: 170,
-  printWasteRate: 0.05,
-  printerPurchasePriceBrl: 7000,
-  printerLifetimeHours: 7000,
-  annualOperatingHours: 2000,
-  annualMaintenanceBrl: 600,
-  averagePowerDrawW: 200,
-  electricityTariffBrlPerKwh: 0.95
-};
+const assumptions = pricingCostAssumptions;
 
 const costHeaders = [
   "material_with_waste_grams",
@@ -112,36 +105,7 @@ function hasValidSliceMetrics(row) {
   );
 }
 
-function calculateProductionCost({ materialGrams, printMinutes }) {
-  const materialWithWasteGrams = materialGrams * (1 + assumptions.printWasteRate);
-  const printHours = printMinutes / 60;
-  const energyKwh =
-    (assumptions.averagePowerDrawW / 1000) *
-    printHours *
-    (1 + assumptions.printWasteRate);
-  const materialCostBrl = materialWithWasteGrams * (assumptions.tpuFilamentBrlPerKg / 1000);
-  const energyCostBrl = energyKwh * assumptions.electricityTariffBrlPerKwh;
-  const maintenanceCostBrl =
-    (assumptions.annualMaintenanceBrl / assumptions.annualOperatingHours) * printHours;
-  const printerWearCostBrl =
-    (assumptions.printerPurchasePriceBrl / assumptions.printerLifetimeHours) *
-    printHours *
-    (1 + assumptions.printWasteRate);
-  const machineCostBrl = maintenanceCostBrl + printerWearCostBrl;
-  const productionCostBrl = materialCostBrl + energyCostBrl + machineCostBrl;
-
-  return {
-    materialWithWasteGrams,
-    printHours,
-    energyKwh,
-    materialCostBrl,
-    energyCostBrl,
-    maintenanceCostBrl,
-    printerWearCostBrl,
-    machineCostBrl,
-    productionCostBrl
-  };
-}
+const calculateProductionCost = calculateUnitProductionCost;
 
 async function readDataset(filePath) {
   const text = await fs.readFile(filePath, "utf8");

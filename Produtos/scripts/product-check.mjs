@@ -132,6 +132,26 @@ for (const { file, data } of manifests) {
     }
   }
 
+  const tubeInnerSpan = data.manufacturing?.tubeInnerSpan;
+  if (tubeInnerSpan) {
+    if (!(Number(tubeInnerSpan.minimumMm) > 0)) {
+      fail(id, "manufacturing.tubeInnerSpan.minimumMm deve ser positivo");
+    }
+    if (!parameterKeys.has(tubeInnerSpan.wallThicknessKey)) {
+      fail(id, `manufacturing.tubeInnerSpan referencia parede inexistente: ${tubeInnerSpan.wallThicknessKey}`);
+    }
+    for (const key of tubeInnerSpan.sizeKeys || []) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `manufacturing.tubeInnerSpan referencia tamanho inexistente: ${key}`);
+      }
+    }
+    for (const key of Object.keys(tubeInnerSpan.sizeOffsetsMm || {})) {
+      if (!(tubeInnerSpan.sizeKeys || []).includes(key)) {
+        fail(id, `manufacturing.tubeInnerSpan.sizeOffsetsMm referencia tamanho não declarado: ${key}`);
+      }
+    }
+  }
+
   // Composição do SKU cobre todos os parâmetros numéricos.
   const numericKeys = (data.parameters || [])
     .filter((parameter) => parameter.type === "dimension")
@@ -257,6 +277,9 @@ for (const { data } of manifests) {
   }
   if (format.leadTimeBaseDays !== data.leadTimeBaseDays) {
     fail(data.productId, `leadTimeBaseDays difere do legado: ${data.leadTimeBaseDays} vs ${format.leadTimeBaseDays}`);
+  }
+  if (JSON.stringify(format.manufacturing || null) !== JSON.stringify(data.manufacturing || null)) {
+    fail(data.productId, "manufacturing difere do catálogo legado");
   }
 
   const legacyParams = new Map(format.parameters.map((parameter) => [parameter.key, parameter]));

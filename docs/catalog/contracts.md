@@ -90,7 +90,7 @@
   "items": [
     {
       "contractVersion": "rhino-gh-v2",
-      "modelVersion": "tube-round-gh-v1",
+      "modelVersion": "tube-round-gh-v2",
       "engine": "rhino_grasshopper",
       "generationMode": "local_manual",
       "sourceGh": "Produtos/Scripts-GH/Sapata_Interna_Tubo-Redondo.gh",
@@ -100,8 +100,17 @@
       "formatSlug": "redondo",
       "quantity": 4,
       "units": "mm",
-      "parameters": {
+      "configurationParameters": {
         "diametroBase": 28,
+        "alturaBase": 6,
+        "alturaPescoco": 18,
+        "paredeTubo": 1.5
+      },
+      "parameterTransforms": {
+        "diametroBase": { "scale": 1, "offset": 10 }
+      },
+      "parameters": {
+        "diametroBase": 38,
         "alturaBase": 6,
         "alturaPescoco": 18,
         "paredeTubo": 1.5
@@ -122,12 +131,13 @@
 }
 ```
 
-Esse payload e montado sob demanda em `/admin/pedidos`, a partir dos itens ja salvos. Ele serve como apoio para o trabalho local no Rhino/Grasshopper e nao e persistido em `Order.metadata`, nao altera o status do pedido e nao bloqueia producao ou expedicao.
+Esse payload e montado sob demanda em `/admin/pedidos`, a partir dos itens ja salvos. `configurationParameters` preserva as medidas informadas pelo cliente; `parameters` contem os valores finais dos sliders depois de aplicar `parameterTransforms`. Ao sincronizar pedidos pagos, esse contrato vira o snapshot imutavel do job. Ele nao e persistido em `Order.metadata`, nao altera o status do pedido e nao bloqueia producao ou expedicao.
 
 Historico de versoes do contrato tecnico:
 
 - `rhino-gh-v1`: cobria apenas tubo redondo, com chaves do catalogo legado (`diametroInterno`, `profundidadeInsercao`, `alturaApoio`).
 - `rhino-gh-v2`: cobre os 5 formatos ativos, chaves alinhadas ao catalogo atual, campo `sourceGh` apontando o script Grasshopper e variantes de haste resolvidas pelo toggle `pescoco`.
+- `tube-round-gh-v2`: aplica ao slider `diametroBase` o mesmo offset de flange de `+10 mm` usado para gerar e fatiar o dataset, preservando a medida externa publica em `configurationParameters`.
 
 ### Como adicionar um produto ao contrato CAD
 
@@ -139,6 +149,7 @@ O registro central e o objeto `CAD_MODELS` em `lib/cad-contract.js`, indexado po
    - `modelVersion`: novo id em `CAD_MODEL_VERSION` (padrao `<modelo>-gh-v1`);
    - `sourceGh`: caminho do script Grasshopper;
    - `parameterKeys`: exatamente as chaves que o script GH consome (subconjunto das chaves do catalogo);
+   - `sliderTransforms`: transformacoes opcionais aplicadas aos valores publicos antes de preencher sliders do Grasshopper;
    - `technicalDefaults`: folgas/chanfros da familia (press-fit usa `fitAllowanceMm`; base lisa nao);
    - formatos com haste opcional usam `variants: { default, neck }`, resolvidos pelo toggle `pescoco` (normalizado para 0/1 pelo configurador).
 4. **Validacao**: crie um pedido de teste no configurador e confira em `/admin/pedidos` que "Dados para Grasshopper" e o JSON copiado trazem os parametros certos (sem zeros inesperados). O pedido deve seguir de pagamento aprovado para `Aguardando producao`, independentemente desse payload.

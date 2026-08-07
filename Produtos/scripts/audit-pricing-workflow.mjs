@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 import {
   calculatePriceBreakdown,
   getInitialValues,
-  productCategories
+  productCategories,
+  validateConfiguration
 } from "../../lib/configurator-data.js";
 import { families } from "../../lib/site-data.js";
 import {
@@ -255,7 +256,8 @@ function testPublicFamilyPriceFrom(siteFamilies, categoriesBySlug) {
     }
 
     const observed = observedFamilyPrices(format, categorySlug, formatSlug);
-    const expectedPriceFromBrl = roundMoney(
+    const expectedPriceFromBrl = observed.minObservedUnitPriceBrl;
+    const minFamilyVariantPriceBrl = roundMoney(
       Math.min(...family.variants.map((variant) => Number(variant.priceBrl || 0)))
     );
     const delta = roundMoney(Number(family.priceFromBrl || 0) - expectedPriceFromBrl);
@@ -265,7 +267,7 @@ function testPublicFamilyPriceFrom(siteFamilies, categoriesBySlug) {
       formatSlug,
       sitePriceFromBrl: Number(family.priceFromBrl || 0),
       expectedPriceFromBrl,
-      minFamilyVariantPriceBrl: expectedPriceFromBrl,
+      minFamilyVariantPriceBrl,
       defaultUnitPriceBrl: observed.defaultUnitPriceBrl,
       minObservedUnitPriceBrl: observed.minObservedUnitPriceBrl,
       maxObservedUnitPriceBrl: observed.maxObservedUnitPriceBrl,
@@ -288,8 +290,12 @@ function observedFamilyPrices(format, categorySlug, formatSlug) {
   const candidates = [];
 
   for (const variantSlug of variantSlugsForFormat(format)) {
-    for (const values of boundaryCases(format, variantSlug)) {
-      candidates.push(calculatePriceBreakdown(format, values, 1).unitPriceBrl);
+    const cases = [...boundaryCases(format, variantSlug), ...minimumSellableCases(format, variantSlug)];
+    for (const values of cases) {
+      const breakdown = calculatePriceBreakdown(format, values, 1);
+      if (validateConfiguration(format, values).length === 0 && breakdown.pricingAvailable) {
+        candidates.push(breakdown.unitPriceBrl);
+      }
     }
   }
 
@@ -299,6 +305,61 @@ function observedFamilyPrices(format, categorySlug, formatSlug) {
     maxObservedUnitPriceBrl: roundMoney(Math.max(...candidates)),
     sampleCount: candidates.length
   };
+}
+
+function minimumSellableCases(format, variantSlug) {
+  const defaults = valuesForVariant(format, variantSlug);
+  const parameters = format.parameters.filter((parameter) => {
+    return parameter.type !== "boolean" && (!parameter.dependsOn || defaults[parameter.dependsOn]);
+  });
+  const base = { ...defaults };
+  for (const parameter of parameters) {
+    base[parameter.key] = parameter.min;
+  }
+
+  const wallParameter = parameters.find((parameter) => parameter.key === "paredeTubo");
+  const wallValues = wallParameter
+    ? numericRange(wallParameter.min, wallParameter.max, wallParameter.step)
+    : [null];
+  const constraint = format.manufacturing?.tubeInnerSpan;
+  const cases = [];
+
+  for (const wall of wallValues) {
+    const values = { ...base };
+    if (wallParameter) {
+      values[wallParameter.key] = wall;
+    }
+    if (constraint) {
+      for (const key of constraint.sizeKeys) {
+        const parameter = parameters.find((candidate) => candidate.key === key);
+        const required =
+          Number(constraint.minimumMm) +
+          Number(wall || 0) * 2 -
+          Number(constraint.sizeOffsetsMm?.[key] || 0);
+        values[key] = alignUp(Math.max(parameter.min, required), parameter.step);
+      }
+    }
+    if (validateConfiguration(format, values).length === 0) {
+      cases.push(values);
+    }
+  }
+
+  return cases;
+}
+
+function numericRange(min, max, step) {
+  const decimals = Number(step) < 1 ? 2 : 0;
+  const values = [];
+  for (let value = Number(min); value <= Number(max) + 0.000001; value += Number(step)) {
+    values.push(roundMetric(value, decimals));
+  }
+  return values;
+}
+
+function alignUp(value, step) {
+  const safeStep = Math.max(0.0001, Number(step || 1));
+  const decimals = safeStep < 1 ? 2 : 0;
+  return roundMetric(Math.ceil((Number(value) - 0.000001) / safeStep) * safeStep, decimals);
 }
 
 function testDefaultPricingCoverage(siteFamilies, categoriesBySlug) {
@@ -361,16 +422,20 @@ function testSlicerSamplePricingSanity(formats) {
       const samples = samplesForSurface(item.categorySlug, item.formatSlug, variantSlug);
       for (const sample of samples) {
         const directUnitCostBrl = Number(sample.productionCostBrl || 0);
-        const unitPriceBrl = Math.max(
-          0.3,
-          roundSalePrice(directUnitCostBrl * saleMultiplierForFormat(item.format))
-        );
+        const breakdown = calculatePriceBreakdown(item.format, sample.params, 1);
+        const unitPriceBrl = Number(breakdown.unitPriceBrl || 0);
         const netRevenueBrl = unitPriceBrl * 0.94;
         const hasPositiveMargin = netRevenueBrl + 0.0001 >= directUnitCostBrl;
 
-        if (!hasPositiveMargin || unitPriceBrl <= 0 || directUnitCostBrl <= 0) {
+        if (
+          breakdown.pricingAvailable === false
+          || !hasPositiveMargin
+          || unitPriceBrl <= 0
+          || directUnitCostBrl <= 0
+        ) {
           failures.push({
             sampleId: sample.sampleId,
+            pricingMode: breakdown.pricingMode,
             unitPriceBrl,
             directUnitCostBrl,
             netRevenueBrl: roundMoney(netRevenueBrl)
@@ -406,7 +471,7 @@ function testMonotonicSweeps(formats) {
           continue;
         }
 
-        const points = representativeValues(parameter, defaults[parameter.key]).map((value) => {
+        const evaluatedPoints = representativeValues(parameter, defaults[parameter.key]).map((value) => {
           const breakdown = calculatePriceBreakdown(item.format, { ...defaults, [parameter.key]: value }, 1);
           return {
             value,
@@ -414,13 +479,22 @@ function testMonotonicSweeps(formats) {
             pricingMode: breakdown.pricingMode
           };
         });
-        const drops = diagnoseDrops(points);
+        const points = evaluatedPoints.filter((point) => point.pricingMode !== "invalid_configuration");
+        const direction = parameter.key === "paredeTubo" ? "variable" : "nondecreasing";
+        const drops = direction === "nondecreasing" ? diagnoseDrops(points) : [];
+        const sensitive = new Set(points.map((point) => point.unitPriceBrl)).size > 1;
+        const unavailable = points.filter((point) => point.pricingMode === "missing_slicer_data");
+        const passed = drops.length === 0 && unavailable.length === 0 && sensitive;
         checks.push({
           surfaceId: surfaceKey(item.categorySlug, item.formatSlug, variantSlug),
           parameter: parameter.key,
+          direction,
           points: points.length,
+          invalidConfigurationPoints: evaluatedPoints.length - points.length,
+          sensitive,
           drops: drops.slice(0, 20),
-          status: drops.length > 0 ? "fail" : "pass"
+          unavailable: unavailable.slice(0, 20),
+          status: passed ? "pass" : "fail"
         });
       }
     }
@@ -518,14 +592,6 @@ function diagnoseDrops(points) {
   }
 
   return drops;
-}
-
-function saleMultiplierForFormat(format) {
-  return format.skuPrefix?.includes("PI") ? 1.7 : 4;
-}
-
-function roundSalePrice(value) {
-  return roundMoney(Math.ceil(Number(value || 0) / 0.25) * 0.25);
 }
 
 function representativeValues(parameter, defaultValue) {

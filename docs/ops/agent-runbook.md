@@ -20,6 +20,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
 - Nota fiscal e automatizada por API via Focus NFe (`INVOICE_PROVIDER=focus_nfe` + `FOCUS_NFE_TOKEN`); pagamento aprovado emite a NF-e automaticamente. Fluxo e pre-requisitos em `docs/ops/invoice-manual.md`.
+- Antes de homologar ou virar o ambiente fiscal, rode `npm run invoice:audit`; o gancho exige `FOCUS_NFE_WEBHOOK_TOKEN` e deve apontar para `/api/webhooks/focus-nfe`.
 - O checkout exige CPF/CNPJ do cliente (validado no servidor) porque a NF-e exige documento do destinatario.
 - Sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
 - O adaptador `INVOICE_PROVIDER=mercado_pago` (endpoint fiscal MP) permanece dormente; o Mercado Pago nao tem API publica de NF-e.

@@ -6,26 +6,22 @@ Objetivo: comparar precos de concorrentes extraidos das imagens com o custo/prec
 
 ## Regra atual
 
-A politica usa tres camadas:
+A precificação ativa usa o custo direto calculado com `materialGrams` e `printMinutes` vindos do Orca, o modelo monotônico gerado para cada superfície e os pisos comerciais definidos no código. A base `base-concorrentes-sapatas.csv` permanece como pesquisa de mercado, mas não participa do cálculo exibido pelo configurador.
 
-1. custo direto calculado com `materialGrams` e `printMinutes` vindos do Orca;
-2. margem regressiva por familia, menor em itens internos de tubo e maior em sapatas lisas pequenas;
-3. referencia de mercado quando houver concorrente comparavel na base `base-concorrentes-sapatas.csv`.
-
-O configurador nao deve usar custo calculado por geometria. Quando nao existe amostra Orca exata em `lib/sliced-pricing-data.js`, a configuracao deve usar preco intermediario calculado por interpolacao entre referencias Orca da mesma familia/formato.
+O configurador não deve usar custo calculado por geometria. Quando não existe amostra Orca exata em `lib/slicer-pricing-data.js`, a configuração usa o modelo calibrado com referências Orca da mesma família, formato e variante.
 
 ## Dados usados
 
-- Base concorrente: `docs/catalog/base-concorrentes-sapatas.csv`.
+- Pesquisa concorrente (não ligada ao preço ativo): `docs/catalog/base-concorrentes-sapatas.csv`.
 - Motor atual: `calculatePriceBreakdown` em `lib/configurator-data.js`.
-- Base Orca: `lib/sliced-pricing-data.js`.
+- Base e modelos Orca: `lib/slicer-pricing-data.js`.
 - Custo direto: material com perda + energia por tempo de impressao.
 - Taxa de canal: `6%`.
 - Energia por hora: `R$ 0,1312/h`.
 
 ## Leitura comercial
 
-A referencia de mercado nao substitui o custo real. Ela atua como faixa comercial:
+A referência de mercado não substitui nem altera o custo real. Ela serve apenas como contexto para decisões futuras:
 
 - em ponteiras internas commodity, o preco fica perto do mercado quando o custo permite, mas nunca abaixo do piso sustentavel;
 - em sapatas lisas configuraveis, o preco usa piso parcial de mercado para evitar peca pequena vendida barato demais;
@@ -41,9 +37,9 @@ A referencia de mercado nao substitui o custo real. Ela atua como faixa comercia
 | ESSENTRA SIG 1353C - ponteira/sapata quadrada 2" | sapata lisa quadrada | R$ 3,87 | `materialGrams` + `printMinutes` da amostra compativel | Usar como ancora parcial, sem copiar preco de injetado. |
 | ESSENTRA RDR111057A - ponteira quadrada 18x18 | sapata tubo quadrado | R$ 0,37 | `materialGrams` + `printMinutes` da amostra compativel | Commodity injetado pode inviabilizar competicao direta. |
 
-## Plano de precificacao
+## Referência para evolução futura
 
-Manter uma politica composta:
+Se a pesquisa de mercado voltar a ser integrada ao motor, a política proposta é:
 
 ```text
 preco final =

@@ -218,6 +218,10 @@ function validateDataset(headers, rows) {
 }
 
 async function sliceDatasetRow(row, index, total) {
+  if (["invalid_configuration", "invalid_geometry"].includes(row.slice_status)) {
+    return row;
+  }
+
   if (
     config.sliceOnlyMissing &&
     row.slice_status === "ok" &&

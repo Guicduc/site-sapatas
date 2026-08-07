@@ -8,7 +8,7 @@ import {
   parseCookieConsent,
   readCookieConsent,
   writeCookieConsent
-} from "./cookie-consent.js";
+} from "../lib/cookie-consent.js";
 
 const NOW = new Date("2026-07-13T12:00:00.000Z");
 

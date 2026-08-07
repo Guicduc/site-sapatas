@@ -132,6 +132,20 @@ Produtos\scripts\gh_export_variations.py
 
 Ele abre os `.gh` em `Produtos\Scripts-GH\`, aplica amostras dentro dos limites publicos do configurador e grava as linhas do CSV canonico. A configuracao dos produtos fica dentro do proprio script para evitar arquivos auxiliares soltos.
 
+Para produtos tubulares, o plano tambem aplica as restricoes cruzadas de fabricacao declaradas em `manufacturing.tube_inner_span`. Uma amostra e descartada quando a parede consome o vao interno minimo ou quando a caixa da geometria exportada nao contem a altura esperada de base e pescoco.
+
+O limite operacional e de 5 mm de vao interno (`menor tamanho externo - 2 × parede`). Ele e uma margem de seguranca do contrato CAD: todas as geometrias historicas incompletas ocorreram com vao de ate 4 mm. A altura completa, isoladamente, nao torna vendavel uma combinacao com abertura interna menor que esse limite.
+
+Para completar lacunas pontuais sem refazer todo o lote, registre os pontos em `sampling.required_samples` e execute em modo direcionado:
+
+```powershell
+$env:GH_APPEND_DATASET="true"
+$env:GH_TARGETED_SAMPLES_ONLY="true"
+npm run export:gh
+```
+
+O modo direcionado exporta somente assinaturas requeridas que ainda nao existem no dataset.
+
 Padrao recomendado para os arquivos `.gh`:
 
 - expor a geometria final em uma saida chamada `EXPORT_3MF`;
@@ -175,7 +189,7 @@ npm run slice:dataset
 
 ## Relacao Com O Site
 
-Enquanto a base canonica nao estiver populada e conectada ao motor publico, o configurador nao deve voltar a estimar preco por volume geometrico. Compra direta continua liberada para medidas dentro dos limites do produto; falta de cobertura de slice e problema de dados/QA, nao bloqueio de carrinho.
+Enquanto a base canonica nao estiver populada e conectada ao motor publico, o configurador nao deve voltar a estimar preco por volume geometrico. Configuracoes sem cobertura de slice ou fora das restricoes de fabricacao ficam sem preco e nao entram no carrinho.
 
 O custo comercial definitivo deve usar somente:
 
@@ -200,3 +214,24 @@ Energia SP efetiva: R$ 0,95/kWh
 Bambu Lab P2S: 200 W medios durante impressao
 Perda operacional: 5%
 ```
+
+## Validacao da precificacao
+
+Depois de gerar ou alterar modelos, reconstrua a versao consumida pelo site e rode as tres camadas de verificacao:
+
+```powershell
+npm run pricing:build-data
+npm run pricing:model-check
+npm run pricing:check
+npm run pricing:audit
+```
+
+- `pricing:model-check` detecta parametros impossiveis e geometrias incompletas no CSV canonico; use `node Produtos/scripts/audit-pricing-models.mjs --fix` somente para classificar mecanicamente linhas ja invalidas.
+- `pricing:check` percorre todos os valores de todos os sliders das superficies publicas com o mesmo motor usado pela loja. Alem do contexto padrao, cobre os extremos dos demais parametros e as espessuras de parede 0,8/2/4/6/8 mm (245 varreduras no catalogo atual).
+- `pricing:audit` confere sincronismo do CSV, precos publicados, configuracoes padrao e duas medidas de cobertura: leave-one-out IDW-8 e validacao cruzada em cinco folds do modelo usado no site. Os limites seguem a referencia operacional: mediana de erro de ate 8% e no maximo 10% das amostras acima de 25% de erro por superficie.
+
+O site ajusta, para cada superficie, um polinomio de grau 3 com coeficientes nao negativos sobre as dimensoes normalizadas. Essa restricao torna o custo nao decrescente quando largura, altura ou diametro aumentam. A parede do tubo usa bases lineares separadas porque seu efeito geometrico pode variar nas duas direcoes. O ajuste e gerado por `pricing:build-data` a partir dos slices reais e nunca deve ser editado manualmente.
+
+As premissas de material, perda, maquina, energia, manutencao e desgaste vivem em `lib/pricing-cost.js`; site, gerador do CSV e auditorias importam a mesma funcao para impedir divergencia silenciosa de formula.
+
+O texto publico "a partir de" significa o menor preco de uma configuracao fabricavel e vendavel. Nos tubos, a auditoria percorre todo o range de parede e ajusta os tamanhos minimos para preservar o vao interno exigido; nas demais familias, usa as menores dimensoes ativas de cada variante.

@@ -6,7 +6,7 @@ import path from "node:path";
 import test, { after } from "node:test";
 
 import { getGrasshopperPayload } from "../lib/cad-contract.js";
-import { buildPrintJobInputsFromOrder } from "../lib/print-job.js";
+import { buildPrintJobInputsFromOrder, normalizePrintJobInput } from "../lib/print-job.js";
 import {
   claimNextPrintJob,
   completePrintJob,
@@ -44,6 +44,8 @@ test("converte apenas pedidos pagos ativos com contrato CAD em jobs completos", 
   assert.equal(jobs[0].material.color, "Preta");
   assert.equal(jobs[0].material.profileId, "p2s-tpu-v1");
   assert.equal(jobs[0].contract.sourceFile, "Produtos/Scripts-GH/Sapata_Lisa_Redonda.gh");
+  assert.deepEqual(jobs[0].contract.configurationParameters, { diametro: 28, alturaBase: 6 });
+  assert.deepEqual(jobs[0].contract.parameterTransforms, {});
   assert.deepEqual(jobs[0].contract.parameters, { diametro: 28, alturaBase: 6 });
   assert.match(jobs[0].idempotencyKey, /^print-file-v1:site_order:order-1:item-1:/);
 
@@ -55,6 +57,81 @@ test("converte apenas pedidos pagos ativos com contrato CAD em jobs completos", 
     { ...order, status: "shipped" },
     { contractPayload: getGrasshopperPayload(order) }
   ), []);
+});
+
+test("traduz medida publica do tubo redondo para o slider usado na precificacao", () => {
+  const order = {
+    ...buildPaidOrder(),
+    items: [{
+      ...buildPaidOrder().items[0],
+      sku: "BF-RD-PI-DB28-AB6-AP18-PT1.5",
+      categorySlug: "ponteira-interna-tubo",
+      formatSlug: "redondo",
+      values: {
+        diametroBase: 28,
+        alturaBase: 6,
+        alturaPescoco: 18,
+        paredeTubo: 1.5
+      }
+    }]
+  };
+  const payload = getGrasshopperPayload(order);
+  const jobs = buildPrintJobInputsFromOrder(order, { contractPayload: payload });
+  const normalizedJob = normalizePrintJobInput(jobs[0]);
+
+  assert.equal(payload.items[0].modelVersion, "tube-round-gh-v2");
+  assert.deepEqual(payload.items[0].configurationParameters, {
+    diametroBase: 28,
+    alturaBase: 6,
+    alturaPescoco: 18,
+    paredeTubo: 1.5
+  });
+  assert.deepEqual(payload.items[0].parameterTransforms, {
+    diametroBase: { scale: 1, offset: 10 }
+  });
+  assert.deepEqual(payload.items[0].parameters, {
+    diametroBase: 38,
+    alturaBase: 6,
+    alturaPescoco: 18,
+    paredeTubo: 1.5
+  });
+  assert.deepEqual(jobs[0].contract.configurationParameters, payload.items[0].configurationParameters);
+  assert.deepEqual(jobs[0].contract.parameterTransforms, payload.items[0].parameterTransforms);
+  assert.deepEqual(jobs[0].contract.parameters, payload.items[0].parameters);
+  assert.deepEqual(normalizedJob.contract.configurationParameters, payload.items[0].configurationParameters);
+  assert.deepEqual(normalizedJob.contract.parameterTransforms, payload.items[0].parameterTransforms);
+  assert.deepEqual(normalizedJob.contract.parameters, payload.items[0].parameters);
+});
+
+test("seleciona o contrato CAD correto da Sapata U com e sem haste", () => {
+  const order = buildPaidOrder();
+  const baseItem = {
+    ...order.items[0],
+    sku: "BF-SU-V2-SH-DI17P8-ES1P5-CO29P4-PR",
+    categorySlug: "sapata-u",
+    formatSlug: "u",
+    values: { diametro: 17.8, comprimento: 29.4, espessura: 1.5, pescoco: false }
+  };
+  const withoutStem = getGrasshopperPayload({ ...order, items: [baseItem] }).items[0];
+  const withStem = getGrasshopperPayload({
+    ...order,
+    items: [{
+      ...baseItem,
+      sku: "BF-SU-V2-HA-DI17P8-ES1P5-CO29P4-PR",
+      values: { ...baseItem.values, pescoco: true }
+    }]
+  }).items[0];
+
+  assert.equal(withoutStem.modelVersion, "base-u-gh-v1");
+  assert.equal(withoutStem.sourceGh, "Produtos/Scripts-GH/Sapata_U_SemHaste.gh");
+  assert.deepEqual(withoutStem.configurationParameters, {
+    diametro: 17.8,
+    comprimento: 29.4,
+    espessura: 1.5
+  });
+  assert.equal(withStem.modelVersion, "base-u-neck-gh-v1");
+  assert.equal(withStem.sourceGh, "Produtos/Scripts-GH/Sapata_U_ComHaste.gh");
+  assert.deepEqual(withStem.configurationParameters, withoutStem.configurationParameters);
 });
 
 test("mantem enqueue e callbacks idempotentes com lease, retry e artefatos", async () => {
