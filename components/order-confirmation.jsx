@@ -237,7 +237,10 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
       )}
 
       <div className="action-row">
-        <Link className="button button-primary" href="/conta">
+        <Link
+          className="button button-primary"
+          href={`/conta?pedido=${encodeURIComponent(order.orderNumber)}`}
+        >
           Ver minha conta
         </Link>
         <Link className="button button-secondary" href="/">
