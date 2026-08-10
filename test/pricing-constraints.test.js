@@ -7,6 +7,7 @@ import {
   getCategoryBySlug,
   getFormat,
   getInitialValues,
+  productCategories,
   validateConfiguration
 } from "../lib/configurator-data.js";
 
@@ -151,4 +152,28 @@ test("Sapata U alterna SKU e superficie de preco junto com a haste", () => {
   assert.match(buildConfigurationSku(format, withStem, { color: "Preta" }), /-HA-/);
   assert.equal(calculatePriceBreakdown(format, withoutStem).coverage.requestedSurfaceId, "sapata-u:u:sem-haste");
   assert.equal(calculatePriceBreakdown(format, withStem).coverage.requestedSurfaceId, "sapata-u:u:haste");
+});
+
+test("todas as categorias ativas usam as cores publicadas e codigos distintos no SKU", () => {
+  const expectedCodes = {
+    Preto: "PR",
+    Branco: "BR",
+    Cinza: "CZ",
+    Marrom: "MR"
+  };
+
+  for (const category of productCategories) {
+    assert.deepEqual(category.colors, Object.keys(expectedCodes), category.slug);
+
+    for (const format of category.formats.filter((item) => item.status === "active")) {
+      const defaults = getInitialValues(format);
+      for (const [color, code] of Object.entries(expectedCodes)) {
+        assert.match(
+          buildConfigurationSku(format, defaults, { color }),
+          new RegExp(`-${code}$`),
+          `${category.slug}:${format.slug}:${color}`
+        );
+      }
+    }
+  }
 });

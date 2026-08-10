@@ -10,10 +10,10 @@
     "versionMarker": "V2",
     "parameterOrder": ["diametro", "espessura", "comprimento"],
     "parameterCodes": { "diametro": "DI", "espessura": "ES", "comprimento": "CO" },
-    "colorCodes": { "Preta": "PR" }
+    "colorCodes": { "Preto": "PR", "Branco": "BR", "Cinza": "CZ", "Marrom": "MR" }
   },
   "material": "TPU",
-  "colors": ["Preta"],
+  "colors": ["Preto", "Branco", "Cinza", "Marrom"],
   "finishes": [],
   "leadTimeBaseDays": 5,
   "generationMode": "local_manual",

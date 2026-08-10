@@ -10,10 +10,10 @@
     "versionMarker": "V2",
     "parameterOrder": ["diametro", "alturaBase", "diametroParafuso"],
     "parameterCodes": { "diametro": "DI", "alturaBase": "AB", "diametroParafuso": "PF" },
-    "colorCodes": { "Preta": "PR", "Areia": "AR", "Terracota": "TE", "Verde mineral": "VM" }
+    "colorCodes": { "Preto": "PR", "Branco": "BR", "Cinza": "CZ", "Marrom": "MR" }
   },
   "material": "TPU",
-  "colors": ["Preta", "Areia", "Terracota", "Verde mineral"],
+  "colors": ["Preto", "Branco", "Cinza", "Marrom"],
   "finishes": [],
   "leadTimeBaseDays": 4,
   "generationMode": "local_manual",

@@ -62,7 +62,7 @@ O ponto principal e `lib/configurator-data.js`.
 - Cada `format` define `slug`, `skuPrefix`, `drawingType`, preco base, prazo base e `parameters`.
 - Parametros numericos usam `min`, `max`, `defaultValue`, `unit` e `step`.
 - Parametros condicionais usam `dependsOn`.
-- Produtos ativos atuais usam cor `Preta` e, em geral, acabamento vazio ou `nao se aplica`.
+- Produtos ativos atuais oferecem as cores `Preto`, `Branco`, `Cinza` e `Marrom`; o preto permanece como padrao. Em geral, o acabamento fica vazio ou `nao se aplica`.
 
 Funcoes importantes:
 
