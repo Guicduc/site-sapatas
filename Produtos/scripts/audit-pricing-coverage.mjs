@@ -173,7 +173,7 @@ function publicSurfaces(products) {
       .map((variant) => ({
         productId: product.productId,
         surfaceId: variant.pricing.surfaceId,
-        parameterKeys: variant.cad.sliderOrder,
+        parameterKeys: variant.pricing.parameterKeys || variant.cad.sliderOrder,
         saleMultiplier: Number(variant.pricing.saleMultiplier || 1),
         manufacturing: product.manufacturing || null
       }));
@@ -245,17 +245,33 @@ function auditSurface(surface) {
 
 function isManufacturableSample(surface, sample) {
   const constraint = surface.manufacturing?.tubeInnerSpan;
-  if (!constraint) {
-    return true;
+  if (constraint) {
+    const wall = Number(sample.params?.[constraint.wallThicknessKey]);
+    const innerSpan = Math.min(
+      ...constraint.sizeKeys.map((key) => {
+        return Number(sample.params?.[key]) + Number(constraint.sizeOffsetsMm?.[key] || 0) - wall * 2;
+      })
+    );
+    if (!Number.isFinite(innerSpan) || innerSpan + 0.0001 < Number(constraint.minimumMm)) {
+      return false;
+    }
   }
 
-  const wall = Number(sample.params?.[constraint.wallThicknessKey]);
-  const innerSpan = Math.min(
-    ...constraint.sizeKeys.map((key) => {
-      return Number(sample.params?.[key]) + Number(constraint.sizeOffsetsMm?.[key] || 0) - wall * 2;
-    })
-  );
-  return Number.isFinite(innerSpan) && innerSpan + 0.0001 >= Number(constraint.minimumMm);
+  const screw = surface.manufacturing?.screwClearance;
+  if (screw) {
+    const screwDiameter = Number(
+      sample.params?.[screw.screwDiameterKey] ?? screw.defaultScrewDiameterMm ?? 0
+    );
+    const minimumSize =
+      screwDiameter * Number(screw.countersinkDiameterFactor || 1) +
+      Number(screw.minimumWallMm || 0) * 2;
+    const sizes = screw.sizeKeys.map((key) => Number(sample.params?.[key]));
+    if (sizes.some((size) => !Number.isFinite(size) || size + 0.0001 < minimumSize)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function nearestNeighbors(samples, excludedIndex, requestedParams, parameterKeys, ranges) {

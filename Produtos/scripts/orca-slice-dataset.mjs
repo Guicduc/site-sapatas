@@ -49,6 +49,7 @@ const canonicalHeaders = [
   "alturaBase",
   "alturaPescoco",
   "diametroPescoco",
+  "diametroParafuso",
   "paredeTubo",
   "pescoco",
   "object_type",
@@ -81,6 +82,7 @@ const parameterHeaders = [
   "alturaBase",
   "alturaPescoco",
   "diametroPescoco",
+  "diametroParafuso",
   "paredeTubo",
   "pescoco"
 ];

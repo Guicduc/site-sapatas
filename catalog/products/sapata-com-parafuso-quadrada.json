@@ -1,0 +1,53 @@
+{
+  "productId": "sapata-com-parafuso-quadrada",
+  "status": "active",
+  "name": "Com parafuso quadrada",
+  "description": "Sapata quadrada sob medida com furo central técnico para fixação mecânica.",
+  "category": { "slug": "sapata-com-parafuso", "formatSlug": "quadrada" },
+  "seo": { "familySlug": "sapata-com-parafuso-quadrada" },
+  "skuPrefix": "BF-SP-QD",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"],
+    "parameterCodes": { "tamanhoBaseX": "BX", "tamanhoBaseY": "BY", "alturaBase": "AB", "diametroParafuso": "PF" },
+    "colorCodes": { "Preta": "PR", "Areia": "AR", "Terracota": "TE", "Verde mineral": "VM" }
+  },
+  "material": "TPU",
+  "colors": ["Preta", "Areia", "Terracota", "Verde mineral"],
+  "finishes": [],
+  "leadTimeBaseDays": 5,
+  "generationMode": "local_manual",
+  "manufacturing": {
+    "screwClearance": {
+      "sizeKeys": ["tamanhoBaseX", "tamanhoBaseY"],
+      "screwDiameterKey": "diametroParafuso",
+      "defaultScrewDiameterMm": 3,
+      "countersinkDiameterFactor": 2,
+      "minimumWallMm": 3
+    }
+  },
+  "drawingType": "base-rect-screw",
+  "notes": [
+    "O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso.",
+    "O controle Grasshopper Diam_Parafuso integra o configurador e o contrato CAD; a superfície de preço atual ignora essa pequena remoção de material."
+  ],
+  "parameters": [
+    { "key": "tamanhoBaseX", "label": "Tamanho base X", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 50, "role": "primary-width" },
+    { "key": "tamanhoBaseY", "label": "Tamanho base Y", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 50, "role": "secondary-width" },
+    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 7, "role": "base-height" },
+    { "key": "diametroParafuso", "label": "Diâmetro do parafuso", "type": "dimension", "unit": "mm", "min": 2, "max": 10, "step": 0.5, "default": 3, "role": "fastener-diameter" }
+  ],
+  "variants": [
+    {
+      "id": "com-parafuso",
+      "code": "CP",
+      "public": true,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com parafuso.gh",
+        "modelVersion": "base-screw-square-gh-v1",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"]
+      },
+      "pricing": { "surfaceId": "sapata-com-parafuso:quadrada:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4, "parameterKeys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"] }
+    }
+  ]
+}
