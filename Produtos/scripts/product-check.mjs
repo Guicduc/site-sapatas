@@ -153,6 +153,27 @@ for (const { file, data } of manifests) {
   }
 
   // Composição do SKU cobre todos os parâmetros numéricos.
+  const screwClearance = data.manufacturing?.screwClearance;
+  if (screwClearance) {
+    if (!parameterKeys.has(screwClearance.screwDiameterKey)) {
+      fail(id, `manufacturing.screwClearance referencia diâmetro inexistente: ${screwClearance.screwDiameterKey}`);
+    }
+    if (!(Number(screwClearance.defaultScrewDiameterMm) > 0)) {
+      fail(id, "manufacturing.screwClearance.defaultScrewDiameterMm deve ser positivo");
+    }
+    if (!(Number(screwClearance.countersinkDiameterFactor) >= 1)) {
+      fail(id, "manufacturing.screwClearance.countersinkDiameterFactor deve ser ao menos 1");
+    }
+    if (!(Number(screwClearance.minimumWallMm) > 0)) {
+      fail(id, "manufacturing.screwClearance.minimumWallMm deve ser positivo");
+    }
+    for (const key of screwClearance.sizeKeys || []) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `manufacturing.screwClearance referencia tamanho inexistente: ${key}`);
+      }
+    }
+  }
+
   const numericKeys = (data.parameters || [])
     .filter((parameter) => parameter.type === "dimension")
     .map((parameter) => parameter.key);
@@ -197,6 +218,11 @@ for (const { file, data } of manifests) {
     for (const key of Object.keys(variant.cad?.sliderTransforms || {})) {
       if (!parameterKeys.has(key)) {
         fail(id, `variante ${variant.id}: sliderTransforms referencia parâmetro inexistente: ${key}`);
+      }
+    }
+    for (const key of variant.pricing?.parameterKeys || []) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `variante ${variant.id}: pricing.parameterKeys referencia parâmetro inexistente: ${key}`);
       }
     }
 

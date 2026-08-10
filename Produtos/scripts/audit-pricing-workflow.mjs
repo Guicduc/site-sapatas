@@ -31,12 +31,12 @@ const familyFormatMap = {
   "sapata-tubo-quadrado": ["ponteira-interna-tubo", "quadrado"],
   "sapata-tubo-oblongo": ["ponteira-interna-tubo", "oblongo"],
   "sapata-lisa-redonda": ["sapata-base-lisa", "redonda"],
-  "sapata-lisa-quadrada": ["sapata-base-lisa", "quadrada"]
+  "sapata-lisa-quadrada": ["sapata-base-lisa", "quadrada"],
+  "sapata-com-parafuso-redonda": ["sapata-com-parafuso", "redonda"],
+  "sapata-com-parafuso-quadrada": ["sapata-com-parafuso", "quadrada"],
+  "sapata-u": ["sapata-u", "u"]
 };
-const intentionallyUnexposedSurfaceIds = new Set([
-  "sapata-base-lisa:quadrada:com-parafuso",
-  "sapata-base-lisa:redonda:com-parafuso"
-]);
+const intentionallyUnexposedSurfaceIds = new Set();
 
 async function main() {
   const csvRows = await readDataset(datasetPath);
@@ -119,6 +119,10 @@ function exposedFormats(categoriesBySlug) {
 }
 
 function variantSlugsForFormat(format) {
+  if (format.pricingVariantSlug) {
+    return [format.pricingVariantSlug];
+  }
+
   return format.parameters.some((parameter) => parameter.key === "pescoco")
     ? ["sem-haste", "haste"]
     : ["sem-haste"];
@@ -467,7 +471,11 @@ function testMonotonicSweeps(formats) {
     for (const variantSlug of item.variants) {
       const defaults = valuesForVariant(item.format, variantSlug);
       for (const parameter of item.format.parameters) {
-        if (parameter.type === "boolean" || (parameter.dependsOn && !defaults[parameter.dependsOn])) {
+        if (
+          parameter.type === "boolean" ||
+          (item.format.pricingParameterKeys && !item.format.pricingParameterKeys.includes(parameter.key)) ||
+          (parameter.dependsOn && !defaults[parameter.dependsOn])
+        ) {
           continue;
         }
 
@@ -548,7 +556,13 @@ function samplesForSurface(categorySlug, formatSlug, variantSlug) {
 
 function activeKeysForFormat(format, values) {
   return format.parameters
-    .filter((parameter) => parameter.type !== "boolean" && (!parameter.dependsOn || values[parameter.dependsOn]))
+    .filter((parameter) => {
+      return (
+        parameter.type !== "boolean" &&
+        (!format.pricingParameterKeys || format.pricingParameterKeys.includes(parameter.key)) &&
+        (!parameter.dependsOn || values[parameter.dependsOn])
+      );
+    })
     .map((parameter) => parameter.key);
 }
 

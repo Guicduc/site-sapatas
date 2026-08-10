@@ -1,0 +1,52 @@
+{
+  "productId": "sapata-com-parafuso-redonda",
+  "status": "active",
+  "name": "Com parafuso redonda",
+  "description": "Sapata redonda sob medida com furo central técnico para fixação mecânica.",
+  "category": { "slug": "sapata-com-parafuso", "formatSlug": "redonda" },
+  "seo": { "familySlug": "sapata-com-parafuso-redonda" },
+  "skuPrefix": "BF-SP-RD",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametro", "alturaBase", "diametroParafuso"],
+    "parameterCodes": { "diametro": "DI", "alturaBase": "AB", "diametroParafuso": "PF" },
+    "colorCodes": { "Preta": "PR", "Areia": "AR", "Terracota": "TE", "Verde mineral": "VM" }
+  },
+  "material": "TPU",
+  "colors": ["Preta", "Areia", "Terracota", "Verde mineral"],
+  "finishes": [],
+  "leadTimeBaseDays": 4,
+  "generationMode": "local_manual",
+  "manufacturing": {
+    "screwClearance": {
+      "sizeKeys": ["diametro"],
+      "screwDiameterKey": "diametroParafuso",
+      "defaultScrewDiameterMm": 3,
+      "countersinkDiameterFactor": 2,
+      "minimumWallMm": 3
+    }
+  },
+  "drawingType": "base-round-screw",
+  "notes": [
+    "O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso.",
+    "O controle Grasshopper Diam_Parafuso integra o configurador e o contrato CAD; a superfície de preço atual ignora essa pequena remoção de material."
+  ],
+  "parameters": [
+    { "key": "diametro", "label": "Diâmetro", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
+    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
+    { "key": "diametroParafuso", "label": "Diâmetro do parafuso", "type": "dimension", "unit": "mm", "min": 2, "max": 10, "step": 0.5, "default": 3, "role": "fastener-diameter" }
+  ],
+  "variants": [
+    {
+      "id": "com-parafuso",
+      "code": "CP",
+      "public": true,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
+        "modelVersion": "base-screw-round-gh-v1",
+        "sliderOrder": ["diametro", "alturaBase", "diametroParafuso"]
+      },
+      "pricing": { "surfaceId": "sapata-com-parafuso:redonda:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4, "parameterKeys": ["diametro", "alturaBase"] }
+    }
+  ]
+}

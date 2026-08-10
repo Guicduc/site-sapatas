@@ -23,6 +23,7 @@ const parameterKeys = [
   "alturaBase",
   "alturaPescoco",
   "diametroPescoco",
+  "diametroParafuso",
   "paredeTubo",
   "pescoco",
   "comprimento",
@@ -122,7 +123,8 @@ async function buildPricingModels(samples) {
         return `${sample.categorySlug}:${sample.formatSlug}:${sample.variantSlug}` === surfaceId;
       });
       const wallKey = variant.cad?.sliderOrder?.includes("paredeTubo") ? "paredeTubo" : "";
-      const progressiveKeys = (variant.cad?.sliderOrder || []).filter((key) => key !== wallKey);
+      const progressiveKeys = (variant.pricing?.parameterKeys || variant.cad?.sliderOrder || [])
+        .filter((key) => key !== wallKey);
 
       models[surfaceId] = fitMonotonePricingModel(surfaceSamples, {
         surfaceId,

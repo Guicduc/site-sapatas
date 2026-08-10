@@ -25,6 +25,9 @@ async function main() {
       for (const variant of variantsForFormat(format)) {
         const defaults = valuesForVariant(format, variant);
         const surfaceId = calculatePriceBreakdown(format, defaults, 1).surfaceId;
+        const pricingParameterKeys = format.pricingParameterKeys
+          ? new Set(format.pricingParameterKeys)
+          : null;
 
         for (const parameter of format.parameters) {
           if (parameter.type === "boolean" || (parameter.dependsOn && !defaults[parameter.dependsOn])) {
@@ -52,7 +55,10 @@ async function main() {
             const drops = direction === "nondecreasing" ? findDrops(validPoints) : [];
             const uniquePrices = new Set(validPoints.map((point) => point.unitPriceBrl)).size;
             const plateaus = findPlateaus(validPoints);
-            const sensitivityRequired = context.id === "default" && validPoints.length > 1;
+            const sensitivityRequired =
+              context.id === "default" &&
+              validPoints.length > 1 &&
+              (!pricingParameterKeys || pricingParameterKeys.has(parameter.key));
             const sensitive = !sensitivityRequired || uniquePrices > 1;
             const status =
               drops.length === 0 &&
