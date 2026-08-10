@@ -15,10 +15,10 @@
       "alturaPescoco": "AP",
       "diametroPescoco": "DP"
     },
-    "colorCodes": { "Preta": "PR" }
+    "colorCodes": { "Preto": "PR", "Branco": "BR", "Cinza": "CZ", "Marrom": "MR" }
   },
   "material": "TPU",
-  "colors": ["Preta"],
+  "colors": ["Preto", "Branco", "Cinza", "Marrom"],
   "finishes": [],
   "leadTimeBaseDays": 4,
   "generationMode": "local_manual",
