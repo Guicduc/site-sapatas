@@ -471,7 +471,11 @@ function testMonotonicSweeps(formats) {
     for (const variantSlug of item.variants) {
       const defaults = valuesForVariant(item.format, variantSlug);
       for (const parameter of item.format.parameters) {
-        if (parameter.type === "boolean" || (parameter.dependsOn && !defaults[parameter.dependsOn])) {
+        if (
+          parameter.type === "boolean" ||
+          (item.format.pricingParameterKeys && !item.format.pricingParameterKeys.includes(parameter.key)) ||
+          (parameter.dependsOn && !defaults[parameter.dependsOn])
+        ) {
           continue;
         }
 
@@ -552,7 +556,13 @@ function samplesForSurface(categorySlug, formatSlug, variantSlug) {
 
 function activeKeysForFormat(format, values) {
   return format.parameters
-    .filter((parameter) => parameter.type !== "boolean" && (!parameter.dependsOn || values[parameter.dependsOn]))
+    .filter((parameter) => {
+      return (
+        parameter.type !== "boolean" &&
+        (!format.pricingParameterKeys || format.pricingParameterKeys.includes(parameter.key)) &&
+        (!parameter.dependsOn || values[parameter.dependsOn])
+      );
+    })
     .map((parameter) => parameter.key);
 }
 

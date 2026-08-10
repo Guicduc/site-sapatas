@@ -173,7 +173,7 @@ function publicSurfaces(products) {
       .map((variant) => ({
         productId: product.productId,
         surfaceId: variant.pricing.surfaceId,
-        parameterKeys: variant.cad.sliderOrder,
+        parameterKeys: variant.pricing.parameterKeys || variant.cad.sliderOrder,
         saleMultiplier: Number(variant.pricing.saleMultiplier || 1),
         manufacturing: product.manufacturing || null
       }));
@@ -259,7 +259,12 @@ function isManufacturableSample(surface, sample) {
 
   const screw = surface.manufacturing?.screwClearance;
   if (screw) {
-    const minimumSize = Number(screw.countersinkDiameterMm || 0) + Number(screw.minimumWallMm || 0) * 2;
+    const screwDiameter = Number(
+      sample.params?.[screw.screwDiameterKey] ?? screw.defaultScrewDiameterMm ?? 0
+    );
+    const minimumSize =
+      screwDiameter * Number(screw.countersinkDiameterFactor || 1) +
+      Number(screw.minimumWallMm || 0) * 2;
     const sizes = screw.sizeKeys.map((key) => Number(sample.params?.[key]));
     if (sizes.some((size) => !Number.isFinite(size) || size + 0.0001 < minimumSize)) {
       return false;

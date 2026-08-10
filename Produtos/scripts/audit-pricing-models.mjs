@@ -160,8 +160,12 @@ function screwConfigurationIssue(contract, row) {
     return "";
   }
 
+  const screwDiameter = Number(
+    row[constraint.screwDiameterKey] ?? constraint.defaultScrewDiameterMm ?? 0
+  );
   const minimumSize =
-    Number(constraint.countersinkDiameterMm || 0) + Number(constraint.minimumWallMm || 0) * 2;
+    screwDiameter * Number(constraint.countersinkDiameterFactor || 1) +
+    Number(constraint.minimumWallMm || 0) * 2;
   const sizes = constraint.sizeKeys.map((key) => Number(row[key]));
   const undersized = sizes.some((size) => !Number.isFinite(size) || size + 0.0001 < minimumSize);
 

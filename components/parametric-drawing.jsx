@@ -404,6 +404,7 @@ function BaseRound({ format, values, activeKey, onSelect }) {
 function BaseRoundScrew({ format, values, activeKey, onSelect }) {
   const baseDiameterValue = Number(values.diametroBase ?? values.diametro ?? 28);
   const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 6);
+  const screwDiameterValue = Number(values.diametroParafuso ?? 3);
   const diameterKey = values.diametroBase !== undefined ? "diametroBase" : "diametro";
   const heightKey = values.alturaBase !== undefined ? "alturaBase" : "altura";
   const diameter = scaleRangeDimension(baseDiameterValue, {
@@ -413,11 +414,8 @@ function BaseRoundScrew({ format, values, activeKey, onSelect }) {
     readableCurve: 40
   });
   const height = scaleBaseHeight(baseHeightValue, { scale: 6, max: 60 });
-  const holeDiameter = scaleFixedFeature(3, baseDiameterValue, diameter, {
-    minSize: 8,
-    maxSize: Math.min(22, diameter * 0.72)
-  });
-  const countersinkDiameter = Math.min(diameter * 0.78, holeDiameter * 2);
+  const holeDiameter = scaleFeatureProportionally(screwDiameterValue, baseDiameterValue, diameter);
+  const countersinkDiameter = holeDiameter * 2;
   const topCx = 360;
   const topCy = topViewY;
   const frontCx = topCx;
@@ -447,13 +445,17 @@ function BaseRoundScrew({ format, values, activeKey, onSelect }) {
       <circle className="cut-line" cx={topCx} cy={topCy} r={countersinkDiameter / 2} fill="none" />
       <circle className="void" cx={topCx} cy={topCy} r={holeDiameter / 2} />
       <Dimension x1={topCx - diameter / 2} y1={topCy - diameter / 2 - 28} x2={topCx + diameter / 2} y2={topCy - diameter / 2 - 28} label={`${baseDiameterValue} mm`} paramKey={diameterKey} activeKey={activeKey} onSelect={onSelect} />
-      <FixedFeatureCallout
+      <ScrewFeatureCallout
         anchorX={topCx + holeDiameter / 2}
         anchorY={topCy - holeDiameter / 2}
         elbowX={500}
         elbowY={94}
         textX={508}
         textY={89}
+        diameter={screwDiameterValue}
+        paramKey="diametroParafuso"
+        activeKey={activeKey}
+        onSelect={onSelect}
       />
 
       <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={baseTopY - 26} y2={baseBottomY + 24} />
@@ -611,6 +613,7 @@ function BaseRectScrew({ format, values, activeKey, onSelect }) {
   const sizeXValue = Number(values.tamanhoBaseX ?? values.comprimento ?? 50);
   const sizeYValue = Number(values.tamanhoBaseY ?? values.largura ?? 50);
   const baseHeightValue = Number(values.alturaBase ?? values.altura ?? 7);
+  const screwDiameterValue = Number(values.diametroParafuso ?? 3);
   const sizeXKey = values.tamanhoBaseX !== undefined ? "tamanhoBaseX" : "comprimento";
   const sizeYKey = values.tamanhoBaseY !== undefined ? "tamanhoBaseY" : "largura";
   const heightKey = values.alturaBase !== undefined ? "alturaBase" : "altura";
@@ -626,8 +629,8 @@ function BaseRectScrew({ format, values, activeKey, onSelect }) {
   const baseHeight = scaleBaseHeight(baseHeightValue);
   const radius = cornerRadius(sizeX, sizeY, { max: 10, ratio: 0.15 });
   const planScale = Math.min(sizeX / Math.max(sizeXValue, 0.1), sizeY / Math.max(sizeYValue, 0.1));
-  const holeDiameter = clamp(3 * planScale, 8, Math.min(22, Math.min(sizeX, sizeY) * 0.72));
-  const countersinkDiameter = Math.min(Math.min(sizeX, sizeY) * 0.78, holeDiameter * 2);
+  const holeDiameter = screwDiameterValue * planScale;
+  const countersinkDiameter = holeDiameter * 2;
   const guideX = 145;
   const topCx = 300;
   const frontCx = 300;
@@ -677,13 +680,17 @@ function BaseRectScrew({ format, values, activeKey, onSelect }) {
       <circle className="void" cx={topCx} cy={topCy} r={holeDiameter / 2} />
       <Dimension x1={topLeft} y1={topTop - 30} x2={topRight} y2={topTop - 30} label={`${sizeXValue} mm`} paramKey={sizeXKey} activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={guideX} y1={topTop} x2={guideX} y2={topBottom} label={`${sizeYValue} mm`} paramKey={sizeYKey} activeKey={activeKey} onSelect={onSelect} />
-      <FixedFeatureCallout
+      <ScrewFeatureCallout
         anchorX={topCx + holeDiameter / 2}
         anchorY={topCy - holeDiameter / 2}
         elbowX={448}
         elbowY={94}
         textX={456}
         textY={89}
+        diameter={screwDiameterValue}
+        paramKey="diametroParafuso"
+        activeKey={activeKey}
+        onSelect={onSelect}
       />
 
       <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={baseTopY - 24} y2={baseBottomY + 20} />
@@ -732,10 +739,8 @@ function countersunkHoleSection(cx, top, bottom, shaftDiameter, countersinkDiame
     Z`;
 }
 
-function scaleFixedFeature(featureValue, referenceValue, referenceSize, { minSize, maxSize }) {
-  const proportionalSize = (Number(featureValue) / Math.max(Number(referenceValue), 0.1)) * Number(referenceSize);
-
-  return clamp(proportionalSize, Math.min(minSize, maxSize), maxSize);
+function scaleFeatureProportionally(featureValue, referenceValue, referenceSize) {
+  return (Number(featureValue) / Math.max(Number(referenceValue), 0.1)) * Number(referenceSize);
 }
 
 function capsulePath(cx, cy, width, height) {
@@ -1029,15 +1034,38 @@ function Dimension({ x1, y1, x2, y2, label, paramKey, activeKey, onSelect }) {
   );
 }
 
-function FixedFeatureCallout({ anchorX, anchorY, elbowX, elbowY, textX, textY }) {
+function ScrewFeatureCallout({
+  anchorX,
+  anchorY,
+  elbowX,
+  elbowY,
+  textX,
+  textY,
+  diameter,
+  paramKey,
+  activeKey,
+  onSelect
+}) {
   const measurementSystem = useContext(MeasurementSystemContext);
-  const fixedDiameter = formatMeasurement(3, "mm", measurementSystem);
+  const displayDiameter = formatMeasurement(diameter, "mm", measurementSystem);
+  const active = activeKey === paramKey;
 
   return (
-    <g aria-label={`Furo passante fixo de ${fixedDiameter}`}>
+    <g
+      className={`dimension${active ? " is-active" : ""}`}
+      role="button"
+      tabIndex="0"
+      aria-label={`Furo para parafuso de ${displayDiameter}`}
+      onClick={() => onSelect(paramKey)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          onSelect(paramKey);
+        }
+      }}
+    >
       <path
         className="technical-projection"
-        d={`M ${anchorX} ${anchorY} L ${elbowX} ${elbowY} H ${textX + 112}`}
+        d={`M ${anchorX} ${anchorY} L ${elbowX} ${elbowY} H ${textX + 142}`}
         fill="none"
       />
       <circle cx={anchorX} cy={anchorY} r="2.5" fill="#314044" />
@@ -1048,8 +1076,9 @@ function FixedFeatureCallout({ anchorX, anchorY, elbowX, elbowY, textX, textY })
         fontFamily="Arial, Helvetica, sans-serif"
         fontSize="12"
         fontWeight="700"
+        style={{ textAnchor: "start" }}
       >
-        Furo Ø{fixedDiameter} · fixo
+        Parafuso Ø{displayDiameter}
       </text>
     </g>
   );

@@ -103,6 +103,25 @@ test("traduz medida publica do tubo redondo para o slider usado na precificacao"
   assert.deepEqual(normalizedJob.contract.parameters, payload.items[0].parameters);
 });
 
+test("envia o diâmetro configurado do parafuso para o contrato CAD", () => {
+  const order = buildPaidOrder();
+  const item = {
+    ...order.items[0],
+    sku: "BF-SP-RD-V2-CP-DI28-AB6-PF4P5-PR",
+    categorySlug: "sapata-com-parafuso",
+    formatSlug: "redonda",
+    values: { diametro: 28, alturaBase: 6, diametroParafuso: 4.5 }
+  };
+  const cadItem = getGrasshopperPayload({ ...order, items: [item] }).items[0];
+
+  assert.deepEqual(cadItem.configurationParameters, {
+    diametro: 28,
+    alturaBase: 6,
+    diametroParafuso: 4.5
+  });
+  assert.equal(cadItem.technicalDefaults.screwCountersinkDiameterFactor, 2);
+});
+
 test("seleciona o contrato CAD correto da Sapata U com e sem haste", () => {
   const order = buildPaidOrder();
   const baseItem = {

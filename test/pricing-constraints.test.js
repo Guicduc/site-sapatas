@@ -89,9 +89,11 @@ test("sapatas com parafuso usam somente as superficies CP e respeitam o limite d
     assert.deepEqual(validateConfiguration(format, boundary), []);
     assert.equal(breakdown.pricingAvailable, true);
     assert.equal(breakdown.surfaceId, `sapata-com-parafuso:${slug}:com-parafuso`);
-    assert.equal(format.manufacturing.screwClearance.fixedScrewDiameterMm, 3);
-    assert.equal(format.manufacturing.screwClearance.countersinkDiameterMm, 6);
+    assert.equal(defaults.diametroParafuso, 3);
+    assert.equal(format.manufacturing.screwClearance.screwDiameterKey, "diametroParafuso");
+    assert.equal(format.manufacturing.screwClearance.countersinkDiameterFactor, 2);
     assert.equal(format.manufacturing.screwClearance.minimumWallMm, 3);
+    assert.match(buildConfigurationSku(format, defaults, { color: "Preta" }), /-PF3-/);
   }
 });
 
@@ -107,6 +109,20 @@ test("sapata com parafuso bloqueia medida abaixo da folga radial homologada", ()
   assert.match(issues.join(" "), /12 mm/);
   assert.equal(breakdown.pricingAvailable, false);
   assert.equal(breakdown.pricingMode, "invalid_configuration");
+});
+
+test("sapata com parafuso recalcula a folga para o diâmetro escolhido", () => {
+  const format = screwFormat("redonda");
+  const validValues = {
+    ...getInitialValues(format),
+    diametro: 14,
+    diametroParafuso: 4
+  };
+  const invalidValues = { ...validValues, diametro: 13.5 };
+
+  assert.deepEqual(validateConfiguration(format, validValues), []);
+  assert.match(validateConfiguration(format, invalidValues).join(" "), /14 mm/);
+  assert.equal(calculatePriceBreakdown(format, validValues).pricingAvailable, true);
 });
 
 test("modelo monotono nao volta ao custo IDW quando a previsao parte de zero", () => {

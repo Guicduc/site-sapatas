@@ -8,8 +8,8 @@
   "skuPrefix": "BF-SP-RD",
   "sku": {
     "versionMarker": "V2",
-    "parameterOrder": ["diametro", "alturaBase"],
-    "parameterCodes": { "diametro": "DI", "alturaBase": "AB" },
+    "parameterOrder": ["diametro", "alturaBase", "diametroParafuso"],
+    "parameterCodes": { "diametro": "DI", "alturaBase": "AB", "diametroParafuso": "PF" },
     "colorCodes": { "Preta": "PR", "Areia": "AR", "Terracota": "TE", "Verde mineral": "VM" }
   },
   "material": "TPU",
@@ -20,19 +20,21 @@
   "manufacturing": {
     "screwClearance": {
       "sizeKeys": ["diametro"],
-      "fixedScrewDiameterMm": 3,
-      "countersinkDiameterMm": 6,
+      "screwDiameterKey": "diametroParafuso",
+      "defaultScrewDiameterMm": 3,
+      "countersinkDiameterFactor": 2,
       "minimumWallMm": 3
     }
   },
   "drawingType": "base-round-screw",
   "notes": [
-    "Furo central técnico fixo em 3 mm e escareamento inferior de 6 mm; o parafuso metálico não está incluso.",
-    "O controle Grasshopper Diam_Parafuso permanece no valor técnico padrão 3 e não integra o configurador nem a superfície de preço."
+    "O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso.",
+    "O controle Grasshopper Diam_Parafuso integra o configurador e o contrato CAD; a superfície de preço atual ignora essa pequena remoção de material."
   ],
   "parameters": [
     { "key": "diametro", "label": "Diâmetro", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
-    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" }
+    { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
+    { "key": "diametroParafuso", "label": "Diâmetro do parafuso", "type": "dimension", "unit": "mm", "min": 2, "max": 10, "step": 0.5, "default": 3, "role": "fastener-diameter" }
   ],
   "variants": [
     {
@@ -42,9 +44,9 @@
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
         "modelVersion": "base-screw-round-gh-v1",
-        "sliderOrder": ["diametro", "alturaBase"]
+        "sliderOrder": ["diametro", "alturaBase", "diametroParafuso"]
       },
-      "pricing": { "surfaceId": "sapata-com-parafuso:redonda:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4 }
+      "pricing": { "surfaceId": "sapata-com-parafuso:redonda:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4, "parameterKeys": ["diametro", "alturaBase"] }
     }
   ]
 }

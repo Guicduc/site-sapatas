@@ -6538,7 +6538,7 @@ summary {
   }
 
   .configurator-side {
-    grid-template-columns: minmax(340px, 0.82fr) minmax(0, 1.7fr);
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.7fr);
     gap: 14px;
     align-items: center;
     margin-top: 12px;
@@ -6549,9 +6549,10 @@ summary {
   }
 
   .configurator-side .option-panel {
-    grid-template-columns: minmax(145px, 0.8fr) minmax(180px, 1.1fr);
+    grid-template-columns: minmax(110px, 0.8fr) minmax(130px, 1.1fr);
     align-items: center;
     gap: 8px 14px;
+    min-width: 0;
     padding-right: 14px;
   }
 
@@ -6578,7 +6579,8 @@ summary {
 
   .configurator-side .quantity-stepper {
     grid-template-columns: 34px minmax(48px, 1fr) 34px;
-    width: 132px;
+    width: min(132px, 100%);
+    min-width: 0;
     padding: 2px;
   }
 
@@ -6588,8 +6590,19 @@ summary {
   }
 
   .configurator-side .summary-panel {
-    grid-template-columns: minmax(140px, 0.72fr) minmax(190px, 1fr) minmax(170px, auto);
+    grid-template-columns: minmax(110px, 0.72fr) minmax(150px, 1fr) minmax(150px, auto);
     gap: 8px 14px;
+    min-width: 0;
+  }
+
+  .configurator-side .summary-heading,
+  .configurator-side .summary-stats {
+    min-width: 0;
+  }
+
+  .configurator-side .summary-heading h2,
+  .configurator-side .summary-heading > span {
+    overflow-wrap: anywhere;
   }
 
   .configurator-side .summary-heading h2 {

@@ -50,6 +50,7 @@ PARAMETER_COLUMNS = [
     "alturaBase",
     "alturaPescoco",
     "diametroPescoco",
+    "diametroParafuso",
     "paredeTubo",
     "pescoco",
 ]
@@ -252,23 +253,24 @@ PRODUCT_CONFIGS = [
         "format_slug": "redonda",
         "variant_slug": "com-parafuso",
         "has_neck": False,
-        "slider_order": ["diametro", "alturaBase"],
-        # `Diam_Parafuso` existe no GH com faixa bruta 0-10 e default 3.
-        # Sem sweep homologado, apply_variation o mantem fixo no default tecnico.
+        "slider_order": ["diametro", "alturaBase", "diametroParafuso"],
         "sampling": {
-            "force_axis_keys": ["diametro", "alturaBase"],
+            "force_axis_keys": ["diametro", "alturaBase", "diametroParafuso"],
             "target_count": 320,
         },
         "manufacturing": {
             "screw_clearance": {
                 "size_keys": ["diametro"],
-                "countersink_diameter_mm": 6,
+                "screw_diameter_key": "diametroParafuso",
+                "default_screw_diameter_mm": 3,
+                "countersink_diameter_factor": 2,
                 "minimum_wall_mm": 3,
             },
         },
         "parameters": {
             "diametro": parameter(12, 150, 28),
             "alturaBase": parameter(1, 10, 6),
+            "diametroParafuso": parameter(2, 10, 3, 0.5),
         },
     },
     {
@@ -340,11 +342,9 @@ PRODUCT_CONFIGS = [
         "format_slug": "quadrada",
         "variant_slug": "com-parafuso",
         "has_neck": False,
-        "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
-        # `Diam_Parafuso` existe no GH com faixa bruta 0-10 e default 3.
-        # Sem sweep homologado, apply_variation o mantem fixo no default tecnico.
+        "slider_order": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"],
         "sampling": {
-            "force_axis_keys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+            "force_axis_keys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"],
             "target_count": 480,
             "required_samples": [
                 {"tamanhoBaseX": 12},
@@ -354,7 +354,9 @@ PRODUCT_CONFIGS = [
         "manufacturing": {
             "screw_clearance": {
                 "size_keys": ["tamanhoBaseX", "tamanhoBaseY"],
-                "countersink_diameter_mm": 6,
+                "screw_diameter_key": "diametroParafuso",
+                "default_screw_diameter_mm": 3,
+                "countersink_diameter_factor": 2,
                 "minimum_wall_mm": 3,
             },
         },
@@ -362,6 +364,7 @@ PRODUCT_CONFIGS = [
             "tamanhoBaseX": parameter(12, 150, 50),
             "tamanhoBaseY": parameter(12, 150, 50),
             "alturaBase": parameter(1, 10, 7),
+            "diametroParafuso": parameter(2, 10, 3, 0.5),
         },
     },    {
         "source_gh": "Produtos/Scripts-GH/Sapata_U_SemHaste.gh",
@@ -701,6 +704,7 @@ def aliased_slider_name(raw_name, product_config):
         "alturabase": "alturaBase",
         "alturapescoco": "alturaPescoco",
         "diametrohaste": "diametroPescoco",
+        "diametroparafuso": "diametroParafuso",
         "alturahaste": "alturaPescoco",
         "x": "tamanhoBaseX",
         "y": "tamanhoBaseY",
@@ -1390,7 +1394,12 @@ def slicer_unsafe_sample_reason(base_name, slider_values, product_config=None):
 
     screw_constraint = (product_config or {}).get("manufacturing", {}).get("screw_clearance")
     if screw_constraint:
-        countersink_diameter = float(screw_constraint.get("countersink_diameter_mm", 0))
+        screw_diameter = numeric_slider_value(
+            slider_values,
+            screw_constraint.get("screw_diameter_key"),
+            screw_constraint.get("default_screw_diameter_mm", 0),
+        )
+        countersink_diameter = screw_diameter * float(screw_constraint.get("countersink_diameter_factor", 1))
         minimum_wall = float(screw_constraint.get("minimum_wall_mm", 0))
         minimum_size = countersink_diameter + minimum_wall * 2
         sizes = [numeric_slider_value(slider_values, key, 0) for key in screw_constraint.get("size_keys", [])]
