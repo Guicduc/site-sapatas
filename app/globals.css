@@ -1455,13 +1455,6 @@ section {
   box-shadow: 0 1px 0 rgba(24, 28, 29, 0.08);
 }
 
-.measurement-unit-note {
-  margin: -10px 0 0;
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
 .parameter-field__copy {
   display: grid;
   gap: 6px;

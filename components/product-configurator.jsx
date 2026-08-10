@@ -715,11 +715,6 @@ function ConfiguratorFields({
           </div>
         </div>
       </div>
-      <p className="measurement-unit-note">
-        {measurementSystem === MEASUREMENT_SYSTEMS.IMPERIAL
-          ? "Aceita ponto, vírgula ou fração, como 1,25 ou 1 1/4. O pedido é salvo em mm sem alterar a medida informada."
-          : "Aceita medidas exatas com ponto ou vírgula, como 30,5. O pedido é salvo em milímetros."}
-      </p>
       {format.parameters.map((parameter) => {
         if (parameter.dependsOn && !values[parameter.dependsOn]) {
           return null;
