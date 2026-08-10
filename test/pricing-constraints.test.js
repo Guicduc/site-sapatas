@@ -100,3 +100,21 @@ test("Sapata U alterna SKU e superficie de preco junto com a haste", () => {
   assert.equal(calculatePriceBreakdown(format, withoutStem).coverage.requestedSurfaceId, "sapata-u:u:sem-haste");
   assert.equal(calculatePriceBreakdown(format, withStem).coverage.requestedSurfaceId, "sapata-u:u:haste");
 });
+
+test("cores disponiveis recebem codigos distintos no SKU", () => {
+  const category = getCategoryBySlug("sapata-u");
+  const format = getFormat(category, "u");
+  const defaults = getInitialValues(format);
+  const expectedCodes = {
+    Preto: "PR",
+    Branco: "BR",
+    Cinza: "CZ",
+    Marrom: "MR"
+  };
+
+  assert.deepEqual(category.colors, Object.keys(expectedCodes));
+
+  for (const [color, code] of Object.entries(expectedCodes)) {
+    assert.match(buildConfigurationSku(format, defaults, { color }), new RegExp(`-${code}$`));
+  }
+});
