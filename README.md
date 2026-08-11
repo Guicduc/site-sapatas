@@ -7,6 +7,7 @@ Aplicacao Next.js para catalogo configuravel e pedidos de sapatas sob medida par
 - Framework: Next.js App Router, React e CSS global em `app/globals.css`.
 - Produto principal: sapatas e ponteiras em TPU, configuraveis por medidas.
 - Rotas publicas principais: `/`, `/catalogo`, `/configurar/[categoria]`, `/carrinho`, `/pedido-confirmado`, `/familias/[slug]`, `/como-funciona`, `/processo`, `/projeto-especial` e `/faq`.
+- Paginas legais obrigatorias para venda a distancia: `/termos` (condicoes de venda), `/trocas` (arrependimento, troca, devolucao e garantia) e `/privacidade` (cookies e dados). A identificacao do fornecedor sai de `company` em `lib/site-data.js` e do CNPJ emissor em `lib/invoice-config.js`.
 - Area do cliente: `/conta`, com acesso por e-mail e numero do pedido, historico, pagamentos, especificacoes e dados de entrega.
 - Fluxo comercial: usuario escolhe categoria/formato, configura medidas, adiciona ao carrinho, informa entrega/cupom, cria pedido e pode gerar pagamento via Mercado Pago.
 - Administracao: `/admin`, `/admin/pedidos`, `/admin/relatorios` e `/admin/operacao` concentram login operacional, pedidos, indicadores, producao, NF-e automatizada via Focus NFe (com contingencia manual) e expedicao.
@@ -47,7 +48,8 @@ Use `.env.example` como base.
 - `SHIPPING_ORIGIN_POSTAL_CODE`: CEP de origem usado na cotacao real de frete.
 - `MELHOR_ENVIO_ENV`, `MELHOR_ENVIO_ACCESS_TOKEN`, `MELHOR_ENVIO_USER_AGENT`, `MELHOR_ENVIO_SERVICE_IDS` e `MELHOR_ENVIO_PREFERRED_SERVICE_IDS`: configuram a integracao Melhor Envio. O `User-Agent` deve conter nome da aplicacao e e-mail tecnico.
 - `SHIPPING_PRODUCT_PADDING_CM`, `SHIPPING_PACKAGING_WEIGHT_GRAMS`, `SHIPPING_MIN_PRODUCT_DIMENSION_CM` e `SHIPPING_MIN_PRODUCT_WEIGHT_KG`: ajustes conservadores para transformar medidas das pecas em dados de envio.
-- `INVOICE_PROVIDER=focus_nfe`, `FOCUS_NFE_ENV`, `FOCUS_NFE_TOKEN` e `FOCUS_NFE_WEBHOOK_TOKEN`: habilitam emissao, consulta e atualizacao automatica de NF-e. Use `npm run invoice:audit` para validar a configuracao sem imprimir segredos.
+- `INVOICE_PROVIDER`: `focus_nfe` emite a NF-e automaticamente apos o pagamento aprovado. `manual` mantem apenas o registro no admin.
+- `FOCUS_NFE_TOKEN`, `FOCUS_NFE_ENV` e `FOCUS_NFE_WEBHOOK_TOKEN`: credenciais e ambiente da Focus NFe. Com `FOCUS_NFE_ENV=homologacao`, as notas nao tem validade fiscal. Use `npm run invoice:audit` para validar a configuracao sem imprimir segredos.
 - `PRODUCTION_DAILY_UNIT_CAPACITY`: capacidade diaria usada no painel operacional. Padrao interno: `120`.
 - `ORCA_*`: configuracoes para integracao local com Orca Slicer.
 
