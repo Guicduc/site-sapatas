@@ -42,6 +42,9 @@ export function AccountAccess({ initialOrderNumber = "" }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [phase, setPhase] = useState("request");
+  const [authMode, setAuthMode] = useState("code");
+  const [password, setPassword] = useState("");
+  const [recovery, setRecovery] = useState(false);
   const [code, setCode] = useState("");
   const [devCode, setDevCode] = useState("");
   const [resendSeconds, setResendSeconds] = useState(0);
@@ -58,6 +61,16 @@ export function AccountAccess({ initialOrderNumber = "" }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (authMode === "password") {
+      setSubmitting(true); setError("");
+      try {
+        const { response } = await postAccountSession({ email, password });
+        if (!response.ok) throw new Error("E-mail ou senha não conferem.");
+        router.replace("/conta"); router.refresh();
+      } catch (caughtError) { setError(caughtError.message); }
+      finally { setSubmitting(false); }
+      return;
+    }
     if (phase === "verify") {
       await verifyCode();
       return;
@@ -71,7 +84,7 @@ export function AccountAccess({ initialOrderNumber = "" }) {
     setNotice("");
 
     try {
-      const { response, payload } = await postAccountSession({ email, orderNumber });
+      const { response, payload } = await postAccountSession({ email, orderNumber, ...(recovery ? { recovery: true } : {}) });
       if (!response.ok) {
         if (response.status === 429) setResendSeconds(Number(payload.retryAfter || 60));
         throw new Error(payload.message || "Não foi possível enviar o código.");
@@ -152,7 +165,12 @@ export function AccountAccess({ initialOrderNumber = "" }) {
               : "Use o e-mail da compra e o número de qualquer pedido para receber um código de acesso."}
           </p>
         </div>
-        {phase === "request" ? (
+        {authMode === "password" ? (
+          <div className="account-login__fields">
+            <label className="field"><span>E-mail</span><input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+            <label className="field"><span>Senha</span><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+          </div>
+        ) : phase === "request" ? (
           <div className="account-login__fields">
             <label className="field">
               <span>E-mail da compra</span>
@@ -178,6 +196,7 @@ export function AccountAccess({ initialOrderNumber = "" }) {
                 autoCapitalize="characters"
                 spellCheck="false"
                 required
+                required={!recovery}
                 placeholder="BF-260619-ABCD1234EFGH"
                 value={orderNumber}
                 aria-describedby="account-order-help"
@@ -223,6 +242,10 @@ export function AccountAccess({ initialOrderNumber = "" }) {
             ? phase === "verify" ? "Entrando..." : "Enviando código..."
             : phase === "verify" ? "Entrar na minha conta" : "Continuar"}
         </button>
+        {phase === "request" && <button type="button" className="account-login__link" onClick={() => { setAuthMode(authMode === "code" ? "password" : "code"); setError(""); }}>
+          {authMode === "code" ? "Entrar com senha" : "Entrar com código"}
+        </button>}
+        {authMode === "password" && <button type="button" className="account-login__link" onClick={() => { setAuthMode("code"); setRecovery(true); setPhase("request"); setError(""); }}>Esqueci minha senha</button>}
         {phase === "verify" && (
           <div className="account-login__secondary-actions">
             <button
@@ -268,6 +291,8 @@ function maskEmail(value) {
 export function AccountDashboard({ email, orders, demo = false }) {
   const [filter, setFilter] = useState("all");
   const [paymentError, setPaymentError] = useState("");
+  const [securityPassword, setSecurityPassword] = useState("");
+  const [securityNotice, setSecurityNotice] = useState("");
   const customer = orders[0]?.customer;
   const latestAddress = orders.find((order) => order.shippingAddress)?.shippingAddress;
   const summary = useMemo(() => ({
@@ -304,6 +329,14 @@ export function AccountDashboard({ email, orders, demo = false }) {
     window.location.assign(payload.checkoutUrl);
   }
 
+  async function savePassword(event) {
+    event.preventDefault(); setSecurityNotice("");
+    const response = await fetch("/api/account/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: securityPassword }) });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) { setSecurityNotice(payload.message || "Não foi possível salvar a senha."); return; }
+    setSecurityPassword(""); setSecurityNotice("Senha atualizada. As outras sessões foram encerradas.");
+  }
+
   return (
     <section className="account-shell">
       <header className="account-heading">
@@ -320,6 +353,7 @@ export function AccountDashboard({ email, orders, demo = false }) {
           <a href="#visao-geral">Visão geral</a>
           <a href="#pedidos">Pedidos</a>
           <a href="#dados">Meus dados</a>
+          <a href="#seguranca">Segurança</a>
           <a href="#ajuda">Ajuda e privacidade</a>
         </nav>
 
@@ -378,6 +412,14 @@ export function AccountDashboard({ email, orders, demo = false }) {
               <div><h3>Dúvidas frequentes</h3><p>Consulte compatibilidade, preço, prazo, material e acabamento.</p><Link href="/faq">Abrir FAQ</Link></div>
             </div>
           </section>
+
+          {!demo && <section id="seguranca" className="account-section" aria-labelledby="security-title">
+            <div className="account-section__heading"><div><p className="eyebrow">Segurança</p><h2 id="security-title">Proteja o acesso à sua conta</h2></div></div>
+            <form className="account-help" onSubmit={savePassword}>
+              <div><h3>Senha opcional</h3><p>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</p><label className="field"><span>Nova senha</span><input type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} /></label><button className="button button-primary" type="submit">Salvar senha</button>{securityNotice && <p role="status">{securityNotice}</p>}</div>
+              <div><h3>Outros dispositivos</h3><p>Encerre sessões abertas em outros navegadores.</p><button type="button" className="button button-secondary" onClick={async () => { await fetch("/api/account/sessions", { method: "DELETE" }); setSecurityNotice("Todas as outras sessões foram encerradas."); }}>Sair de todos os dispositivos</button></div>
+            </form>
+          </section>}
         </div>
       </div>
     </section>

@@ -8,7 +8,7 @@ import {
   mapMercadoPagoPaymentStatus,
   searchMercadoPagoPaymentsByReference
 } from "@/lib/mercado-pago";
-import { getOrderById, getOrderForEmail, recordMercadoPagoUpdate } from "@/lib/order-store";
+import { getOrderById, getOrderForAccountId, recordMercadoPagoUpdate } from "@/lib/order-store";
 import { ORDER_STATUS } from "@/lib/order-status";
 import { notifyPaymentResolved } from "@/lib/transactional-email";
 
@@ -19,7 +19,7 @@ export async function POST(request) {
   try {
     const { orderId } = await request.json();
     const [session, orderAccess] = await Promise.all([getAccountSession(), getOrderAccess()]);
-    let order = session ? await getOrderForEmail(orderId, session.email) : null;
+    let order = session ? await getOrderForAccountId(orderId, session.accountId) : null;
 
     if (!order && orderAccess?.orderId === orderId) {
       order = await getOrderById(orderId);

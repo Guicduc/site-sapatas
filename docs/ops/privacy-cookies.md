@@ -14,14 +14,14 @@ Este documento registra o inventario tecnico verificado em 13/07/2026 e a regra 
 | Nome | Tecnologia | Finalidade | Criacao | Prazo |
 | --- | --- | --- | --- | --- |
 | `baseforma-admin` | cookie HttpOnly, SameSite=Lax | sessao administrativa | login em `/admin` | 12 horas |
-| `baseforma-account` | cookie HttpOnly, SameSite=Lax | sessao da conta do cliente | confirmacao do codigo por e-mail | 30 dias |
+| `baseforma-account` | cookie HttpOnly, SameSite=Lax, Secure em producao, Priority=High | sessao da conta do cliente; token opaco, apenas hash persistido | confirmacao do codigo ou senha | 30 dias |
 | `baseforma-order-access` | cookie HttpOnly, SameSite=Lax | acesso temporario ao pedido criado | `POST /api/orders` | 2 horas |
 | `baseforma-cart` | localStorage | persistencia do carrinho | uso do configurador/carrinho | ate limpeza do navegador |
 | `baseforma-cart-recovery` | localStorage | identificador e token do carrinho salvo | recuperacao de carrinho no checkout | ate conversao ou limpeza |
 | `baseforma-last-order-id` | sessionStorage | reabertura da confirmacao do pedido | pedido criado | ate fechar a aba |
 | `baseforma-cookie-consent` | localStorage | escolha e validade do consentimento | aviso/centro de preferencias | 180 dias |
 
-Todas as tecnologias acima sao funcionais. Os cookies de sessao sao assinados, HttpOnly e `Secure` em producao. O valor de `baseforma-cart-recovery` contem somente identificador e token; os dados do lead ficam no armazenamento do servidor, sujeito a `CART_RECOVERY_RETENTION_DAYS`.
+Todas as tecnologias acima sao funcionais. O cookie de conta e HttpOnly, SameSite=Lax, Secure em producao e carrega token opaco aleatorio; somente seu hash e persistido. O valor de `baseforma-cart-recovery` contem somente identificador e token; os dados do lead ficam no armazenamento do servidor, sujeito a `CART_RECOVERY_RETENTION_DAYS`.
 
 ## Regra para scripts opcionais
 

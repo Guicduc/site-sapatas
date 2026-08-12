@@ -1,7 +1,7 @@
 import { AccountAccess, AccountDashboard } from "@/components/account-dashboard";
 import { getAccountSession } from "@/lib/account-session";
 import { toAccountOrder } from "@/lib/account-view";
-import { listOrdersByEmail } from "@/lib/order-store";
+import { listOrdersByAccountId } from "@/lib/order-store";
 import { isDemoSession } from "@/lib/demo-session";
 import { DemoAccount } from "@/components/demo-account";
 
@@ -24,6 +24,6 @@ export default async function AccountPage({ searchParams }) {
     return <AccountAccess initialOrderNumber={initialOrderNumber} />;
   }
 
-  const orders = await listOrdersByEmail(session.email);
+  const orders = await listOrdersByAccountId(session.accountId);
   return <AccountDashboard email={session.email} orders={orders.map(toAccountOrder)} />;
 }

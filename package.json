@@ -22,6 +22,7 @@
     "invoice:audit": "node scripts/audit-focus-nfe.mjs"
   },
   "dependencies": {
+    "argon2": "^0.31.2",
     "next": "16.2.10",
     "pg": "^8.20.0",
     "react": "19.2.5",
