@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { formatCurrency } from "@/lib/format";
 import {
@@ -33,39 +34,92 @@ const PAYMENT_ACTION_NEEDED = new Set([
 const PRODUCTION_DONE = new Set(["ready_to_ship", "shipped"]);
 const SHIPMENT_DONE = new Set(["shipped", "delivered"]);
 
-export function AccountAccess() {
+export function AccountAccess({ initialOrderNumber = "" }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [orderNumber, setOrderNumber] = useState("");
+  const [orderNumber, setOrderNumber] = useState(() => normalizeOrderNumber(initialOrderNumber));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [phase, setPhase] = useState("request");
   const [code, setCode] = useState("");
   const [devCode, setDevCode] = useState("");
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const codeInputRef = useRef(null);
+
+  useEffect(() => {
+    if (phase !== "verify") return undefined;
+    codeInputRef.current?.focus();
+    const timer = window.setInterval(() => {
+      setResendSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [phase]);
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (phase === "verify") {
+      await verifyCode();
+      return;
+    }
+    await requestCode();
+  }
+
+  async function requestCode() {
     setSubmitting(true);
     setError("");
+    setNotice("");
 
     try {
-      const response = await fetch("/api/account/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, orderNumber, ...(phase === "verify" ? { code } : {}) })
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message);
-      if (payload.challenge) {
-        setPhase("verify");
-        setDevCode(payload.devCode || "");
-        return;
+      const { response, payload } = await postAccountSession({ email, orderNumber });
+      if (!response.ok) {
+        if (response.status === 429) setResendSeconds(Number(payload.retryAfter || 60));
+        throw new Error(payload.message || "Não foi possível enviar o código.");
       }
-      window.location.reload();
+      setPhase("verify");
+      setCode("");
+      setDevCode(payload.devCode || "");
+      setResendSeconds(Number(payload.retryAfter || 60));
+      setNotice(payload.message || "Código enviado. Confira sua caixa de entrada.");
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível acessar sua conta.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function verifyCode() {
+    if (code.length !== 6) {
+      setError("Digite os 6 números do código recebido.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const { response, payload } = await postAccountSession({ email, code });
+      if (!response.ok) throw new Error(payload.message || "Código inválido ou expirado.");
+      setNotice("Acesso confirmado. Abrindo sua conta...");
+      router.replace("/conta");
+      router.refresh();
+    } catch (caughtError) {
+      setError(caughtError.message || "Não foi possível confirmar o código.");
+      setCode("");
+      window.requestAnimationFrame(() => codeInputRef.current?.focus());
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function changeAccount() {
+    setPhase("request");
+    setCode("");
+    setDevCode("");
+    setError("");
+    setNotice("");
+    setResendSeconds(0);
   }
 
   return (
@@ -84,49 +138,131 @@ export function AccountAccess() {
       </div>
 
       <form className="account-login" onSubmit={handleSubmit} aria-busy={submitting}>
-        <div>
+        <div className="account-login__heading">
           <p className="eyebrow">Acesso seguro</p>
-          <h2>Entre na sua conta</h2>
-          <p>Informe o e-mail e o numero de um pedido para receber um codigo de acesso.</p>
+          <div className="account-login__progress" aria-label={`Etapa ${phase === "request" ? 1 : 2} de 2`}>
+            <span className="is-active">1</span>
+            <i aria-hidden="true" />
+            <span className={phase === "verify" ? "is-active" : ""}>2</span>
+          </div>
+          <h2>{phase === "verify" ? "Confira seu e-mail" : "Entre na sua conta"}</h2>
+          <p>
+            {phase === "verify"
+              ? <>Enviamos um código de 6 números para <strong>{maskEmail(email)}</strong>. Ele vale por 10 minutos.</>
+              : "Use o e-mail da compra e o número de qualquer pedido para receber um código de acesso."}
+          </p>
         </div>
-        <label className="field">
-          <span>E-mail da compra</span>
-          <input
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            disabled={phase === "verify"}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>Número do pedido</span>
-          <input
-            autoComplete="off"
-            required
-            placeholder="BF-260619-ABCD"
-            disabled={phase === "verify"}
-            value={orderNumber}
-            onChange={(event) => setOrderNumber(event.target.value.toUpperCase())}
-          />
-        </label>
-        {phase === "verify" && (
-          <label className="field">
-            <span>Código recebido por e-mail</span>
-            <input inputMode="numeric" autoComplete="one-time-code" maxLength="6" required value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} />
-          </label>
+        {phase === "request" ? (
+          <div className="account-login__fields">
+            <label className="field">
+              <span>E-mail da compra</span>
+              <input
+                type="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck="false"
+                required
+                placeholder="voce@empresa.com.br"
+                value={email}
+                aria-invalid={Boolean(error)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  setError("");
+                }}
+              />
+            </label>
+            <label className="field">
+              <span>Número do pedido</span>
+              <input
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck="false"
+                required
+                placeholder="BF-260619-ABCD1234EFGH"
+                value={orderNumber}
+                aria-describedby="account-order-help"
+                aria-invalid={Boolean(error)}
+                onChange={(event) => {
+                  setOrderNumber(normalizeOrderNumber(event.target.value));
+                  setError("");
+                }}
+              />
+              <small id="account-order-help">Você encontra esse número no e-mail de confirmação do pedido.</small>
+            </label>
+          </div>
+        ) : (
+          <div className="account-login__verification">
+            <label className="field">
+              <span>Código de acesso</span>
+              <input
+                ref={codeInputRef}
+                className="account-login__code"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                autoComplete="one-time-code"
+                maxLength="6"
+                required
+                placeholder="000000"
+                value={code}
+                aria-describedby="account-code-help"
+                aria-invalid={Boolean(error)}
+                onChange={(event) => {
+                  setCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                  setError("");
+                }}
+              />
+              <small id="account-code-help">Digite apenas os 6 números. Confira também a pasta de spam.</small>
+            </label>
+          </div>
         )}
         {devCode && <p className="account-alert" role="status">Ambiente local: use o código <strong>{devCode}</strong>.</p>}
+        {notice && <p className="account-alert account-alert--success" role="status" aria-live="polite">{notice}</p>}
         {error && <p className="account-alert account-alert--error" role="alert">{error}</p>}
-        <button className="button button-primary button-block" disabled={submitting}>
-          {submitting ? "Validando..." : phase === "verify" ? "Confirmar código" : "Enviar código de acesso"}
+        <button className="button button-primary button-block" disabled={submitting || (phase === "verify" && code.length !== 6)}>
+          {submitting
+            ? phase === "verify" ? "Entrando..." : "Enviando código..."
+            : phase === "verify" ? "Entrar na minha conta" : "Continuar"}
         </button>
-        {phase === "verify" && <button className="button button-secondary button-block" type="button" onClick={() => { setPhase("request"); setCode(""); setDevCode(""); }}>Usar outros dados</button>}
-        <small>Não encontrou o número? Consulte a confirmação recebida após finalizar o pedido.</small>
+        {phase === "verify" && (
+          <div className="account-login__secondary-actions">
+            <button
+              className="account-login__link"
+              type="button"
+              disabled={submitting || resendSeconds > 0}
+              onClick={requestCode}
+            >
+              {resendSeconds > 0 ? `Reenviar em ${resendSeconds}s` : "Reenviar código"}
+            </button>
+            <button className="account-login__link" type="button" disabled={submitting} onClick={changeAccount}>
+              Trocar e-mail ou pedido
+            </button>
+          </div>
+        )}
+        <p className="account-login__privacy">Sem senha. Sua sessão fica protegida neste dispositivo e pode ser encerrada a qualquer momento.</p>
       </form>
     </section>
   );
+}
+
+async function postAccountSession(body) {
+  const response = await fetch("/api/account/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json().catch(() => ({}));
+  return { response, payload };
+}
+
+function normalizeOrderNumber(value) {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "").slice(0, 40);
+}
+
+function maskEmail(value) {
+  const [localPart = "", domain = ""] = String(value || "").trim().split("@");
+  if (!domain) return value;
+  const visible = localPart.slice(0, Math.min(2, localPart.length));
+  return `${visible}${"•".repeat(Math.max(3, localPart.length - visible.length))}@${domain}`;
 }
 
 export function AccountDashboard({ email, orders, demo = false }) {

@@ -167,12 +167,18 @@ export default async function FamilyPage({ params }) {
             <strong>{family.asideTitle}</strong>
             <p>{family.asideDescription}</p>
             <div className="action-column">
-              <a
-                className="button button-primary button-block"
-                href={buildMailtoUrl(brand.email, contactSubject, contactBody)}
-              >
-                Confirmar a variante por e-mail
-              </a>
+              {family.configuratorPath ? (
+                <Link className="button button-primary button-block" href={family.configuratorPath}>
+                  Configurar produto
+                </Link>
+              ) : (
+                <a
+                  className="button button-primary button-block"
+                  href={buildMailtoUrl(brand.email, contactSubject, contactBody)}
+                >
+                  Confirmar a variante por e-mail
+                </a>
+              )}
               <Link
                 className="button button-secondary button-block"
                 href={`/projeto-especial?family=${family.slug}`}

@@ -324,7 +324,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
             </div>
 
             <ConfigurationSummary
-              format={{ ...format, name: getSummaryProductName(category, format) }}
+              format={{ ...format, name: getSummaryProductName(format) }}
               sku={sku}
               issues={issues}
               unitPrice={unitPrice}
@@ -382,12 +382,8 @@ function getConfiguratorDescription() {
   return "Configure as medidas conforme a necessidade do seu projeto.";
 }
 
-function getSummaryProductName(category, format) {
-  if (category.slug === "ponteira-interna-tubo") {
-    return `Sapata interna ${format.name.toLowerCase()}`;
-  }
-
-  return format.name;
+function getSummaryProductName(format) {
+  return format.summaryName || format.name;
 }
 
 function ColorSelector({ colors, value, onChange }) {

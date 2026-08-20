@@ -1,0 +1,4 @@
+interface:
+  display_name: "Launch Baseforma Product"
+  short_description: "Launch and validate Baseforma catalog products"
+  default_prompt: "Use $launch-baseforma-product to add or update a Baseforma product safely."

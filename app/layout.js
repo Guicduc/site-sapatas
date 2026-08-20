@@ -61,7 +61,7 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-scroll-behavior="smooth">
       <body className={brandDisplay.variable}>
         <CartProvider>
           <div className="page-background" aria-hidden="true" />

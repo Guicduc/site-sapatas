@@ -16,6 +16,9 @@
     "colors",
     "leadTimeBaseDays",
     "generationMode",
+    "drawingType",
+    "ui",
+    "visuals",
     "parameters",
     "variants"
   ],
@@ -137,6 +140,40 @@
       "type": "string",
       "description": "Renderer do desenho técnico 2D (registry de renderizadores)."
     },
+    "ui": {
+      "type": "object",
+      "required": ["fixation", "applications", "summaryName"],
+      "additionalProperties": false,
+      "properties": {
+        "fixation": { "type": "string", "minLength": 1 },
+        "summaryName": { "type": "string", "minLength": 1 },
+        "applications": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "description": "Texto operacional específico do formato, consumido pelo configurador compartilhado."
+    },
+    "visuals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "src", "alt"],
+        "additionalProperties": false,
+        "properties": {
+          "role": { "enum": ["family", "product", "variations", "manual", "usage"] },
+          "src": { "type": "string", "pattern": "^/products/final/" },
+          "alt": { "type": "string", "minLength": 1 },
+          "variantId": { "type": "string" },
+          "condition": {
+            "type": "object",
+            "additionalProperties": { "type": ["boolean", "number", "string"] }
+          }
+        }
+      },
+      "description": "Imagens finais por papel. Condições controlam apenas exibição, nunca regras de produto."
+    },
     "notes": {
       "type": "array",
       "items": { "type": "string" }
@@ -201,7 +238,7 @@
           },
           "cad": {
             "type": "object",
-            "required": ["script", "sliderOrder"],
+            "required": ["script", "modelVersion", "sliderOrder"],
             "additionalProperties": false,
             "properties": {
               "script": {
@@ -224,6 +261,11 @@
                     "scale": { "type": "number" }
                   }
                 }
+              },
+              "technicalDefaults": {
+                "type": "object",
+                "additionalProperties": { "type": "number" },
+                "description": "Folgas, chanfros e tolerâncias técnicas consumidas pelo script da variante."
               }
             }
           },
