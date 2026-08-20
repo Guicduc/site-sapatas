@@ -12,10 +12,13 @@
 // 4. Toda variante pública tem superfície de preço com amostras no dataset canônico de slice.
 // 5. Paridade com o catálogo legado (lib/configurator-data.js): parâmetros, ranges, defaults,
 //    prefixo de SKU e prazo precisam bater enquanto os consumidores não migram para o registry.
+// 6. UI e imagens: drawingType conhecido, arquivos existentes e cobertura visual das variantes.
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
+import { isKnownConfiguratorGeometry } from "../../lib/configurator-geometry-types.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const catalogDir = path.join(repoRoot, "catalog");
@@ -72,6 +75,9 @@ const requiredTopLevel = [
   "colors",
   "leadTimeBaseDays",
   "generationMode",
+  "drawingType",
+  "ui",
+  "visuals",
   "parameters",
   "variants"
 ];
@@ -103,6 +109,14 @@ for (const { file, data } of manifests) {
 
   if (data.generationMode !== "local_manual") {
     fail(id, `generationMode inválido: ${data.generationMode}`);
+  }
+
+  if (!isKnownConfiguratorGeometry(data.drawingType)) {
+    fail(id, `drawingType sem adaptador registrado: ${data.drawingType}`);
+  }
+
+  if (!data.ui?.fixation || !data.ui?.summaryName || !(data.ui?.applications || []).length) {
+    fail(id, "ui deve declarar fixation, summaryName e ao menos uma aplicação");
   }
 
   const parameterKeys = new Set();
@@ -210,6 +224,9 @@ for (const { file, data } of manifests) {
     if (!variant.cad?.script || !fs.existsSync(scriptPath)) {
       fail(id, `variante ${variant.id}: script Grasshopper não encontrado: ${variant.cad?.script}`);
     }
+    if (!variant.cad?.modelVersion) {
+      fail(id, `variante ${variant.id}: cad.modelVersion ausente`);
+    }
     for (const key of variant.cad?.sliderOrder || []) {
       if (!parameterKeys.has(key)) {
         fail(id, `variante ${variant.id}: sliderOrder referencia parâmetro inexistente: ${key}`);
@@ -235,6 +252,48 @@ for (const { file, data } of manifests) {
       }
     }
   }
+
+  const visuals = data.visuals || [];
+  const visualRoles = new Set(visuals.map((visual) => visual.role));
+
+  if (!visualRoles.has("family")) {
+    fail(id, "visuals deve possuir imagem family");
+  }
+  if (!visualRoles.has("product")) {
+    fail(id, "visuals deve possuir imagem product");
+  }
+  for (const role of ["manual", "usage"]) {
+    if (!visualRoles.has(role)) {
+      warn(id, `visuals ainda não possui imagem ${role}`);
+    }
+  }
+
+  for (const visual of visuals) {
+    const publicPath = path.join(repoRoot, "public", String(visual.src || "").replace(/^[/\\]+/, ""));
+    if (!visual.src || !fs.existsSync(publicPath)) {
+      fail(id, `imagem não encontrada: ${visual.src}`);
+    }
+    if (!visual.alt?.trim()) {
+      fail(id, `imagem ${visual.src || "sem caminho"} sem texto alternativo`);
+    }
+    if (visual.variantId && !variantIds.has(visual.variantId)) {
+      fail(id, `imagem ${visual.src} referencia variante inexistente: ${visual.variantId}`);
+    }
+    for (const key of Object.keys(visual.condition || {})) {
+      if (!parameterKeys.has(key)) {
+        fail(id, `imagem ${visual.src} condicionada por parâmetro inexistente: ${key}`);
+      }
+    }
+  }
+
+  for (const variant of (data.variants || []).filter((item) => item.public)) {
+    const hasVariantProduct = visuals.some((visual) => {
+      return visual.role === "product" && (!visual.variantId || visual.variantId === variant.id);
+    });
+    if (!hasVariantProduct) {
+      fail(id, `variante pública ${variant.id} sem imagem product aplicável`);
+    }
+  }
 }
 
 // --- 2. Unicidade entre produtos --------------------------------------------
@@ -255,6 +314,13 @@ if (!onlyProductId) {
   checkUnique("familySlug", (data) => data.seo?.familySlug);
   checkUnique("skuPrefix", (data) => data.skuPrefix);
   checkUnique("rota", (data) => `${data.category?.slug}:${data.category?.formatSlug}`);
+
+  const productIds = new Set(manifests.map(({ data }) => data.productId));
+  for (const category of categoriesFile.categories) {
+    if (!productIds.has(category.cardVisualProductId)) {
+      fail(null, `categoria ${category.slug} referencia cardVisualProductId inexistente: ${category.cardVisualProductId}`);
+    }
+  }
 }
 
 // --- 4. Cobertura de slice das variantes públicas ---------------------------
@@ -285,7 +351,7 @@ for (const { data } of manifests) {
 
 // --- 5. Paridade com o catálogo legado --------------------------------------
 
-const { productCategories } = await import(
+const { legacyRuntimeProductCategories: productCategories } = await import(
   pathToFileURL(path.join(repoRoot, "lib", "configurator-data.js")).href
 );
 
@@ -333,6 +399,19 @@ for (const { data } of manifests) {
     if (!data.parameters.some((parameter) => parameter.key === key)) {
       fail(data.productId, `parâmetro do legado ausente no manifesto: ${key}`);
     }
+  }
+}
+
+// --- 6. Página pública ------------------------------------------------------
+
+const { families } = await import(
+  pathToFileURL(path.join(repoRoot, "lib", "site-data.js")).href
+);
+const familySlugs = new Set(families.map((family) => family.slug));
+
+for (const { data } of manifests) {
+  if (data.status === "active" && !familySlugs.has(data.seo.familySlug)) {
+    fail(data.productId, `produto ativo sem página de família: ${data.seo.familySlug}`);
   }
 }
 

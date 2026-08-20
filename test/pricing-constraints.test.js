@@ -154,6 +154,34 @@ test("Sapata U alterna SKU e superficie de preco junto com a haste", () => {
   assert.equal(calculatePriceBreakdown(format, withStem).coverage.requestedSurfaceId, "sapata-u:u:haste");
 });
 
+test("toggles normalizados pelo servidor preservam variante, SKU e preco", () => {
+  const cases = [
+    ["sapata-base-lisa", "redonda"],
+    ["sapata-base-lisa", "quadrada"],
+    ["sapata-u", "u"]
+  ];
+
+  for (const [categorySlug, formatSlug] of cases) {
+    const format = getFormat(getCategoryBySlug(categorySlug), formatSlug);
+    const defaults = getInitialValues(format);
+
+    for (const enabled of [false, true]) {
+      const clientValues = { ...defaults, pescoco: enabled };
+      const serverValues = { ...defaults, pescoco: Number(enabled) };
+      const clientPrice = calculatePriceBreakdown(format, clientValues);
+      const serverPrice = calculatePriceBreakdown(format, serverValues);
+
+      assert.equal(serverPrice.surfaceId, clientPrice.surfaceId, `${categorySlug}:${formatSlug}`);
+      assert.equal(serverPrice.unitPriceBrl, clientPrice.unitPriceBrl, `${categorySlug}:${formatSlug}`);
+      assert.equal(
+        buildConfigurationSku(format, serverValues, { color: "Preto" }),
+        buildConfigurationSku(format, clientValues, { color: "Preto" }),
+        `${categorySlug}:${formatSlug}`
+      );
+    }
+  }
+});
+
 test("todas as categorias ativas usam as cores publicadas e codigos distintos no SKU", () => {
   const expectedCodes = {
     Preto: "PR",

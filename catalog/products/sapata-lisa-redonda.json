@@ -23,6 +23,19 @@
   "leadTimeBaseDays": 4,
   "generationMode": "local_manual",
   "drawingType": "base-round",
+  "ui": {
+    "fixation": "apoio plano",
+    "summaryName": "Lisa redonda",
+    "applications": ["poltronas", "sofás", "bases circulares"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-lisa-redonda-family.png", "alt": "Família de sapatas lisas redondas em diferentes medidas e cores" },
+    { "role": "variations", "src": "/products/final/sapata-lisa-redonda-variados.png", "alt": "Variações de sapata lisa redonda com e sem haste" },
+    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-lisa-redonda-sem-haste.png", "alt": "Sapata lisa redonda sem haste em vista de produto final" },
+    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-lisa-redonda-com-haste.png", "alt": "Sapata lisa redonda com haste em vista de produto final" },
+    { "role": "manual", "condition": { "pescoco": true }, "src": "/products/final/manual-sapata-lisa-redonda-com-haste.png", "alt": "Sequência de instalação da sapata lisa redonda com haste" },
+    { "role": "usage", "condition": { "pescoco": true }, "src": "/products/final/uso-sapata-lisa-redonda-com-haste.png", "alt": "Sapata lisa redonda com haste aplicada em mobiliário" }
+  ],
   "notes": ["Modelo paramétrico disponível para configuração."],
   "parameters": [
     { "key": "diametro", "label": "Diametro", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
@@ -39,7 +52,9 @@
       "condition": { "pescoco": false },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda.gh",
-        "sliderOrder": ["diametro", "alturaBase"]
+        "modelVersion": "base-round-gh-v1",
+        "sliderOrder": ["diametro", "alturaBase"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15 }
       },
       "pricing": {
         "surfaceId": "sapata-base-lisa:redonda:sem-haste",
@@ -54,7 +69,9 @@
       "condition": { "pescoco": true },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com Haste.gh",
-        "sliderOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"]
+        "modelVersion": "base-round-neck-gh-v1",
+        "sliderOrder": ["diametro", "alturaBase", "alturaPescoco", "diametroPescoco"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15 }
       },
       "pricing": {
         "surfaceId": "sapata-base-lisa:redonda:haste",

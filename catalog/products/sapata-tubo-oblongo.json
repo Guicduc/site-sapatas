@@ -32,6 +32,16 @@
     }
   },
   "drawingType": "tube-oblong",
+  "ui": {
+    "fixation": "press-fit interno",
+    "summaryName": "Sapata interna tubo oblongo",
+    "applications": ["cadeiras", "móveis importados", "reposição especial"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-tubo-oblongo-family.png", "alt": "Família de sapatas para tubo oblongo em diferentes medidas e cores" },
+    { "role": "product", "src": "/products/final/sapata-tubo-oblongo-product.png", "alt": "Sapata para tubo oblongo em vista de produto final" },
+    { "role": "manual", "src": "/products/final/manual-sapata-tubo-oblongo.png", "alt": "Sequência de instalação da sapata para tubo oblongo" }
+  ],
   "notes": ["Informe largura e altura externas do perfil; a parede determina o vão interno disponível."],
   "parameters": [
     { "key": "tamanhoBaseX", "label": "Largura externa do tubo", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 36, "role": "primary-width" },
@@ -47,7 +57,9 @@
       "public": true,
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Interna_Tubo-Oblongo.gh",
-        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "paredeTubo"]
+        "modelVersion": "tube-oblong-gh-v1",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "paredeTubo"],
+        "technicalDefaults": { "fitAllowanceMm": -0.2, "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "shoulderRadiusMm": 1.2, "meshToleranceMm": 0.15 }
       },
       "pricing": {
         "surfaceId": "ponteira-interna-tubo:oblongo:sem-haste",
