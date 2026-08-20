@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { LegalSupplierIdentity } from "@/components/legal-supplier-identity";
-import { brand } from "@/lib/site-data";
+import { buildMailtoUrl } from "@/lib/format";
+import { company } from "@/lib/site-data";
 
 export const metadata = {
   title: "Trocas e devoluções",
@@ -12,7 +13,7 @@ export const metadata = {
   }
 };
 
-const lastUpdated = "30 de julho de 2026";
+const lastUpdated = "20 de agosto de 2026";
 
 export default function ReturnsPage() {
   return (
@@ -44,7 +45,9 @@ export default function ReturnsPage() {
           <ol>
             <li>
               Envie um e-mail para{" "}
-              <a href={`mailto:${brand.email}?subject=Arrependimento de compra`}>{brand.email}</a>{" "}
+              <a href={buildMailtoUrl(company.supportEmail, "Arrependimento de compra")}>
+                {company.supportEmail}
+              </a>{" "}
               dentro dos 7 dias, informando o número do pedido e quais itens deseja devolver.
             </li>
             <li>
@@ -124,10 +127,9 @@ export default function ReturnsPage() {
         </div>
         <div className="legal-copy">
           <p>
-            O reembolso é feito pelo mesmo meio de pagamento usado na compra, através do Mercado
-            Pago. O prazo até o crédito aparecer depende do meio escolhido: em cartão de crédito o
-            estorno segue o ciclo da fatura da administradora, e em Pix ou boleto o valor é devolvido
-            para a conta indicada.
+            A solicitação de reembolso é tratada pelo atendimento e processada no Mercado Pago de
+            acordo com o meio usado na compra. O prazo para o crédito aparecer depende do meio de
+            pagamento e das regras da instituição financeira responsável.
           </p>
           <p>
             Quando o pedido é devolvido integralmente, a nota fiscal eletrônica é cancelada ou

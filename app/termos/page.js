@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { LegalSupplierIdentity } from "@/components/legal-supplier-identity";
-import { brand } from "@/lib/site-data";
+import { buildMailtoUrl } from "@/lib/format";
+import { company } from "@/lib/site-data";
 
 export const metadata = {
   title: "Condições de venda",
@@ -12,7 +13,7 @@ export const metadata = {
   }
 };
 
-const lastUpdated = "30 de julho de 2026";
+const lastUpdated = "20 de agosto de 2026";
 
 export default function TermsPage() {
   return (
@@ -83,8 +84,7 @@ export default function TermsPage() {
             </li>
             <li>
               A Baseforma recalcula itens, cupom, frete e total no servidor antes de gravar o
-              pedido. Se o valor recalculado divergir do exibido, vale o valor recalculado, e o
-              pedido só segue com o total confirmado na tela.
+              pedido. O pagamento é gerado somente para o total registrado nesse pedido.
             </li>
             <li>O pedido é criado no site e recebe um número próprio.</li>
             <li>Somente depois disso o pagamento é gerado.</li>
@@ -140,21 +140,10 @@ export default function TermsPage() {
             configurado, variando conforme família, medida, quantidade e fila de produção.
           </p>
           <p>
-            No lançamento, a postagem é feita pelos Correios com conferência da operação. O
-            carrinho estima o frete a partir do CEP e dos itens configurados:
-          </p>
-          <ul>
-            <li>São Paulo: R$ 18, com transporte estimado em 5 dias.</li>
-            <li>Rio de Janeiro, Minas Gerais, Espírito Santo e Paraná: R$ 28, estimados em 7 dias.</li>
-            <li>Santa Catarina e Rio Grande do Sul: R$ 28, estimados em 8 dias.</li>
-            <li>Demais estados: R$ 42, estimados em 10 dias.</li>
-            <li>Pedidos a partir de R$ 250 em produtos têm frete gratuito.</li>
-          </ul>
-          <p>
-            Esses valores e prazos de transporte são estimativas comerciais e podem ser revisados
-            pela operação antes da postagem, inclusive quando a embalagem, o endereço ou o serviço
-            exigirem ajuste. Se a revisão alterar o valor já pago, a Baseforma comunica você por
-            e-mail antes de despachar, e você pode cancelar o pedido sem custo caso não concorde.
+            O carrinho calcula ou estima o frete a partir do endereço e dos itens configurados. O
+            serviço, o valor, o prazo estimado e eventual frete gratuito aparecem no resumo antes
+            da criação do pedido. A postagem é conferida pela operação e o valor cobrado no
+            pagamento corresponde ao total registrado no pedido.
           </p>
           <p>
             Quando o pedido é expedido, você recebe um e-mail com o registro da expedição e o
@@ -215,7 +204,10 @@ export default function TermsPage() {
           </p>
           <p>
             Dúvidas sobre estas condições:{" "}
-            <a href={`mailto:${brand.email}?subject=Condições de venda`}>{brand.email}</a>.
+            <a href={buildMailtoUrl(company.supportEmail, "Condições de venda")}>
+              {company.supportEmail}
+            </a>
+            .
           </p>
         </div>
       </section>
