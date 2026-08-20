@@ -1,5 +1,9 @@
 # Registry canônico de produtos
 
+O fluxo completo, incluindo CAD, Orca, imagens, pagina e configurador, esta em
+`docs/catalog/product-launch-playbook.md`. O contrato compartilhado da interface esta em
+`docs/catalog/configurator-contract.md`.
+
 Fonte única de verdade para os produtos do catálogo. Cada produto é um JSON em
 `catalog/products/<productId>.json`, validado contra `catalog/product.schema.json`.
 As categorias (e suas rotas `/configurar/{slug}`) vivem em `catalog/categories.json`.
@@ -31,9 +35,8 @@ Fluxo resumido: **draft → slice validado → active**.
   parâmetros do produto.
 - Preço: `surfaceId` segue `categoria:formato:variante`; variante pública de produto
   `active` precisa de amostras no dataset canônico de slice.
-- Paridade com o catálogo legado (`lib/configurator-data.js`): enquanto os
-  consumidores não migram para o registry, ranges, defaults, steps, prefixo de SKU e
-  prazo precisam bater — qualquer divergência quebra o check.
+- Paridade com o fallback legado (`lib/configurator-data.js`): durante a retirada
+  gradual do fallback, ranges, defaults, steps, prefixo de SKU e prazo precisam bater.
 
 ## Variantes
 

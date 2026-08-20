@@ -99,7 +99,7 @@ cost_assumption_power_w
 
 ## Parametros De Produto
 
-Os nomes de parametro devem bater com `lib/configurator-data.js`.
+Os nomes de parametro devem bater com `catalog/products/*.json`. `npm run product:check` tambem garante paridade com o runtime durante a migracao.
 
 Parametros canonicos atuais:
 
@@ -130,7 +130,7 @@ O script operacional fica em:
 Produtos\scripts\gh_export_variations.py
 ```
 
-Ele abre os `.gh` em `Produtos\Scripts-GH\`, aplica amostras dentro dos limites publicos do configurador e grava as linhas do CSV canonico. A configuracao dos produtos fica dentro do proprio script para evitar arquivos auxiliares soltos.
+Ele abre os `.gh` em `Produtos\Scripts-GH\`, aplica amostras dentro dos limites publicos do configurador e grava as linhas do CSV canonico. O manifesto e a fonte dos contratos publicos e CAD; o script mantem apenas estrategias operacionais de amostragem que nao pertencem ao runtime do site.
 
 Para produtos tubulares, o plano tambem aplica as restricoes cruzadas de fabricacao declaradas em `manufacturing.tube_inner_span`. Uma amostra e descartada quando a parede consome o vao interno minimo ou quando a caixa da geometria exportada nao contem a altura esperada de base e pescoco.
 

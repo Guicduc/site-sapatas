@@ -143,17 +143,17 @@ Para `sapata-com-parafuso`, os scripts redondo e quadrado recebem as dimensoes d
 
 ### Como adicionar um produto ao contrato CAD
 
-O registro central e o objeto `CAD_MODELS` em `lib/cad-contract.js`, indexado por `"categorySlug:formatSlug"`. Um formato que nao esta nesse registro continua no fluxo normal do pedido; o admin apenas usa o payload generico com os valores salvos. Ao adicionar uma familia ou formato novo:
+O registro central e `variants[].cad` no manifesto em `catalog/products/<productId>.json`. `lib/cad-contract.js` resolve a variante pela configuracao salva e monta o payload. O objeto `CAD_MODELS` permanece apenas como fallback temporario de migracao. Um formato sem contrato continua no fluxo normal do pedido; o admin usa o payload generico com os valores salvos.
 
 1. **Script Grasshopper**: garanta o `.gh` em `Produtos/Scripts-GH/` e anote os sliders que ele espera (ordem e nomes em `Produtos/scripts/gh_export_variations.py`, `PRODUCT_CONFIGS`).
-2. **Catalogo**: cadastre o formato em `lib/configurator-data.js`. As chaves de `parameters` do formato sao a fonte da verdade — o contrato le `item.values` por essas chaves.
-3. **Registro no contrato**: adicione a entrada em `CAD_MODELS` com:
-   - `modelVersion`: novo id em `CAD_MODEL_VERSION` (padrao `<modelo>-gh-v1`);
-   - `sourceGh`: caminho do script Grasshopper;
-   - `parameterKeys`: exatamente as chaves que o script GH consome (subconjunto das chaves do catalogo);
+2. **Catalogo**: cadastre o formato e seus `parameters` no manifesto. O contrato le `item.values` por essas chaves.
+3. **Registro no contrato**: em cada variante, declare `cad` com:
+   - `modelVersion`: id estavel no padrao `<modelo>-gh-v1`;
+   - `script`: caminho do script Grasshopper;
+   - `sliderOrder`: exatamente as chaves que o script GH consome;
    - `sliderTransforms`: transformacoes opcionais aplicadas aos valores publicos antes de preencher sliders do Grasshopper;
-   - `technicalDefaults`: folgas/chanfros da familia (press-fit usa `fitAllowanceMm`; base lisa nao);
-   - formatos com haste opcional usam `variants: { default, neck }`, resolvidos pelo toggle `pescoco` (normalizado para 0/1 pelo configurador).
+   - `technicalDefaults`: folgas, chanfros e tolerancias da variante;
+   - `condition`: valores que selecionam a variante, como `pescoco: true`.
 4. **Validacao**: crie um pedido de teste no configurador e confira em `/admin/pedidos` que "Dados para Grasshopper" e o JSON copiado trazem os parametros certos (sem zeros inesperados). O pedido deve seguir de pagamento aprovado para `Aguardando producao`, independentemente desse payload.
 
 Atencao aos erros que ja aconteceram: chave de parametro divergente entre catalogo e contrato produz payload com zeros silenciosos (o contrato faz `Number(values[key] || 0)`). Isso afeta o trabalho manual, mas nao o estado operacional do pedido.
