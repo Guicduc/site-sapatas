@@ -111,7 +111,7 @@ Resultado esperado sem credenciais: resposta `200` com `shippingQuote.provider` 
 - Checkout: `components/cart-page.jsx`, `lib/order-validation.js`, `app/api/orders/route.js`.
 - Pagamento: `lib/mercado-pago.js`, `app/api/payments/mercado-pago/preference/route.js`, `app/api/webhooks/mercado-pago/route.js`, `lib/order-store.js`.
 - Frete: `lib/shipping.js`, `app/api/shipping/quote/route.js`, `lib/commerce-adjustments.js`.
-- Conta do cliente: `app/conta/page.js`, `components/account-dashboard.jsx`, `lib/account-session.js`, `lib/account-view.js`.
+- Conta do cliente: `app/conta/page.js`, `components/account-dashboard.jsx`, `lib/account-session.js`, `lib/account-auth.js`, `lib/password-policy.js`, `lib/account-view.js`.
 - Admin: `app/admin/*`, `components/admin-*`, `lib/admin-session.js`, `lib/fulfillment.js`, `lib/order-analytics.js`.
 - Banco: `lib/order-store.js`, `docs/ops/database.sql`.
 

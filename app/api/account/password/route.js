@@ -6,10 +6,13 @@ import { issueAccountSession, revokeCustomerAccountSessions, updatePassword } fr
 import { sendAccountPasswordChangedEmail } from "@/lib/transactional-email";
 
 export async function POST(request) {
+  if (!sameOrigin(request)) return failure(403, "Não foi possível concluir essa ação.");
   const session = await getAccountSession();
   if (!session?.accountId) return failure(401, "Não foi possível concluir essa ação.");
+  if (!isRecentAuthentication(session.recentAuthAt)) {
+    return failure(403, "Entre novamente antes de alterar sua senha.");
+  }
   const body = await request.json().catch(() => ({}));
-  if (!sameOrigin(request)) return failure(403, "Não foi possível concluir essa ação.");
   try {
     await updatePassword(session.accountId, body.password);
     await sendAccountPasswordChangedEmail(session.email);
@@ -26,7 +29,16 @@ export async function POST(request) {
 function sameOrigin(request) {
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
-  return !origin || (host && new URL(origin).host === host);
+  try {
+    return !origin || (host && new URL(origin).host === host);
+  } catch {
+    return false;
+  }
+}
+
+function isRecentAuthentication(value, maxAgeMs = 15 * 60 * 1000) {
+  const authenticatedAt = Date.parse(value || "");
+  return Number.isFinite(authenticatedAt) && Date.now() - authenticatedAt <= maxAgeMs;
 }
 
 function failure(status, message) {

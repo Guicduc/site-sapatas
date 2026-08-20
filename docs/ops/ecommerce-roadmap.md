@@ -17,7 +17,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 
 - Painel de produtos via catalogo configuravel em `lib/configurator-data.js` e rotas `/catalogo` e `/configurar/[categoria]`.
 - Gestao de pedidos em `/admin/pedidos`, com dados persistidos em Postgres quando `DATABASE_URL` existe.
-- Cadastro de clientes e area do cliente em `/conta`, com acesso por codigo enviado por e-mail.
+- Cadastro de clientes e area do cliente em `/conta`, com primeiro acesso/recuperacao por codigo enviado por e-mail, senha opcional e sessoes opacas revogaveis persistidas no banco.
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
 - Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`; no MVP, o frete e "Correios manual" por UF, com origem registrada em `metadata.commerce.shipping`.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.

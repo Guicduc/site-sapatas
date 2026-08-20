@@ -11,4 +11,6 @@ test("password policy accepts long unicode passphrases and rejects short/common 
   assert.match(hash, /^\$argon2id\$/);
   assert.equal(await verifyPassword(hash, password), true);
   assert.equal(await verifyPassword(hash, "outra senha longa completamente"), false);
+  assert.equal(await verifyPassword("hash-invalido", password), false);
+  assert.equal(await verifyPassword(hash, "x".repeat(129)), false);
 });

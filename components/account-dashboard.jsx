@@ -153,16 +153,20 @@ export function AccountAccess({ initialOrderNumber = "" }) {
       <form className="account-login" onSubmit={handleSubmit} aria-busy={submitting}>
         <div className="account-login__heading">
           <p className="eyebrow">Acesso seguro</p>
-          <div className="account-login__progress" aria-label={`Etapa ${phase === "request" ? 1 : 2} de 2`}>
-            <span className="is-active">1</span>
-            <i aria-hidden="true" />
-            <span className={phase === "verify" ? "is-active" : ""}>2</span>
-          </div>
-          <h2>{phase === "verify" ? "Confira seu e-mail" : "Entre na sua conta"}</h2>
+          {authMode === "code" && <div className="account-login__progress" aria-label={`Etapa ${phase === "request" ? 1 : 2} de 2`}>
+              <span className="is-active">1</span>
+              <i aria-hidden="true" />
+              <span className={phase === "verify" ? "is-active" : ""}>2</span>
+            </div>}
+          <h2>{authMode === "password" ? "Entre com sua senha" : phase === "verify" ? "Confira seu e-mail" : "Entre na sua conta"}</h2>
           <p>
-            {phase === "verify"
+            {authMode === "password"
+              ? "Use o e-mail da compra e a senha criada na sua conta."
+              : phase === "verify"
               ? <>Enviamos um código de 6 números para <strong>{maskEmail(email)}</strong>. Ele vale por 10 minutos.</>
-              : "Use o e-mail da compra e o número de qualquer pedido para receber um código de acesso."}
+              : recovery
+                ? "Informe o e-mail da sua conta para receber um código de recuperação."
+                : "Use o e-mail da compra e o número de qualquer pedido para receber um código de acesso."}
           </p>
         </div>
         {authMode === "password" ? (
@@ -195,7 +199,6 @@ export function AccountAccess({ initialOrderNumber = "" }) {
                 autoComplete="off"
                 autoCapitalize="characters"
                 spellCheck="false"
-                required
                 required={!recovery}
                 placeholder="BF-260619-ABCD1234EFGH"
                 value={orderNumber}
@@ -239,8 +242,8 @@ export function AccountAccess({ initialOrderNumber = "" }) {
         {error && <p className="account-alert account-alert--error" role="alert">{error}</p>}
         <button className="button button-primary button-block" disabled={submitting || (phase === "verify" && code.length !== 6)}>
           {submitting
-            ? phase === "verify" ? "Entrando..." : "Enviando código..."
-            : phase === "verify" ? "Entrar na minha conta" : "Continuar"}
+            ? authMode === "password" ? "Entrando..." : phase === "verify" ? "Entrando..." : "Enviando código..."
+            : authMode === "password" ? "Entrar com senha" : phase === "verify" ? "Entrar na minha conta" : "Continuar"}
         </button>
         {phase === "request" && <button type="button" className="account-login__link" onClick={() => { setAuthMode(authMode === "code" ? "password" : "code"); setError(""); }}>
           {authMode === "code" ? "Entrar com senha" : "Entrar com código"}
@@ -261,7 +264,7 @@ export function AccountAccess({ initialOrderNumber = "" }) {
             </button>
           </div>
         )}
-        <p className="account-login__privacy">Sem senha. Sua sessão fica protegida neste dispositivo e pode ser encerrada a qualquer momento.</p>
+        <p className="account-login__privacy">{authMode === "password" ? "Sua senha e sua sessão são protegidas. O acesso por código continua disponível." : "Sem senha. Sua sessão fica protegida neste dispositivo e pode ser encerrada a qualquer momento."}</p>
       </form>
     </section>
   );
@@ -296,6 +299,7 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
   const [securityPassword, setSecurityPassword] = useState("");
   const [securityNotice, setSecurityNotice] = useState("");
   const [securityError, setSecurityError] = useState(false);
+  const [securitySubmitting, setSecuritySubmitting] = useState(false);
   const passwordInputRef = useRef(null);
   const customer = orders[0]?.customer;
   const latestAddress = orders.find((order) => order.shippingAddress)?.shippingAddress;
@@ -334,20 +338,53 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
   }
 
   async function savePassword(event) {
-    event.preventDefault(); setSecurityNotice(""); setSecurityError(false);
-    const response = await fetch("/api/account/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: securityPassword }) });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) { setSecurityError(true); setSecurityNotice(payload.message || "Não foi possível salvar a senha."); return; }
-    setSecurityPassword("");
-    setHasPassword(true);
-    setShowPasswordSetup(false);
-    setSecurityNotice(hasPassword ? "Senha atualizada. As outras sessões foram encerradas." : "Senha criada. Agora você também pode entrar sem código.");
+    event.preventDefault();
+    if (securitySubmitting) return;
+    setSecurityNotice("");
+    setSecurityError(false);
+    setSecuritySubmitting(true);
+    try {
+      const response = await fetch("/api/account/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: securityPassword }) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) { setSecurityError(true); setSecurityNotice(payload.message || "Não foi possível salvar a senha."); return; }
+      setSecurityPassword("");
+      setHasPassword(true);
+      setShowPasswordSetup(false);
+      setSecurityNotice(hasPassword ? "Senha atualizada. As outras sessões foram encerradas." : "Senha criada. Agora você também pode entrar sem código.");
+    } catch {
+      setSecurityError(true);
+      setSecurityNotice("Não foi possível salvar a senha. Tente novamente.");
+    } finally {
+      setSecuritySubmitting(false);
+    }
   }
 
   function startPasswordSetup() {
     setShowPasswordSetup(true);
     setSecurityNotice("");
     window.requestAnimationFrame(() => passwordInputRef.current?.focus());
+  }
+
+  async function revokeOtherSessions() {
+    if (securitySubmitting) return;
+    setSecurityNotice("");
+    setSecurityError(false);
+    setSecuritySubmitting(true);
+    try {
+      const response = await fetch("/api/account/sessions", { method: "DELETE" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setSecurityError(true);
+        setSecurityNotice(payload.message || "Não foi possível encerrar as outras sessões.");
+        return;
+      }
+      setSecurityNotice("As outras sessões foram encerradas. Este dispositivo continua conectado.");
+    } catch {
+      setSecurityError(true);
+      setSecurityNotice("Não foi possível encerrar as outras sessões. Tente novamente.");
+    } finally {
+      setSecuritySubmitting(false);
+    }
   }
 
   return (
@@ -378,8 +415,8 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
                 <small>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</small>
               </label>
               <div className="account-password-banner__actions">
-                <button className="button button-primary" type="submit">Salvar senha</button>
-                <button className="button button-secondary" type="button" onClick={() => { setShowPasswordSetup(false); setSecurityPassword(""); setSecurityNotice(""); }}>Agora não</button>
+                <button className="button button-primary" type="submit" disabled={securitySubmitting}>{securitySubmitting ? "Salvando..." : "Salvar senha"}</button>
+                <button className="button button-secondary" type="button" disabled={securitySubmitting} onClick={() => { setShowPasswordSetup(false); setSecurityPassword(""); setSecurityNotice(""); }}>Agora não</button>
               </div>
               {securityNotice && <p className={`account-alert${securityError ? " account-alert--error" : ""}`} role={securityError ? "alert" : "status"}>{securityNotice}</p>}
             </form>
@@ -457,8 +494,8 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
           {!demo && hasPassword && <section id="seguranca" className="account-section" aria-labelledby="security-title">
             <div className="account-section__heading"><div><p className="eyebrow">Segurança</p><h2 id="security-title">Proteja o acesso à sua conta</h2></div></div>
             <form className="account-help" onSubmit={savePassword}>
-              <div><h3>Alterar senha</h3><p>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</p><label className="field"><span>Nova senha</span><input type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} /></label><button className="button button-primary" type="submit">Atualizar senha</button></div>
-              <div><h3>Outros dispositivos</h3><p>Encerre sessões abertas em outros navegadores.</p><button type="button" className="button button-secondary" onClick={async () => { await fetch("/api/account/sessions", { method: "DELETE" }); setSecurityError(false); setSecurityNotice("Todas as outras sessões foram encerradas."); }}>Sair de todos os dispositivos</button></div>
+              <div><h3>Alterar senha</h3><p>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</p><label className="field"><span>Nova senha</span><input type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} /></label><button className="button button-primary" type="submit" disabled={securitySubmitting}>{securitySubmitting ? "Atualizando..." : "Atualizar senha"}</button></div>
+              <div><h3>Outros dispositivos</h3><p>Encerre sessões abertas em outros navegadores.</p><button type="button" className="button button-secondary" disabled={securitySubmitting} onClick={revokeOtherSessions}>Sair dos outros dispositivos</button></div>
             </form>
           </section>}
         </div>

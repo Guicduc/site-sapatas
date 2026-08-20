@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { randomInt } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 
 import {
   ACCOUNT_COOKIE,
@@ -15,8 +15,7 @@ import {
   verifyOrderEmail
 } from "@/lib/order-store";
 import { consumeAccountRateLimit } from "@/lib/order-store";
-import { createHash } from "node:crypto";
-import { establishAccountFromVerifiedOrder, findCustomerAccount, issueAccountSession, revokeCustomerAccountSessions, verifyPassword } from "@/lib/account-auth";
+import { establishAccountFromVerifiedOrder, findCustomerAccount, issueAccountSession, verifyPassword } from "@/lib/account-auth";
 import { sendAccountAccessCodeEmail } from "@/lib/transactional-email";
 
 export async function POST(request) {
@@ -38,18 +37,21 @@ export async function POST(request) {
   }
 
   if (payload.code) {
-    const claimedOrderId = await consumeAccountAccessCode({ email, codeHash: hashAccountCode(email, payload.code) });
-    if (!claimedOrderId) {
+    const challenge = await consumeAccountAccessCode({ email, codeHash: hashAccountCode(email, payload.code) });
+    if (!challenge) {
       return NextResponse.json(
         { error: "invalid_code", message: "Código inválido ou expirado." },
         { status: 401 }
       );
     }
-    await verifyOrderEmail(claimedOrderId, email);
-    const account = claimedOrderId ? null : await findCustomerAccount(email);
-    const established = claimedOrderId
-      ? await establishAccountFromVerifiedOrder({ email, orderId: claimedOrderId })
-      : account ? { account, token: await issueAccountSession(account.id) } : null;
+    let established = null;
+    if (challenge.orderId) {
+      await verifyOrderEmail(challenge.orderId, email);
+      established = await establishAccountFromVerifiedOrder({ email, orderId: challenge.orderId });
+    } else {
+      const account = await findCustomerAccount(email);
+      established = account ? { account, token: await issueAccountSession(account.id) } : null;
+    }
     if (!established) return genericAuthFailure();
     const response = NextResponse.json({ authenticated: true, passwordAvailable: Boolean(established.account.password_hash || established.account.passwordHash) });
     response.cookies.set(ACCOUNT_COOKIE, established.token, getAccountCookieOptions());

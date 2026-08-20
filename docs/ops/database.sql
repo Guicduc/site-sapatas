@@ -150,6 +150,7 @@ create table if not exists account_rate_limits (
   window_started_at timestamptz not null,
   attempts integer not null default 0
 );
+create index if not exists account_rate_limits_window_idx on account_rate_limits(window_started_at);
 
 -- Fulfillment operacional fica em orders.metadata->'fulfillment'.
 -- Estrutura atual:
