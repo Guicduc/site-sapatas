@@ -12,6 +12,24 @@ const topViewY = 170;
 const baseBottomY = 440;
 const MeasurementSystemContext = createContext(MEASUREMENT_SYSTEMS.METRIC);
 
+const geometryRenderers = Object.freeze({
+  "tube-round": TubeRound,
+  "tube-rect": TubeRect,
+  "tube-oblong": TubeOblong,
+  "base-round": BaseRound,
+  "base-round-screw": BaseRoundScrew,
+  "screw-round": BaseRoundScrew,
+  "base-oblong": BaseOblong,
+  "base-rect": BaseRect,
+  "base-rect-screw": BaseRectScrew,
+  "screw-square": BaseRectScrew,
+  "base-u": BaseU
+});
+
+export function getGeometryRenderer(type) {
+  return geometryRenderers[type] || null;
+}
+
 export function ParametricDrawing({
   format,
   values,
@@ -20,6 +38,7 @@ export function ParametricDrawing({
   onSelectParameter
 }) {
   const type = format.drawingType;
+  const GeometryDrawing = getGeometryRenderer(type);
 
   return (
     <MeasurementSystemContext.Provider value={measurementSystem}>
@@ -41,15 +60,14 @@ export function ParametricDrawing({
         <circle className="drawing-node" cx="132" cy="440" r="4" />
         <circle className="drawing-node" cx="652" cy="440" r="4" />
         <circle className="drawing-node" cx="132" cy="44" r="4" />
-        {type === "tube-round" && <TubeRound format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "tube-rect" && <TubeRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "tube-oblong" && <TubeOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-round" && <BaseRound format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {(type === "base-round-screw" || type === "screw-round") && <BaseRoundScrew format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-oblong" && <BaseOblong format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-rect" && <BaseRect format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {(type === "base-rect-screw" || type === "screw-square") && <BaseRectScrew format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
-        {type === "base-u" && <BaseU format={format} values={values} activeKey={activeKey} onSelect={onSelectParameter} />}
+        {GeometryDrawing && (
+          <GeometryDrawing
+            format={format}
+            values={values}
+            activeKey={activeKey}
+            onSelect={onSelectParameter}
+          />
+        )}
         </svg>
       </div>
     </MeasurementSystemContext.Provider>

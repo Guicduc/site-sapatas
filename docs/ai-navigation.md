@@ -55,9 +55,10 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 ## Dados de catalogo
 
-O ponto principal e `lib/configurator-data.js`.
+O ponto principal e `catalog/products/*.json`, carregado por `lib/product-registry.js`.
 
-- `productCategories`: categorias exibidas no catalogo e no configurador.
+- `catalog/categories.json`: metadados e ordem das categorias.
+- `productCategories`: projecao serializavel exibida no catalogo e no configurador.
 - Cada categoria contem `slug`, `name`, imagem, aplicacoes, cores, acabamentos e `formats`.
 - Cada `format` define `slug`, `skuPrefix`, `drawingType`, preco base, prazo base e `parameters`.
 - Parametros numericos usam `min`, `max`, `defaultValue`, `unit` e `step`.
@@ -72,6 +73,8 @@ Funcoes importantes:
 - `calculatePriceBreakdown`: calcula preco, custo e fonte da precificacao.
 - `calculateLeadTime`: calcula prazo em dias uteis.
 - `buildConfigurationSku`: monta SKU a partir do prefixo e medidas.
+
+`lib/configurator-data.js` preserva o motor compartilhado de validacao, SKU, prazo e preco. O array legado permanece temporariamente como fallback e teste de paridade; produtos novos nao devem ser cadastrados nele.
 
 ## Familias e conteudo do site
 
@@ -167,12 +170,14 @@ Nao recrie CSV bruto separado do Orca como fonte de preco; ele nao contem medida
 
 - `Produtos/Scripts-GH/*.gh`: scripts Grasshopper por familia/modelo.
 - `Produtos/grasshopper_3mf_export_flow.md`: fluxo documentado para exportar modelos 3MF e alimentar dados de precificacao real.
+- `docs/catalog/product-launch-playbook.md`: ponto de entrada para o lancamento completo de um produto.
+- `docs/catalog/configurator-contract.md`: limites entre manifesto, configurador compartilhado e adaptadores de geometria.
 
 Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 
 1. Adicione ou revise o script em `Produtos/Scripts-GH/`.
-2. Atualize `lib/configurator-data.js` com categoria/formato/parametros.
-3. Registre o modelo em `CAD_MODELS` dentro de `lib/cad-contract.js` (chaves de parametros, script GH, defaults tecnicos e variantes de haste). Passo a passo em `docs/catalog/contracts.md`, secao "Como adicionar um produto ao contrato CAD". Esse registro alimenta somente o payload manual do Grasshopper.
+2. Crie ou atualize o manifesto em `catalog/products/` com categoria, formato e parametros.
+3. Registre CAD dentro de `variants[].cad` no manifesto (script, versao, sliders, transformacoes e defaults tecnicos). Passo a passo em `docs/catalog/contracts.md`, secao "Como adicionar um produto ao contrato CAD".
 4. Se houver pagina SEO, atualize `lib/site-data.js`.
 5. Atualize a configuracao de produto dentro de `Produtos/scripts/gh_export_variations.py`.
 6. Rode `npm run export:gh`, `npm run slice:dataset`, `npm run pricing:build-data`, `npm run pricing:check` e `npm run pricing:audit`.
@@ -181,7 +186,7 @@ Ao adicionar uma nova familia ou formato, atualize nesta ordem:
 ## Cuidados ao alterar
 
 - Leia `docs/ops/agent-runbook.md` antes de fazer merge, deploy ou mudancas no fluxo comercial.
-- Nao duplique regras de produto em componentes; prefira `lib/configurator-data.js`.
+- Nao duplique regras de produto em componentes; prefira o manifesto e os motores compartilhados em `lib/`.
 - Nao coloque chaves secretas no repositorio; use `.env.local`.
 - Preserve slugs existentes quando eles ja forem usados por URLs publicas.
 - Depois de alterar produto ou preco, rode `npm run build`.

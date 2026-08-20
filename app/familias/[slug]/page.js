@@ -166,14 +166,20 @@ export default async function FamilyPage({ params }) {
             <strong>{family.asideTitle}</strong>
             <p>{family.asideDescription}</p>
             <div className="action-column">
-              <a
-                className="button button-primary button-block"
-                href={buildWhatsAppUrl(brand.whatsappNumber, whatsappMessage)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Confirmar a variante por WhatsApp
-              </a>
+              {family.configuratorPath ? (
+                <Link className="button button-primary button-block" href={family.configuratorPath}>
+                  Configurar produto
+                </Link>
+              ) : (
+                <a
+                  className="button button-primary button-block"
+                  href={buildWhatsAppUrl(brand.whatsappNumber, whatsappMessage)}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Confirmar a variante por WhatsApp
+                </a>
+              )}
               <Link
                 className="button button-secondary button-block"
                 href={`/projeto-especial?family=${family.slug}`}

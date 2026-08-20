@@ -27,10 +27,18 @@
     }
   },
   "drawingType": "base-rect-screw",
-  "notes": [
-    "O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso.",
-    "O controle Grasshopper Diam_Parafuso integra o configurador e o contrato CAD; a superfície de preço atual ignora essa pequena remoção de material."
+  "ui": {
+    "fixation": "parafuso central",
+    "summaryName": "Com parafuso quadrada",
+    "applications": ["cadeiras", "mesas", "poltronas", "bases quadradas"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-com-parafuso-quadrada-family.png", "alt": "Família de sapatas quadradas com furo central para parafuso em diferentes medidas e cores" },
+    { "role": "product", "src": "/products/final/sapata-com-parafuso-quadrada-product.png", "alt": "Sapata quadrada com furo central para parafuso em vista de produto final" },
+    { "role": "manual", "src": "/products/final/sapata-com-parafuso-quadrada-manual.png", "alt": "Sequência de instalação da sapata quadrada com parafuso separado" },
+    { "role": "usage", "src": "/products/final/sapata-com-parafuso-quadrada-uso.png", "alt": "Sapata quadrada com parafuso aplicada sob pé de madeira" }
   ],
+  "notes": ["O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso."],
   "parameters": [
     { "key": "tamanhoBaseX", "label": "Tamanho base X", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 50, "role": "primary-width" },
     { "key": "tamanhoBaseY", "label": "Tamanho base Y", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 50, "role": "secondary-width" },
@@ -45,7 +53,8 @@
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com parafuso.gh",
         "modelVersion": "base-screw-square-gh-v1",
-        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"]
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "diametroParafuso"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15, "screwCountersinkDiameterFactor": 2, "minimumRadialWallMm": 3 }
       },
       "pricing": { "surfaceId": "sapata-com-parafuso:quadrada:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4, "parameterKeys": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"] }
     }
