@@ -41,6 +41,6 @@ Fluxo resumido: **draft → slice validado → active**.
 ## Variantes
 
 `sem-haste`, `haste` e `com-parafuso` são os mesmos IDs em UI, CAD, dataset, imagens
-e auditoria. `com-parafuso` é `public: false`: os dados podem existir no dataset sem
-aparecer no configurador. A chave `pescoco` segue como entrada do toggle que resolve
-`sem-haste`/`haste` (declarado em `variants[].condition`).
+e auditoria. As variantes `com-parafuso` atuais são públicas e aparecem no
+configurador da categoria correspondente. A chave `pescoco` segue como entrada do
+toggle que resolve `sem-haste`/`haste` (declarado em `variants[].condition`).

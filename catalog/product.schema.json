@@ -16,6 +16,9 @@
     "colors",
     "leadTimeBaseDays",
     "generationMode",
+    "drawingType",
+    "ui",
+    "visuals",
     "parameters",
     "variants"
   ],
@@ -235,7 +238,7 @@
           },
           "cad": {
             "type": "object",
-            "required": ["script", "sliderOrder"],
+            "required": ["script", "modelVersion", "sliderOrder"],
             "additionalProperties": false,
             "properties": {
               "script": {

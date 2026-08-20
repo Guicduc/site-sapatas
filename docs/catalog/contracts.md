@@ -136,7 +136,7 @@ Esse payload e montado sob demanda em `/admin/pedidos`, a partir dos itens ja sa
 Historico de versoes do contrato tecnico:
 
 - `rhino-gh-v1`: cobria apenas tubo redondo, com chaves do catalogo legado (`diametroInterno`, `profundidadeInsercao`, `alturaApoio`).
-- `rhino-gh-v2`: cobre os 5 formatos ativos, chaves alinhadas ao catalogo atual, campo `sourceGh` apontando o script Grasshopper e variantes de haste resolvidas pelo toggle `pescoco`.
+- `rhino-gh-v2`: cobre os 8 formatos ativos, chaves alinhadas ao catalogo atual, campo `sourceGh` apontando o script Grasshopper e variantes de haste resolvidas pelo toggle `pescoco`.
 
 Para `sapata-com-parafuso`, os scripts redondo e quadrado recebem as dimensoes da base e `diametroParafuso`, configuravel de 2 a 10 mm em passos de 0,5 mm. O valor compoe o SKU e o contrato CAD; a superficie de preco atual continua baseada apenas nas dimensoes da base porque a variacao remove pouco material. O rebaixo usa duas vezes o diametro configurado e preserva parede radial/lateral minima de 3 mm, regra validada para cada combinacao no configurador e no pedido.
 - `tube-round-gh-v2`: aplica ao slider `diametroBase` o mesmo offset de flange de `+10 mm` usado para gerar e fatiar o dataset, preservando a medida externa publica em `configurationParameters`.
