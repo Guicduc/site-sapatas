@@ -25,5 +25,5 @@ export default async function AccountPage({ searchParams }) {
   }
 
   const orders = await listOrdersByAccountId(session.accountId);
-  return <AccountDashboard email={session.email} orders={orders.map(toAccountOrder)} />;
+  return <AccountDashboard email={session.email} orders={orders.map(toAccountOrder)} passwordAvailable={session.passwordAvailable} />;
 }

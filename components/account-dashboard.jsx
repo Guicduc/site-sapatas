@@ -288,11 +288,15 @@ function maskEmail(value) {
   return `${visible}${"•".repeat(Math.max(3, localPart.length - visible.length))}@${domain}`;
 }
 
-export function AccountDashboard({ email, orders, demo = false }) {
+export function AccountDashboard({ email, orders, demo = false, passwordAvailable = false }) {
   const [filter, setFilter] = useState("all");
   const [paymentError, setPaymentError] = useState("");
+  const [hasPassword, setHasPassword] = useState(passwordAvailable);
+  const [showPasswordSetup, setShowPasswordSetup] = useState(false);
   const [securityPassword, setSecurityPassword] = useState("");
   const [securityNotice, setSecurityNotice] = useState("");
+  const [securityError, setSecurityError] = useState(false);
+  const passwordInputRef = useRef(null);
   const customer = orders[0]?.customer;
   const latestAddress = orders.find((order) => order.shippingAddress)?.shippingAddress;
   const summary = useMemo(() => ({
@@ -330,11 +334,20 @@ export function AccountDashboard({ email, orders, demo = false }) {
   }
 
   async function savePassword(event) {
-    event.preventDefault(); setSecurityNotice("");
+    event.preventDefault(); setSecurityNotice(""); setSecurityError(false);
     const response = await fetch("/api/account/password", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: securityPassword }) });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) { setSecurityNotice(payload.message || "Não foi possível salvar a senha."); return; }
-    setSecurityPassword(""); setSecurityNotice("Senha atualizada. As outras sessões foram encerradas.");
+    if (!response.ok) { setSecurityError(true); setSecurityNotice(payload.message || "Não foi possível salvar a senha."); return; }
+    setSecurityPassword("");
+    setHasPassword(true);
+    setShowPasswordSetup(false);
+    setSecurityNotice(hasPassword ? "Senha atualizada. As outras sessões foram encerradas." : "Senha criada. Agora você também pode entrar sem código.");
+  }
+
+  function startPasswordSetup() {
+    setShowPasswordSetup(true);
+    setSecurityNotice("");
+    window.requestAnimationFrame(() => passwordInputRef.current?.focus());
   }
 
   return (
@@ -348,12 +361,40 @@ export function AccountDashboard({ email, orders, demo = false }) {
         <button className="button button-secondary" type="button" onClick={logout}>{demo ? "Limpar testes" : "Sair"}</button>
       </header>
 
+      {!demo && !hasPassword && (
+        <section id="criar-senha" className={`account-password-banner${showPasswordSetup ? " is-open" : ""}`} aria-labelledby="password-banner-title">
+          <div className="account-password-banner__copy">
+            <p className="eyebrow">Primeiro acesso</p>
+            <h2 id="password-banner-title">Entre mais rápido nas próximas vezes</h2>
+            <p>Crie uma senha para acessar sua conta sem depender do código por e-mail. O acesso por código continuará disponível.</p>
+          </div>
+          {!showPasswordSetup ? (
+            <button className="button button-primary" type="button" aria-expanded="false" aria-controls="password-setup-form" onClick={startPasswordSetup}>Criar minha senha</button>
+          ) : (
+            <form id="password-setup-form" className="account-password-banner__form" onSubmit={savePassword}>
+              <label className="field">
+                <span>Nova senha</span>
+                <input ref={passwordInputRef} type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} />
+                <small>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</small>
+              </label>
+              <div className="account-password-banner__actions">
+                <button className="button button-primary" type="submit">Salvar senha</button>
+                <button className="button button-secondary" type="button" onClick={() => { setShowPasswordSetup(false); setSecurityPassword(""); setSecurityNotice(""); }}>Agora não</button>
+              </div>
+              {securityNotice && <p className={`account-alert${securityError ? " account-alert--error" : ""}`} role={securityError ? "alert" : "status"}>{securityNotice}</p>}
+            </form>
+          )}
+        </section>
+      )}
+
+      {!demo && hasPassword && securityNotice && <p className={`account-alert${securityError ? " account-alert--error" : " account-alert--success"}`} role={securityError ? "alert" : "status"}>{securityNotice}</p>}
+
       <div className="account-layout">
         <nav className="account-nav" aria-label="Seções da conta">
           <a href="#visao-geral">Visão geral</a>
           <a href="#pedidos">Pedidos</a>
           <a href="#dados">Meus dados</a>
-          <a href="#seguranca">Segurança</a>
+          <a href={hasPassword ? "#seguranca" : "#criar-senha"}>Segurança</a>
           <a href="#ajuda">Ajuda e privacidade</a>
         </nav>
 
@@ -413,11 +454,11 @@ export function AccountDashboard({ email, orders, demo = false }) {
             </div>
           </section>
 
-          {!demo && <section id="seguranca" className="account-section" aria-labelledby="security-title">
+          {!demo && hasPassword && <section id="seguranca" className="account-section" aria-labelledby="security-title">
             <div className="account-section__heading"><div><p className="eyebrow">Segurança</p><h2 id="security-title">Proteja o acesso à sua conta</h2></div></div>
             <form className="account-help" onSubmit={savePassword}>
-              <div><h3>Senha opcional</h3><p>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</p><label className="field"><span>Nova senha</span><input type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} /></label><button className="button button-primary" type="submit">Salvar senha</button>{securityNotice && <p role="status">{securityNotice}</p>}</div>
-              <div><h3>Outros dispositivos</h3><p>Encerre sessões abertas em outros navegadores.</p><button type="button" className="button button-secondary" onClick={async () => { await fetch("/api/account/sessions", { method: "DELETE" }); setSecurityNotice("Todas as outras sessões foram encerradas."); }}>Sair de todos os dispositivos</button></div>
+              <div><h3>Alterar senha</h3><p>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</p><label className="field"><span>Nova senha</span><input type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} /></label><button className="button button-primary" type="submit">Atualizar senha</button></div>
+              <div><h3>Outros dispositivos</h3><p>Encerre sessões abertas em outros navegadores.</p><button type="button" className="button button-secondary" onClick={async () => { await fetch("/api/account/sessions", { method: "DELETE" }); setSecurityError(false); setSecurityNotice("Todas as outras sessões foram encerradas."); }}>Sair de todos os dispositivos</button></div>
             </form>
           </section>}
         </div>
