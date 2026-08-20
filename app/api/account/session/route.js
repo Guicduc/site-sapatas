@@ -65,7 +65,8 @@ export async function POST(request) {
     );
   }
 
-  if (await hasRecentAccountAccessCode(email)) {
+  // Rate limiting protects production email delivery, but only slows local testing.
+  if (process.env.NODE_ENV === "production" && await hasRecentAccountAccessCode(email)) {
     return NextResponse.json(
       {
         error: "code_recently_sent",
