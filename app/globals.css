@@ -4836,6 +4836,45 @@ summary {
   font-size: clamp(2.2rem, 4vw, 4rem);
 }
 
+.account-password-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 24px;
+  border: 1px solid color-mix(in oklab, var(--accent) 38%, var(--line));
+  background: color-mix(in oklab, var(--accent) 7%, var(--surface));
+}
+
+.account-password-banner.is-open {
+  grid-template-columns: minmax(0, 0.85fr) minmax(320px, 1.15fr);
+  align-items: start;
+}
+
+.account-password-banner__copy {
+  display: grid;
+  gap: 6px;
+  max-width: 65ch;
+}
+
+.account-password-banner__copy h2,
+.account-password-banner__copy p {
+  margin: 0;
+}
+
+.account-password-banner__form {
+  display: grid;
+  gap: 14px;
+  padding-left: 24px;
+  border-left: 1px solid color-mix(in oklab, var(--accent) 28%, var(--line));
+}
+
+.account-password-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .account-layout {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -5225,6 +5264,27 @@ summary {
   .account-heading .button,
   .account-section__heading > .button {
     width: 100%;
+  }
+
+  .account-password-banner,
+  .account-password-banner.is-open {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .account-password-banner > .button {
+    width: 100%;
+  }
+
+  .account-password-banner__form {
+    padding-top: 18px;
+    padding-left: 0;
+    border-top: 1px solid color-mix(in oklab, var(--accent) 28%, var(--line));
+    border-left: 0;
+  }
+
+  .account-password-banner__actions .button {
+    flex: 1 1 160px;
   }
 
   .account-nav {

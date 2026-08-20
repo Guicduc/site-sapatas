@@ -110,7 +110,7 @@ create index if not exists print_jobs_origin_idx
 create table if not exists account_access_codes (
   id text primary key,
   email text not null,
-  order_id text not null,
+  order_id text,
   code_hash text not null,
   attempts integer not null default 0,
   expires_at timestamptz not null,
@@ -118,6 +118,39 @@ create table if not exists account_access_codes (
 );
 
 create index if not exists account_access_codes_email_idx on account_access_codes(email, created_at desc);
+
+-- Identidade de conta separada de customers, que continua sendo uma linha por pedido.
+create table if not exists customer_accounts (
+  id text primary key,
+  email text not null unique,
+  password_hash text,
+  password_set_at timestamptz,
+  password_changed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists customer_account_orders (
+  account_id text not null references customer_accounts(id) on delete cascade,
+  order_id text not null references orders(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (account_id, order_id)
+);
+create table if not exists customer_account_sessions (
+  id text primary key,
+  account_id text not null references customer_accounts(id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  recent_auth_at timestamptz,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists customer_account_sessions_account_idx on customer_account_sessions(account_id, revoked_at, expires_at);
+create table if not exists account_rate_limits (
+  key text primary key,
+  window_started_at timestamptz not null,
+  attempts integer not null default 0
+);
+create index if not exists account_rate_limits_window_idx on account_rate_limits(window_started_at);
 
 -- Fulfillment operacional fica em orders.metadata->'fulfillment'.
 -- Estrutura atual:

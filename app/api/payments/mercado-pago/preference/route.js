@@ -6,7 +6,7 @@ import {
   getMercadoPagoCheckoutUrl,
   getPreferenceReuseWindowMinutes
 } from "@/lib/mercado-pago";
-import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForEmail } from "@/lib/order-store";
+import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForAccountId } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
 
 function isReusablePendingPayment(payment) {
@@ -22,7 +22,7 @@ export async function POST(request) {
   try {
     const { orderId } = await request.json();
     const [session, orderAccess] = await Promise.all([getAccountSession(), getOrderAccess()]);
-    let order = session ? await getOrderForEmail(orderId, session.email) : null;
+    let order = session ? await getOrderForAccountId(orderId, session.accountId) : null;
 
     if (!order && orderAccess?.orderId === orderId) {
       order = await getOrderById(orderId);
