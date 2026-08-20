@@ -24,6 +24,19 @@
   "leadTimeBaseDays": 5,
   "generationMode": "local_manual",
   "drawingType": "base-rect",
+  "ui": {
+    "fixation": "apoio plano",
+    "summaryName": "Lisa quadrada",
+    "applications": ["chapa metálica", "banquinhos", "bases quadradas"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-lisa-quadrada-family.png", "alt": "Família de sapatas lisas quadradas em diferentes medidas e cores" },
+    { "role": "variations", "src": "/products/final/sapata-lisa-quadrada-variados.png", "alt": "Variações de sapata lisa quadrada com e sem haste" },
+    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-lisa-quadrada-sem-haste.png", "alt": "Sapata lisa quadrada sem haste em vista de produto final" },
+    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-lisa-quadrada-com-haste.png", "alt": "Sapata lisa quadrada com haste em vista de produto final" },
+    { "role": "manual", "condition": { "pescoco": true }, "src": "/products/final/manual-sapata-lisa-quadrada-com-haste.png", "alt": "Sequência de instalação da sapata lisa quadrada com haste" },
+    { "role": "usage", "condition": { "pescoco": true }, "src": "/products/final/uso-sapata-lisa-quadrada-com-haste.png", "alt": "Sapata lisa quadrada com haste aplicada em mobiliário" }
+  ],
   "notes": ["Modelo paramétrico disponível para configuração."],
   "parameters": [
     { "key": "tamanhoBaseX", "label": "Tamanho base X", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 50, "role": "primary-width" },
@@ -41,7 +54,9 @@
       "condition": { "pescoco": false },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada.gh",
-        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"]
+        "modelVersion": "base-square-gh-v1",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15 }
       },
       "pricing": {
         "surfaceId": "sapata-base-lisa:quadrada:sem-haste",
@@ -56,7 +71,9 @@
       "condition": { "pescoco": true },
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Quadrada-com haste.gh",
-        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"]
+        "modelVersion": "base-square-neck-gh-v1",
+        "sliderOrder": ["tamanhoBaseX", "tamanhoBaseY", "alturaBase", "alturaPescoco", "diametroPescoco"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15 }
       },
       "pricing": {
         "surfaceId": "sapata-base-lisa:quadrada:haste",

@@ -31,6 +31,17 @@
     }
   },
   "drawingType": "tube-round",
+  "ui": {
+    "fixation": "press-fit interno",
+    "summaryName": "Sapata interna tubo redondo",
+    "applications": ["cadeiras", "mesas tubulares", "reposição"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-tubo-redondo-family.png", "alt": "Família de sapatas para tubo redondo em diferentes medidas e cores" },
+    { "role": "product", "src": "/products/final/sapata-tubo-redondo-product.png", "alt": "Sapata para tubo redondo em vista de produto final" },
+    { "role": "manual", "src": "/products/final/manual-sapata-tubo-redondo.png", "alt": "Sequência de instalação da sapata para tubo redondo" },
+    { "role": "usage", "src": "/products/final/uso-sapata-tubo-redondo.png", "alt": "Sapata para tubo redondo aplicada em pé tubular" }
+  ],
   "notes": ["Informe o diâmetro externo real do tubo; a parede determina o vão interno disponível."],
   "parameters": [
     { "key": "diametroBase", "label": "Diâmetro externo do tubo (Ø)", "type": "dimension", "unit": "mm", "min": 3, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
@@ -45,8 +56,10 @@
       "public": true,
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Interna_Tubo-Redondo.gh",
+        "modelVersion": "tube-round-gh-v2",
         "sliderOrder": ["diametroBase", "alturaBase", "alturaPescoco", "paredeTubo"],
-        "sliderTransforms": { "diametroBase": { "offset": 10 } }
+        "sliderTransforms": { "diametroBase": { "scale": 1, "offset": 10 } },
+        "technicalDefaults": { "fitAllowanceMm": -0.2, "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "shoulderRadiusMm": 1.2, "meshToleranceMm": 0.15 }
       },
       "pricing": {
         "surfaceId": "ponteira-interna-tubo:redondo:sem-haste",

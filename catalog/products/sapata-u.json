@@ -2,7 +2,7 @@
   "productId": "sapata-u",
   "status": "active",
   "name": "Sapata U",
-  "description": "Sapata em U para encaixe por pressão em tubos redondos, com ou sem haste.",
+  "description": "Para tubos redondos com encaixe por pressão.",
   "category": { "slug": "sapata-u", "formatSlug": "u" },
   "seo": { "familySlug": "sapata-u" },
   "skuPrefix": "BF-SU",
@@ -18,6 +18,18 @@
   "leadTimeBaseDays": 5,
   "generationMode": "local_manual",
   "drawingType": "base-u",
+  "ui": {
+    "fixation": "encaixe por pressão",
+    "summaryName": "Sapata U",
+    "applications": ["estruturas metálicas", "mobiliário", "tubos redondos"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-u-family-v2.png", "alt": "Família de sapatas U em diferentes medidas, com e sem haste" },
+    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-u-sem-haste-v2.png", "alt": "Sapata U sem haste em vista de produto final" },
+    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-u-com-haste-v2.png", "alt": "Sapata U com haste central em vista de produto final" },
+    { "role": "manual", "src": "/products/final/manual-sapata-u-v2.png", "alt": "Sequência de instalação da sapata U por encaixe no tubo redondo" },
+    { "role": "usage", "src": "/products/final/uso-sapata-u-v2.png", "alt": "Sapata U aplicada em estrutura tubular de mobiliário" }
+  ],
   "notes": ["Modelos com e sem haste validados em CAD, fatiamento e cobertura de preço."],
   "parameters": [
     { "key": "diametro", "label": "Diâmetro externo do tubo", "type": "dimension", "unit": "mm", "min": 5, "max": 60, "step": 0.1, "default": 17.8, "role": "primary-width" },
@@ -34,7 +46,8 @@
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_U_SemHaste.gh",
         "modelVersion": "base-u-gh-v1",
-        "sliderOrder": ["diametro", "comprimento", "espessura"]
+        "sliderOrder": ["diametro", "comprimento", "espessura"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15 }
       },
       "pricing": { "surfaceId": "sapata-u:u:sem-haste", "strategy": "sliced_dataset", "saleMultiplier": 4 }
     },
@@ -46,7 +59,8 @@
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_U_ComHaste.gh",
         "modelVersion": "base-u-neck-gh-v1",
-        "sliderOrder": ["diametro", "comprimento", "espessura"]
+        "sliderOrder": ["diametro", "comprimento", "espessura"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15 }
       },
       "pricing": { "surfaceId": "sapata-u:u:haste", "strategy": "sliced_dataset", "saleMultiplier": 4 }
     }

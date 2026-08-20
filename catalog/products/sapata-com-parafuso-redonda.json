@@ -27,10 +27,18 @@
     }
   },
   "drawingType": "base-round-screw",
-  "notes": [
-    "O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso.",
-    "O controle Grasshopper Diam_Parafuso integra o configurador e o contrato CAD; a superfície de preço atual ignora essa pequena remoção de material."
+  "ui": {
+    "fixation": "parafuso central",
+    "summaryName": "Com parafuso redonda",
+    "applications": ["cadeiras", "mesas", "poltronas", "bases circulares"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-com-parafuso-redonda-family.png", "alt": "Família de sapatas redondas com furo central para parafuso em diferentes medidas e cores" },
+    { "role": "product", "src": "/products/final/sapata-com-parafuso-redonda-product.png", "alt": "Sapata redonda com furo central para parafuso em vista de produto final" },
+    { "role": "manual", "src": "/products/final/sapata-com-parafuso-redonda-manual.png", "alt": "Sequência de instalação da sapata redonda com parafuso separado" },
+    { "role": "usage", "src": "/products/final/sapata-com-parafuso-redonda-uso.png", "alt": "Sapata redonda com parafuso aplicada sob pé de madeira" }
   ],
+  "notes": ["O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso."],
   "parameters": [
     { "key": "diametro", "label": "Diâmetro", "type": "dimension", "unit": "mm", "min": 12, "max": 150, "step": 1, "default": 28, "role": "primary-width" },
     { "key": "alturaBase", "label": "Altura da base", "type": "dimension", "unit": "mm", "min": 1, "max": 10, "step": 1, "default": 6, "role": "base-height" },
@@ -44,7 +52,8 @@
       "cad": {
         "script": "Produtos/Scripts-GH/Sapata_Lisa_Redonda-com parafuso.gh",
         "modelVersion": "base-screw-round-gh-v1",
-        "sliderOrder": ["diametro", "alturaBase", "diametroParafuso"]
+        "sliderOrder": ["diametro", "alturaBase", "diametroParafuso"],
+        "technicalDefaults": { "topChamferMm": 0.8, "baseBottomChamferMm": 0.6, "meshToleranceMm": 0.15, "screwCountersinkDiameterFactor": 2, "minimumRadialWallMm": 3 }
       },
       "pricing": { "surfaceId": "sapata-com-parafuso:redonda:com-parafuso", "strategy": "sliced_dataset", "saleMultiplier": 4, "parameterKeys": ["diametro", "alturaBase"] }
     }
