@@ -12,14 +12,16 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }) {
   if (await isDemoSession()) {
     return <DemoAccount />;
   }
   const session = await getAccountSession();
 
   if (!session) {
-    return <AccountAccess />;
+    const query = await searchParams;
+    const initialOrderNumber = typeof query?.pedido === "string" ? query.pedido : "";
+    return <AccountAccess initialOrderNumber={initialOrderNumber} />;
   }
 
   const orders = await listOrdersByEmail(session.email);

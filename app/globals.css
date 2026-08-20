@@ -4592,9 +4592,115 @@ summary {
   gap: 6px;
 }
 
+.account-login__heading {
+  position: relative;
+}
+
+.account-login__heading h2 {
+  padding-right: 104px;
+}
+
+.account-login__heading strong {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.account-login__progress {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex !important;
+  grid-template-columns: 28px 28px 28px;
+  align-items: center;
+  gap: 5px !important;
+}
+
+.account-login__progress span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--ink-soft);
+  background: var(--surface);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.account-login__progress span.is-active {
+  border-color: var(--primary);
+  color: #fff;
+  background: var(--primary);
+}
+
+.account-login__progress i {
+  width: 22px;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+.account-login__fields,
+.account-login__verification {
+  gap: 16px !important;
+}
+
+.account-login__verification {
+  padding: 18px;
+  border-block: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.56);
+}
+
 .account-login input,
 .checkout-form input {
   min-height: 46px;
+}
+
+.account-login input[aria-invalid="true"] {
+  border-color: #9f2f25;
+  box-shadow: 0 0 0 2px rgba(159, 47, 37, 0.12);
+}
+
+.account-login .account-login__code {
+  min-height: 58px;
+  padding-left: calc(10px + 0.38em);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 1.55rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.38em;
+  text-align: center;
+}
+
+.account-login__secondary-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px !important;
+}
+
+.account-login__link {
+  min-height: 38px;
+  padding: 4px 0;
+  border: 0;
+  color: var(--primary-dark);
+  background: transparent;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-login__link:not(:disabled) {
+  cursor: pointer;
+}
+
+.account-login__privacy {
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
 }
 
 .checkout-address {
@@ -4704,6 +4810,12 @@ summary {
   color: #842a24;
   border-color: oklch(0.68 0.1 28);
   background: oklch(0.96 0.025 28);
+}
+
+.account-alert--success {
+  color: var(--primary-dark);
+  border-color: oklch(0.64 0.09 175);
+  background: oklch(0.96 0.025 175);
 }
 
 .account-shell {
@@ -5053,9 +5165,21 @@ summary {
   }
 
   .account-login {
+    order: -1;
     padding-inline: 24px;
-    border-top: 1px solid var(--line-strong);
+    border-top: 0;
+    border-bottom: 1px solid var(--line-strong);
     border-left: 0;
+  }
+
+  .account-login__heading h2 {
+    padding-right: 0;
+  }
+
+  .account-login__progress {
+    position: static;
+    order: -1;
+    margin-bottom: 12px;
   }
 
   .account-nav {
