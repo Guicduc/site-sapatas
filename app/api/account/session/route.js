@@ -23,7 +23,9 @@ export async function POST(request) {
   const payload = await request.json().catch(() => ({}));
   const email = normalizeAccountEmail(payload.email);
   const originKey = createHash("sha256").update(`${email}:${request.headers.get("x-forwarded-for") || "anonymous"}`).digest("hex");
-  if (!(await consumeAccountRateLimit(originKey))) return NextResponse.json({ error: "rate_limited", message: "Não foi possível concluir essa ação agora." }, { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "900" } });
+  if (process.env.NODE_ENV === "production" && !(await consumeAccountRateLimit(originKey))) {
+    return NextResponse.json({ error: "rate_limited", message: "Não foi possível concluir essa ação agora." }, { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "900" } });
+  }
 
   if (payload.password) {
     const account = await findCustomerAccount(email);
