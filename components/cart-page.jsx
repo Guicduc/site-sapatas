@@ -227,8 +227,7 @@ function CheckoutForm({ cartTotal }) {
   const itemsSubtotal = items.reduce((sum, item) => sum + Number(item.priceBrl || item.totalPriceBrl || 0), 0);
   const localCommerce = calculateCommerceAdjustments({
     itemsSubtotalBrl: itemsSubtotal,
-    shippingAddress: address,
-    couponCode
+    shippingAddress: address
   });
   const commerce = shippingQuoteState.commerce || localCommerce;
   const couponReady = !couponCode || commerce.discount.applied;
@@ -258,7 +257,9 @@ function CheckoutForm({ cartTotal }) {
     items,
     postalCode: address.postalCode,
     state: address.state,
-    couponCode
+    couponCode,
+    email,
+    documentDigits
   });
 
   useEffect(() => {
@@ -381,7 +382,8 @@ function CheckoutForm({ cartTotal }) {
           body: JSON.stringify({
             items,
             shippingAddress: address,
-            couponCode: normalizeCouponCode(couponCode)
+            couponCode: normalizeCouponCode(couponCode),
+            customer: { email, document: documentDigits }
           })
         });
         const payload = await response.json();

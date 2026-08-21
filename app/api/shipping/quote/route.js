@@ -12,7 +12,8 @@ export async function POST(request) {
     const result = await quoteShippingForCheckout({
       items: payload.items,
       shippingAddress: payload.shippingAddress,
-      couponCode: payload.couponCode
+      couponCode: payload.couponCode,
+      customer: payload.customer
     });
 
     return NextResponse.json({
