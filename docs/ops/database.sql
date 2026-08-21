@@ -3,6 +3,7 @@ create table if not exists customers (
   name text not null,
   contact text not null,
   email text,
+  document text check (document is null or document ~ '^([0-9]{11}|[0-9]{14})$'),
   created_at timestamptz not null default now()
 );
 
