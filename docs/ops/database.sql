@@ -71,6 +71,12 @@ create index if not exists orders_status_idx on orders(status);
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists payments_order_id_idx on payments(order_id);
 create index if not exists payments_provider_payment_idx on payments(provider_payment_id);
+create unique index if not exists payments_one_active_mp_preference_idx
+  on payments(order_id)
+  where provider = 'mercado_pago'
+    and status = 'pending'
+    and provider_payment_id is null
+    and checkout_url is not null;
 
 -- Fila duravel para gerar arquivos de impressao. Nao referencia orders por FK
 -- porque source/source_id tambem aceitam jobs vindos de outras frentes.
