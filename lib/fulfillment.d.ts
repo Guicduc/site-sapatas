@@ -1,0 +1,11 @@
+import type { FulfillmentMetadata, OrderStatus, ProductionStatus, ShipmentStatus, InvoiceStatus } from "./commercial-contract-types.js";
+export const PRODUCTION_STATUS: Readonly<Record<string, ProductionStatus>>;
+export const SHIPMENT_STATUS: Readonly<Record<string, ShipmentStatus>>;
+export const INVOICE_STATUS: Readonly<Record<string, InvoiceStatus>>;
+export const productionStatusOptions: ProductionStatus[];
+export const shipmentStatusOptions: ShipmentStatus[];
+export const invoiceStatusOptions: InvoiceStatus[];
+export function normalizeFulfillment(order: unknown): FulfillmentMetadata;
+export function buildFulfillmentMetadata(order: unknown, patch?: { eventType?: string; production?: Partial<FulfillmentMetadata["production"]>; invoice?: Partial<FulfillmentMetadata["invoice"]>; shipment?: Partial<FulfillmentMetadata["shipment"]> }, now?: string): FulfillmentMetadata;
+export function calculateProductionDemand(order: unknown): { units: number; workUnits: number; printMinutes: number };
+export function getOrderStatusForFulfillment(currentStatus: OrderStatus, fulfillment: FulfillmentMetadata): OrderStatus;
