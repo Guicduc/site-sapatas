@@ -20,7 +20,8 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Gestao de pedidos em `/admin/pedidos`, com dados persistidos em Postgres quando `DATABASE_URL` existe.
 - Cadastro de clientes e area do cliente em `/conta`, com primeiro acesso/recuperacao por codigo enviado por e-mail, senha opcional e sessoes opacas revogaveis persistidas no banco.
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
-- Cupons, desconto e frete estimado em `lib/commerce-adjustments.js`; no MVP, o frete e "Correios manual" por UF, com origem registrada em `metadata.commerce.shipping`.
+- Aritmetica publica de desconto e frete estimado em `lib/commerce-adjustments.js`; definicoes, valores e elegibilidade de cupons ficam somente no servidor em `lib/promotion-policy.js`.
+- `PRIMEIRO15` exige ausencia de compra aprovada para o CPF/CNPJ normalizado. Cupons privados de frete e a promocao de primeira compra reservam uma unica identidade por pedido, atomicamente; pagamento aprovado confirma o uso e cancelamento por substituicao libera apenas uma reserva ainda nao paga. Rejeicoes sao genericas e nao revelam historico do cliente.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
 - E-mails transacionais via Resend para codigo de conta, pedido criado, pagamento resolvido e pedido enviado. O ultimo parte do estado operacional persistido `shipment.status: "shipped"`, inclui rastreio quando informado e registra sucesso/falha para evitar duplicidade.

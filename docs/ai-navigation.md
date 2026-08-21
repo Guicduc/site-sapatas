@@ -129,7 +129,8 @@ commit.
 
 ## Ajustes comerciais
 
-- `lib/commerce-adjustments.js`: regras compartilhadas de cupom, desconto e frete estimado.
+- `lib/commerce-adjustments.js`: aritmetica publica de desconto e frete estimado, sem catalogo de cupons.
+- `lib/promotion-policy.js`: modulo exclusivo do servidor com definicoes, validade e elegibilidade de promocoes; usos restritos sao reservados em `promotion_redemptions` durante a mesma transacao do pedido.
 - O carrinho usa esse modulo para preview, mas `lib/order-validation.js` recalcula tudo no servidor antes de salvar o pedido.
 - Quando frete/desconto alteram o total, `lib/mercado-pago.js` envia uma linha consolidada ao Mercado Pago para manter o valor cobrado igual ao `order.totalBrl`.
 - `lib/cart-recovery.js`: recuperacao de carrinho com hash de token, IP hasheado, recalculo server-side dos itens e retencao por `CART_RECOVERY_RETENTION_DAYS`.

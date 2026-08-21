@@ -37,6 +37,12 @@ espera `post_payment_outbox` e as tabelas de roteamento/handoff de producao.
 Rollback do aplicativo não remove migrations
 aditivas nem apaga eventos pendentes.
 
+## Cupons de uso restrito
+
+`20260821_promotion_redemptions.sql` deve ser aplicada antes do codigo que reserva
+cupons no checkout. A tabela grava apenas um HMAC da identidade normalizada, o id
+interno da promocao e o pedido; nao grava codigo privado, CPF/CNPJ ou e-mail.
+
 ## Migration transacional crítica
 
 `20260821_critical_transaction_safety.sql` limpa preferências pendentes

@@ -49,6 +49,11 @@ Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` ->
 
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
 
+Definicoes de cupons vivem somente em `lib/promotion-policy.js`. `PRIMEIRO15` e o
+cupom privado de frete usam CPF/CNPJ pseudonimizado por HMAC e uma reserva atomica
+em `promotion_redemptions`; aplique a migration antes do deploy. Configure
+`PROMOTION_IDENTITY_SECRET` (com fallback operacional para `ACCOUNT_SESSION_SECRET`).
+
 ## Frete
 
 - Ativar frete real exige `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
