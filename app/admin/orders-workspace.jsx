@@ -52,10 +52,22 @@ const SIMPLE_PRODUCTION_OPTIONS = [
     tone: "info"
   },
   {
+    value: PRODUCTION_STATUS.IN_PRODUCTION,
+    label: "Aceito / em producao",
+    description: "Trabalho aceito pela operacao e em andamento.",
+    tone: "info"
+  },
+  {
     value: PRODUCTION_STATUS.READY_TO_SHIP,
     label: "Produzido",
     description: "Producao concluida; pedido segue para expedicao.",
     tone: "success"
+  },
+  {
+    value: PRODUCTION_STATUS.BLOCKED,
+    label: "Falha / bloqueado",
+    description: "Falha comercial registrada; exige acao da operacao.",
+    tone: "warning"
   }
 ];
 
@@ -1231,6 +1243,10 @@ function toSimpleProductionStatus(status) {
   if ([PRODUCTION_STATUS.READY_TO_SHIP, PRODUCTION_STATUS.SHIPPED].includes(status)) {
     return PRODUCTION_STATUS.READY_TO_SHIP;
   }
+  if ([PRODUCTION_STATUS.IN_PRODUCTION, PRODUCTION_STATUS.QUALITY_CHECK].includes(status)) {
+    return PRODUCTION_STATUS.IN_PRODUCTION;
+  }
+  if (status === PRODUCTION_STATUS.BLOCKED) return PRODUCTION_STATUS.BLOCKED;
   return PRODUCTION_STATUS.QUEUED;
 }
 

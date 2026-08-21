@@ -5,7 +5,8 @@ import test from "node:test";
 const runtimeStores = [
   new URL("../lib/order-store.js", import.meta.url),
   new URL("../lib/cart-recovery.js", import.meta.url),
-  new URL("../lib/print-job-store.js", import.meta.url)
+  new URL("../lib/print-job-store.js", import.meta.url),
+  new URL("../lib/production-handoff-store.js", import.meta.url)
 ];
 
 test("stores de runtime nao criam nem alteram schema", async () => {
