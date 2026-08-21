@@ -7,7 +7,12 @@ import {
   getOrderAccessCookieOptions
 } from "@/lib/account-session";
 import { toAccountOrder } from "@/lib/account-view";
-import { cancelSupersededOrder, createOrder } from "@/lib/order-store";
+import {
+  cancelSupersededOrder,
+  consumeOrderCreationRateLimit,
+  createOrder
+} from "@/lib/order-store";
+import { getAnonymousOrderRateLimitKey, parseLimitedJsonRequest } from "@/lib/order-limits";
 import { buildOrderDraft } from "@/lib/order-validation";
 import { notifyOrderCreated } from "@/lib/transactional-email";
 import { isDemoSession } from "@/lib/demo-session";
@@ -16,9 +21,19 @@ import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
 
 export async function POST(request) {
   try {
-    const payload = await request.json();
+    const payload = await parseLimitedJsonRequest(request);
+    const demoSession = await isDemoSession();
+    if (!demoSession) {
+      const allowed = await consumeOrderCreationRateLimit(getAnonymousOrderRateLimitKey(request));
+      if (!allowed) {
+        const error = new Error("Muitas tentativas de criar pedido. Aguarde 15 minutos e tente novamente.");
+        error.code = "order_rate_limit_exceeded";
+        error.status = 429;
+        throw error;
+      }
+    }
     const orderDraft = await buildOrderDraft(payload);
-    if (await isDemoSession()) {
+    if (demoSession) {
       const now = new Date().toISOString();
       const demoOrder = {
         ...orderDraft,
@@ -69,13 +84,15 @@ export async function POST(request) {
     );
     return response;
   } catch (error) {
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
-        error: "order_create_failed",
+        error: error.code || "order_create_failed",
         message: error.message || "Não foi possível criar o pedido."
       },
-      { status: 400 }
+      { status: error.status || 400 }
     );
+    if (error.status === 429) response.headers.set("Retry-After", "900");
+    return response;
   }
 }
 

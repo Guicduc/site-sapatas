@@ -6,6 +6,7 @@ import test from "node:test";
 
 import {
   createOrder,
+  consumeOrderCreationRateLimit,
   getOrCreatePendingMercadoPagoPayment,
   getOrderById,
   recordMercadoPagoUpdate,
@@ -82,6 +83,13 @@ test("transicoes paralelas preservam metadados de pagamento e fulfillment", asyn
   assert.equal(order.metadata.fulfillment.invoice.status, "api_pending");
   assert.equal(order.metadata.fulfillment.shipment.status, "packing");
   assert.equal(order.metadata.fulfillment.shipment.carrier, "Correios");
+});
+
+test("limite anônimo persiste entre tentativas locais", async () => {
+  const key = "order-create:test-client";
+  assert.equal(await consumeOrderCreationRateLimit(key, 2, 900), true);
+  assert.equal(await consumeOrderCreationRateLimit(key, 2, 900), true);
+  assert.equal(await consumeOrderCreationRateLimit(key, 2, 900), false);
 });
 
 test("Postgres devolve o documento persistido quando TEST_DATABASE_URL esta configurada", {

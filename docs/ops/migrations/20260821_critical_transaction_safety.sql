@@ -8,6 +8,7 @@ begin
     select 1
     from pg_constraint
     where conname = 'customers_document_format_check'
+      and conrelid = 'customers'::regclass
   ) then
     alter table customers
       add constraint customers_document_format_check
@@ -39,5 +40,14 @@ create unique index if not exists payments_one_active_mp_preference_idx
     and status = 'pending'
     and provider_payment_id is null
     and checkout_url is not null;
+
+create table if not exists request_rate_limits (
+  key text primary key,
+  window_started_at timestamptz not null,
+  attempts integer not null default 0
+);
+
+create index if not exists request_rate_limits_window_idx
+  on request_rate_limits(window_started_at);
 
 commit;

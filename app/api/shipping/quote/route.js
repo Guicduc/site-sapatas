@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { assertShippingPayloadLimits, parseLimitedJsonRequest } from "@/lib/order-limits";
 import { quoteShippingForCheckout } from "@/lib/shipping";
 
 export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
-    const payload = await request.json().catch(() => ({}));
+    const payload = await parseLimitedJsonRequest(request);
+    assertShippingPayloadLimits(payload);
     const result = await quoteShippingForCheckout({
       items: payload.items,
       shippingAddress: payload.shippingAddress,
@@ -20,10 +22,10 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: "shipping_quote_failed",
+        error: error.code || "shipping_quote_failed",
         message: error.message || "Nao foi possivel cotar o frete."
       },
-      { status: 400 }
+      { status: error.status || 400 }
     );
   }
 }
