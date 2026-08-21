@@ -4,6 +4,7 @@ Este documento registra o estado atual do e-commerce e os pontos que ficaram int
 
 Para execucao por agentes, merge, deploy e validacao minima, use tambem `docs/ops/agent-runbook.md`.
 Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use tambem `docs/ops/payment-email-handoff.md`.
+Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/ops/production-system-transition.md`.
 
 ## Escopo ativo agora
 
@@ -28,7 +29,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 - Relatorios basicos em `/admin/relatorios`.
 - Operacao de producao, nota fiscal automatizada e expedicao em `/admin/operacao`.
 - Fluxo pos-pagamento simplificado em `Aguardando producao` -> `Produzido` -> expedicao; CAD permanece manual e fora dos estados do pedido.
-- Fila duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido.
+- Fila transicional duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido. Ela permanece ate existir contrato, migracao e corte idempotente para o sistema externo de producao; essa migracao ainda nao foi implementada.
 - Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
@@ -62,6 +63,7 @@ Para continuidade da ativacao de Mercado Pago e caixas de e-mail do dominio, use
 
 ## Backlog futuro
 
+- Definir e implementar o sistema externo de producao: API autenticada/idempotente para buscar trabalho pago, execucao de CAD/Grasshopper/slice/impressao fora do site e retorno idempotente somente de marcos comerciais. Migrar ou reconciliar os jobs ativos e executar corte deterministico antes de remover a fila atual; no inicio, o operador continua registrando marcos no admin.
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
 - Compra de etiqueta, impressao e webhooks de rastreio no Melhor Envio, depois da homologacao de cotacao. Ate la, o e-mail de pedido enviado depende da confirmacao manual de expedicao no admin.
 - Carta de correcao de NF-e por API na Focus NFe e armazenamento proprio de XML/PDF. Cancelamento e webhook de status ja estao implementados.
