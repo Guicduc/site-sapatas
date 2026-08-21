@@ -6,17 +6,7 @@ import {
   mapMercadoPagoPaymentStatus,
   verifyMercadoPagoSignature
 } from "@/lib/mercado-pago";
-import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
-import { recordMercadoPagoUpdate } from "@/lib/order-store";
-import { ORDER_STATUS } from "@/lib/order-status";
-import { notifyPaymentResolved } from "@/lib/transactional-email";
-
-// Pagamento tardio de um pedido cancelado ou marcado para revisao manual não
-// deve gerar e-mail de confirmacao ao cliente; o alerta interno já foi enviado
-// por recordMercadoPagoUpdate.
-function canNotifyCustomer(order) {
-  return order && order.status !== ORDER_STATUS.CANCELLED && !order.metadata?.paymentReview;
-}
+import { persistAndDispatchMercadoPagoUpdate } from "@/lib/post-payment-dispatch";
 
 export async function POST(request) {
   let payload;
@@ -30,7 +20,7 @@ export async function POST(request) {
 
   if (payload?.type === "local_test" && process.env.NODE_ENV !== "production") {
     const status = normalizeLocalStatus(payload.status);
-    const order = await recordMercadoPagoUpdate({
+    const order = await persistAndDispatchMercadoPagoUpdate({
       orderId: payload.orderId,
       preferenceId: payload.preferenceId || null,
       paymentId: payload.paymentId || `local-${Date.now()}`,
@@ -38,14 +28,6 @@ export async function POST(request) {
       amountBrl: payload.amountBrl || null,
       raw: payload
     });
-    if (canNotifyCustomer(order)) {
-      await notifyPaymentResolved(order, order?.paymentStatus || status);
-    }
-    await requestInvoiceAfterPayment(order, {
-      providerPaymentId: payload.paymentId,
-      raw: payload
-    });
-
     return NextResponse.json({
       received: true,
       localTest: true,
@@ -78,7 +60,7 @@ export async function POST(request) {
   try {
     const payment = await fetchMercadoPagoPayment(dataId);
     const status = mapMercadoPagoPaymentStatus(payment.status);
-    const order = await recordMercadoPagoUpdate({
+    const order = await persistAndDispatchMercadoPagoUpdate({
       orderId: payment.external_reference || payment.metadata?.order_id || null,
       preferenceId: payment.preference_id || null,
       paymentId: String(payment.id),
@@ -86,11 +68,6 @@ export async function POST(request) {
       amountBrl: payment.transaction_amount,
       raw: payment
     });
-    if (canNotifyCustomer(order)) {
-      await notifyPaymentResolved(order, order?.paymentStatus || status);
-    }
-    await requestInvoiceAfterPayment(order, payment);
-
     return NextResponse.json({
       received: true,
       paymentId: payment.id,

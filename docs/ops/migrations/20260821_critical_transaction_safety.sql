@@ -1,5 +1,3 @@
-begin;
-
 alter table customers add column if not exists document text;
 
 do $$
@@ -49,5 +47,3 @@ create table if not exists request_rate_limits (
 
 create index if not exists request_rate_limits_window_idx
   on request_rate_limits(window_started_at);
-
-commit;

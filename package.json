@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "db:migrate": "node scripts/migrate.mjs",
     "test": "node --test",
     "start": "next start",
     "test:cookie-consent": "node --test test/cookie-consent.test.js",
