@@ -18,15 +18,15 @@ import {
   toDisplayMeasurement
 } from "@/lib/measurement-units";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
+import { calculateClientPricePreview } from "@/lib/client-pricing-preview";
 import {
   buildConfigurationSku,
   calculateLeadTime,
-  calculatePriceBreakdown,
   getFormat,
   getInitialValues,
   productCategories,
   validateConfiguration
-} from "@/lib/configurator-data";
+} from "@/lib/client-configurator-data";
 
 export function ProductConfigurator({ category, initialFormatSlug }) {
   const router = useRouter();
@@ -61,7 +61,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
   const priceBreakdown = useMemo(
-    () => calculatePriceBreakdown(format, values, quantity),
+    () => calculateClientPricePreview(format, values, quantity),
     [format, values, quantity]
   );
   const pricingAvailable = priceBreakdown.pricingAvailable !== false;
