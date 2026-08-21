@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Rhino 7 IronPython script.
 # Opens Grasshopper definitions, generates product parameter variations, exports final
 # solids to 3MF/STL, and writes the canonical slicer pricing dataset.
@@ -53,6 +54,8 @@ PARAMETER_COLUMNS = [
     "diametroParafuso",
     "paredeTubo",
     "pescoco",
+    "comprimento",
+    "espessura",
 ]
 
 SLICE_COLUMNS = [
@@ -137,6 +140,51 @@ PRODUCT_CONFIGS = [
             "alturaBase": parameter(1, 10, 6),
             "alturaPescoco": parameter(5, 35, 18),
             "paredeTubo": parameter(0.8, 8, 1.5, 0.1),
+        },
+    },
+    {
+        "source_gh": "Produtos/Scripts-GH/Sapata_Esferica.gh",
+        "product_family": "sapata-esferica",
+        "category_slug": "sapata-esferica",
+        "format_slug": "esferica",
+        "variant_slug": "padrao",
+        "has_neck": False,
+        "slider_order": ["diametroBase", "paredeTubo", "alturaPescoco"],
+        # Os três controles finais são construtivos e permanecem nos valores salvos no GH.
+        "generic_slider_order": [
+            "diametroBase",
+            "paredeTubo",
+            "alturaPescoco",
+            "espessuraAneisTecnica",
+            "divisoesAneisTecnica",
+            "tamanhoPontosTecnico",
+        ],
+        "sampling": {
+            "force_axis_keys": ["diametroBase", "paredeTubo", "alturaPescoco"],
+            "target_count": 480,
+            "required_samples": [
+                {"diametroBase": 20, "paredeTubo": 0.8, "alturaPescoco": 17},
+                {"diametroBase": 20, "paredeTubo": 0.8, "alturaPescoco": 35},
+                {"diametroBase": 20, "paredeTubo": 6, "alturaPescoco": 17},
+                {"diametroBase": 20, "paredeTubo": 6, "alturaPescoco": 35},
+                {"diametroBase": 75, "paredeTubo": 0.8, "alturaPescoco": 17},
+                {"diametroBase": 75, "paredeTubo": 0.8, "alturaPescoco": 35},
+                {"diametroBase": 75, "paredeTubo": 6, "alturaPescoco": 17},
+                {"diametroBase": 75, "paredeTubo": 6, "alturaPescoco": 35},
+            ],
+        },
+        "manufacturing": {
+            "tube_inner_span": {
+                "size_keys": ["diametroBase"],
+                "size_offsets_mm": {},
+                "wall_thickness_key": "paredeTubo",
+                "minimum_mm": 5,
+            },
+        },
+        "parameters": {
+            "diametroBase": parameter(20, 75, 28.9, 0.1),
+            "paredeTubo": parameter(0.8, 6, 2, 0.1),
+            "alturaPescoco": parameter(17, 35, 17),
         },
     },
     {
@@ -1446,7 +1494,7 @@ def generated_geometry_issue(product_config, slider_values, metric_values):
         return ""
 
     requires_neck = (
-        product_config.get("category_slug") == "ponteira-interna-tubo"
+        product_config.get("category_slug") in ["ponteira-interna-tubo", "sapata-esferica"]
         or product_config.get("has_neck", False)
     )
     if not requires_neck:

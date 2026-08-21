@@ -44,6 +44,20 @@
       "applications": ["cadeiras", "mesas", "poltronas", "bases de madeira e metal"]
     },
     {
+      "slug": "sapata-esferica",
+      "name": "Sapata esférica",
+      "eyebrow": "Apoio esférico sob medida",
+      "description": "Sapatas esféricas para tubos redondos, com encaixe interno por pressão e medidas configuráveis.",
+      "baseType": "tubo redondo",
+      "primaryFixation": "press-fit interno",
+      "cardVisualProductId": "sapata-esferica",
+      "image": {
+        "src": "/products/final/sapata-esferica-family.png",
+        "alt": "Sapatas esféricas Baseforma para tubos redondos"
+      },
+      "applications": ["cadeiras tubulares", "mesas", "estruturas metálicas", "reposição"]
+    },
+    {
       "slug": "sapata-u",
       "name": "Sapata U",
       "eyebrow": "Encaixe por pressão em tubo redondo",

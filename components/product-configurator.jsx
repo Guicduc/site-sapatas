@@ -42,14 +42,11 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
   const [invalidMeasurementKeys, setInvalidMeasurementKeys] = useState({});
   const [previewMode, setPreviewMode] = useState("drawing");
   const [activeVisualIndex, setActiveVisualIndex] = useState(0);
-  const [orderDocked, setOrderDocked] = useState(false);
   const [measurementSystem, setMeasurementSystem] = useReducer(
     measurementSystemReducer,
     MEASUREMENT_SYSTEMS.METRIC
   );
   const fieldsRef = useRef({});
-  const orderDockRef = useRef(null);
-  const orderDockSlotRef = useRef(null);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -99,51 +96,6 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 
     setActiveVisualIndex((current) => Math.min(current, Math.max(visualImages.length - 1, 0)));
   }, [previewMode, visualImages.length]);
-
-  useEffect(() => {
-    const dock = orderDockRef.current;
-    const slot = orderDockSlotRef.current;
-
-    if (!dock || !slot) {
-      return undefined;
-    }
-
-    const desktopQuery = window.matchMedia("(min-width: 981px)");
-    let frameId = 0;
-
-    function updateDockPosition() {
-      window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(() => {
-        if (!desktopQuery.matches) {
-          slot.style.removeProperty("--configurator-order-height");
-          setOrderDocked(false);
-          return;
-        }
-
-        const dockHeight = dock.offsetHeight;
-        const dockingBoundary = window.innerHeight - dockHeight - 12;
-        const shouldDock = slot.getBoundingClientRect().top > dockingBoundary;
-
-        slot.style.setProperty("--configurator-order-height", `${dockHeight}px`);
-        setOrderDocked((current) => current === shouldDock ? current : shouldDock);
-      });
-    }
-
-    const resizeObserver = new ResizeObserver(updateDockPosition);
-    resizeObserver.observe(dock);
-    desktopQuery.addEventListener?.("change", updateDockPosition);
-    window.addEventListener("resize", updateDockPosition);
-    window.addEventListener("scroll", updateDockPosition, { passive: true });
-    updateDockPosition();
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      resizeObserver.disconnect();
-      desktopQuery.removeEventListener?.("change", updateDockPosition);
-      window.removeEventListener("resize", updateDockPosition);
-      window.removeEventListener("scroll", updateDockPosition);
-    };
-  }, []);
 
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
@@ -268,11 +220,8 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
           </div>
         </div>
 
-        <div
-          ref={orderDockSlotRef}
-          className={`configurator-order-slot${orderDocked ? " is-docked" : ""}`}
-        >
-          <aside ref={orderDockRef} className="configurator-side">
+        <div className="configurator-order-slot">
+          <aside className="configurator-side">
             <div className={`option-panel${!hasColorChoices && !hasFinishChoices ? " option-panel--compact" : ""}`}>
             <p className="eyebrow">{hasColorChoices || hasFinishChoices ? "Escolhas" : "Pedido"}</p>
             {hasColorChoices ? (
@@ -325,8 +274,6 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 
             <ConfigurationSummary
               format={{ ...format, name: getSummaryProductName(format) }}
-              sku={sku}
-              issues={issues}
               unitPrice={unitPrice}
               totalPrice={totalPrice}
               priceBreakdown={priceBreakdown}
@@ -566,6 +513,13 @@ function FormatIcon({ type }) {
           <circle cx="24" cy="24" r="16" />
           <circle cx="24" cy="24" r="9" />
           <path d="M24 5 V43 M5 24 H43" />
+        </>
+      )}
+      {type === "tube-round-spherical" && (
+        <>
+          <path d="M10 26 A14 14 0 0 0 38 26 Z" />
+          <path d="M15 26 V12 H33 V26 M13 18 H35 M13 22 H35" />
+          <path d="M24 7 V41 M6 26 H42" />
         </>
       )}
       {type === "tube-rect" && (
@@ -999,8 +953,6 @@ function getStepDecimals(step) {
 
 function ConfigurationSummary({
   format,
-  sku,
-  issues,
   unitPrice,
   totalPrice,
   priceBreakdown,
@@ -1015,7 +967,6 @@ function ConfigurationSummary({
       <div className="summary-heading">
         <p className="eyebrow">Resumo</p>
         <h2>{format.status === "review" ? "Sob avaliação" : format.name}</h2>
-        <span>{sku}</span>
       </div>
       <div className="summary-stats">
         <article>
