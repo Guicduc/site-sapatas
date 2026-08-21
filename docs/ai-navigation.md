@@ -47,6 +47,8 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/shipping/quote`: calcula frete para o checkout. Usa `SHIPPING_PROVIDER=melhor_envio` quando configurado e fallback manual quando nao houver token/CEP de origem.
 - `POST /api/payments/mercado-pago/preference`: cria preferencia de pagamento para pedido pagavel.
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
+- `GET/POST /api/admin/outbox/process`: processa lotes dos efeitos pos-pagamento enfileirados.
+- `GET/POST /api/admin/outbox`: mostra status/erros e permite retry administrativo de falhas terminais.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
 - `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
 - `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
@@ -107,6 +109,19 @@ O total de familias/produtos ativos deve ser derivado dos manifests ativos em `c
 ## Pedidos e persistencia
 
 O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `lib/order-status.js`.
+
+`lib/db.js` centraliza pool e transacoes PostgreSQL. Requests nao executam DDL.
+O bootstrap esta em `docs/ops/database.sql`; alteracoes usam o runner e os
+arquivos versionados descritos em `docs/ops/database-migrations.md`.
+
+`listOrders` e as listas de conta/e-mail carregam itens, pagamentos e revisoes
+em tres consultas por lote, alem da consulta principal. O custo nao cresce em
+tres queries extras por pedido.
+
+`lib/outbox-store.js` grava e reserva os efeitos pos-pagamento. O webhook
+persiste pagamento, transicao do pedido e eventos na mesma transacao. O
+processador em `lib/outbox-processor.js` envia e-mail e solicita NF-e depois do
+commit.
 
 ## Ajustes comerciais
 

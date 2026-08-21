@@ -9,6 +9,8 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Frete real: `docs/ops/shipping-integration.md`.
 - Nota fiscal automatizada (Focus NFe): `docs/ops/invoice-manual.md`.
 - Banco de dados: `docs/ops/database.sql`.
+- Migrations e ordem de deploy: `docs/ops/database-migrations.md`.
+- Fila pos-pagamento: `docs/ops/post-payment-outbox.md`.
 - Variaveis de ambiente: `.env.example`.
 - Contexto de produto/design para UI: `PRODUCT.md`.
 - Privacidade, cookies e regra para novos scripts: `docs/ops/privacy-cookies.md`.
@@ -37,7 +39,8 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 5. `lib/order-store.js` persiste pedido e pagamentos.
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
-8. Pagamento aprovado aciona `lib/invoice-provider.js` para emitir a NF-e automaticamente via Focus NFe.
+8. A mesma transacao enfileira e-mail e NF-e em `post_payment_outbox`.
+9. O processador chama Resend e `lib/invoice-provider.js` fora do webhook.
 
 Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` -> `Produzido` -> expedicao. A preparacao CAD e manual e nao cria status, gate ou bloqueio no pedido.
 
@@ -62,6 +65,7 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
   - `*`: `false`
 - O Vercel CLI pode nao estar instalado no ambiente local. Nesse caso, o deploy deve ser disparado por commit e push para `origin/main`.
 - Antes de pushar, rode `npm run build`.
+- Quando houver migration nova, rode `npm run db:migrate` no banco alvo antes do push para `main`.
 - Se `git push origin main` for recusado por remoto adiantado, use:
   1. `git fetch origin main`
   2. inspecione `git log --oneline --decorate --graph --max-count=8 --all`

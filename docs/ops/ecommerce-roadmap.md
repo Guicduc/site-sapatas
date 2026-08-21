@@ -31,6 +31,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Fluxo pos-pagamento simplificado em `Aguardando producao` -> `Produzido` -> expedicao; CAD permanece manual e fora dos estados do pedido.
 - Fila transicional duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido. Ela permanece ate existir contrato, migracao e corte idempotente para o sistema externo de producao; essa migracao ainda nao foi implementada.
 - Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
+- Fila PostgreSQL duravel para e-mail e NF-e pos-pagamento, com enqueue transacional no webhook, idempotencia, leases, retries e inspecao administrativa.
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
 - Login administrativo em `/admin`, com `ADMIN_ACCESS_TOKEN` usado para criar sessao assinada em cookie HttpOnly.
