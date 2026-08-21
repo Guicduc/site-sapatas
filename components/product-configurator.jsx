@@ -12,9 +12,12 @@ import {
   MEASUREMENT_SYSTEMS,
   formatMeasurement,
   formatMeasurementValue,
+  getCanonicalMeasurementRange,
   getDisplayRange,
   measurementSystemReducer,
   parseMeasurementInput,
+  snapMeasurementValue,
+  stepMeasurementValue,
   toDisplayMeasurement
 } from "@/lib/measurement-units";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
@@ -601,7 +604,7 @@ function ConfiguratorFields({
       event.currentTarget.setPointerCapture?.(event.pointerId);
     }
 
-    const nextValue = getPointerValue(event, parameter);
+    const nextValue = getPointerValue(event, parameter, measurementSystem);
     onFocus(parameter.key);
 
     if (String(values[parameter.key] ?? "") !== nextValue) {
@@ -611,17 +614,16 @@ function ConfiguratorFields({
 
   function handleRangeKeyDown(event, parameter) {
     const currentValue = Number(values[parameter.key] ?? parameter.defaultValue ?? parameter.min);
-    const step = Number(parameter.step || 1);
-    const largeStep = step * 10;
+    const range = getCanonicalMeasurementRange(parameter, measurementSystem);
     const keyHandlers = {
-      ArrowLeft: currentValue - step,
-      ArrowDown: currentValue - step,
-      ArrowRight: currentValue + step,
-      ArrowUp: currentValue + step,
-      PageDown: currentValue - largeStep,
-      PageUp: currentValue + largeStep,
-      Home: parameter.min,
-      End: parameter.max
+      ArrowLeft: () => stepMeasurementValue(currentValue, parameter, measurementSystem, -1),
+      ArrowDown: () => stepMeasurementValue(currentValue, parameter, measurementSystem, -1),
+      ArrowRight: () => stepMeasurementValue(currentValue, parameter, measurementSystem, 1),
+      ArrowUp: () => stepMeasurementValue(currentValue, parameter, measurementSystem, 1),
+      PageDown: () => stepMeasurementValue(currentValue, parameter, measurementSystem, -10),
+      PageUp: () => stepMeasurementValue(currentValue, parameter, measurementSystem, 10),
+      Home: () => String(range.min),
+      End: () => String(range.max)
     };
 
     if (!(event.key in keyHandlers)) {
@@ -629,7 +631,7 @@ function ConfiguratorFields({
     }
 
     event.preventDefault();
-    const nextValue = formatParameterValue(keyHandlers[event.key], parameter);
+    const nextValue = keyHandlers[event.key]();
 
     if (String(values[parameter.key] ?? "") !== nextValue) {
       onChange(parameter.key, nextValue);
@@ -672,6 +674,9 @@ function ConfiguratorFields({
 
         const isBoolean = parameter.type === "boolean";
         const displayRange = isBoolean ? null : getDisplayRange(parameter, measurementSystem);
+        const canonicalDisplayRange = isBoolean
+          ? null
+          : getCanonicalMeasurementRange(parameter, measurementSystem);
 
         return (
         <label className={`field parameter-field${isBoolean ? " parameter-field--toggle" : ""}${activeKey === parameter.key ? " is-active" : ""}`} key={`${format.slug}:${parameter.key}`}>
@@ -708,8 +713,8 @@ function ConfiguratorFields({
               role="slider"
               tabIndex={parameter.dependsOn && !values[parameter.dependsOn] ? -1 : 0}
               aria-label={parameter.label}
-              aria-valuemin={toDisplayMeasurement(parameter.min, parameter.unit, measurementSystem)}
-              aria-valuemax={toDisplayMeasurement(parameter.max, parameter.unit, measurementSystem)}
+              aria-valuemin={toDisplayMeasurement(canonicalDisplayRange.min, parameter.unit, measurementSystem)}
+              aria-valuemax={toDisplayMeasurement(canonicalDisplayRange.max, parameter.unit, measurementSystem)}
               aria-valuenow={toDisplayMeasurement(values[parameter.key] ?? parameter.min, parameter.unit, measurementSystem)}
               aria-valuetext={formatMeasurement(values[parameter.key] ?? parameter.min, parameter.unit, measurementSystem)}
               aria-disabled={parameter.dependsOn && !values[parameter.dependsOn] ? "true" : undefined}
@@ -820,6 +825,10 @@ function MeasurementInput({
   }
 
   function commitValue(rawValue) {
+    if (!inputPending) {
+      return;
+    }
+
     if (String(rawValue).trim() === "") {
       invalidateValue("Informe a medida.");
       return;
@@ -834,6 +843,7 @@ function MeasurementInput({
 
     setInputError("");
     setInputPending(false);
+    setDraftValue(formatMeasurementValue(result.value, parameter.unit, measurementSystem));
     onValidityChange(true);
     lastValidValueRef.current = result.value;
 
@@ -922,33 +932,14 @@ function getValuePosition(value, parameter) {
   return Math.min(100, Math.max(0, ((numericValue - parameter.min) / range) * 100));
 }
 
-function getPointerValue(event, parameter) {
+function getPointerValue(event, parameter, measurementSystem) {
   const rect = event.currentTarget.getBoundingClientRect();
   const ratio = rect.width > 0
     ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
     : 0;
   const rawValue = parameter.min + ratio * (parameter.max - parameter.min);
 
-  return formatParameterValue(rawValue, parameter);
-}
-
-function formatParameterValue(value, parameter) {
-  const step = Number(parameter.step || 1);
-  const decimals = getStepDecimals(step);
-  const steppedValue = Math.round((Number(value) - parameter.min) / step) * step + parameter.min;
-  const clampedValue = Math.min(parameter.max, Math.max(parameter.min, steppedValue));
-
-  return decimals > 0 ? clampedValue.toFixed(decimals) : String(Math.round(clampedValue));
-}
-
-function getStepDecimals(step) {
-  const text = String(step);
-
-  if (!text.includes(".")) {
-    return 0;
-  }
-
-  return text.split(".")[1].length;
+  return snapMeasurementValue(rawValue, parameter, measurementSystem);
 }
 
 function ConfigurationSummary({
