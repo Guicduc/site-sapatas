@@ -11,6 +11,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Banco de dados: `docs/ops/database.sql`.
 - Migrations e ordem de deploy: `docs/ops/database-migrations.md`.
 - Fila pos-pagamento: `docs/ops/post-payment-outbox.md`.
+- Integracao de producao: `docs/ops/production-system-integration.md`.
 - Variaveis de ambiente: `.env.example`.
 - Contexto de produto/design para UI: `PRODUCT.md`.
 - Privacidade, cookies e regra para novos scripts: `docs/ops/privacy-cookies.md`.
@@ -27,6 +28,8 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
 - O adaptador `INVOICE_PROVIDER=mercado_pago` (endpoint fiscal MP) permanece dormente; o Mercado Pago nao tem API publica de NF-e.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
+- A API externa de producao usa somente `PRODUCTION_SYSTEM_TOKEN`; nunca aceite o token/cookie humano do admin nessa fronteira.
+- `print_jobs` permanece ativo ate auditoria, migracao e corte. Preserve `production_work_routes` para nao duplicar o mesmo pedido entre a ponte e o sistema externo.
 
 Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
 

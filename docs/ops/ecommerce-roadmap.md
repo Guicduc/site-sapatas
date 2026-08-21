@@ -29,7 +29,8 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Relatorios basicos em `/admin/relatorios`.
 - Operacao de producao, nota fiscal automatizada e expedicao em `/admin/operacao`.
 - Fluxo pos-pagamento simplificado em `Aguardando producao` -> `Produzido` -> expedicao; CAD permanece manual e fora dos estados do pedido.
-- Fila transicional duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido. Ela permanece ate existir contrato, migracao e corte idempotente para o sistema externo de producao; essa migracao ainda nao foi implementada.
+- Fila transicional duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido. Ela permanece ate existir sistema externo homologado, reconciliacao dos jobs ativos e corte idempotente; nenhuma dessas etapas operacionais foi executada.
+- Fronteira desativada por padrao para o futuro sistema externo: snapshots comprados imutaveis e minimizados, pull/ack idempotente, marcos `accepted`/`produced`/`failed`, health e roteamento exclusivo contra `print_jobs`. O sistema externo, a homologacao dos jobs ativos e o corte ainda nao foram executados.
 - Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
 - Fila PostgreSQL duravel para e-mail e NF-e pos-pagamento, com enqueue transacional no webhook, idempotencia, leases, retries e inspecao administrativa.
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
@@ -64,7 +65,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 
 ## Backlog futuro
 
-- Definir e implementar o sistema externo de producao: API autenticada/idempotente para buscar trabalho pago, execucao de CAD/Grasshopper/slice/impressao fora do site e retorno idempotente somente de marcos comerciais. Migrar ou reconciliar os jobs ativos e executar corte deterministico antes de remover a fila atual; no inicio, o operador continua registrando marcos no admin.
+- Construir e homologar o sistema externo de producao contra a API ja implementada. Auditar/migrar jobs ativos e executar o corte documentado antes de remover a fila atual; no inicio, o operador continua registrando marcos no admin.
 - Usuarios administrativos nominais, papeis e trilha de auditoria por operador.
 - Compra de etiqueta, impressao e webhooks de rastreio no Melhor Envio, depois da homologacao de cotacao. Ate la, o e-mail de pedido enviado depende da confirmacao manual de expedicao no admin.
 - Carta de correcao de NF-e por API na Focus NFe e armazenamento proprio de XML/PDF. Cancelamento e webhook de status ja estao implementados.

@@ -4,6 +4,12 @@ Este documento registra a regra operacional da fila de producao usada no admin.
 
 A direcao de longo prazo e descrita em `docs/ops/production-system-transition.md`. A fila abaixo continua sendo a ponte atual e nao deve ser tratada como a migracao para o sistema externo ja concluida.
 
+Durante a integracao, `production_work_routes` atribui cada pedido a
+`legacy_print_queue` ou `external`. A migration preserva como legados todos os
+pedidos que ja possuem `print_jobs`, o pull externo ignora esses pedidos e a
+sincronizacao do admin ignora pedidos ja roteados externamente. Nao apague essa
+decisao durante rollback.
+
 ## Objetivo
 
 Manter uma lista simples de pedidos pagos que aguardam producao. A preparacao de arquivos pode ser assistida por um worker externo, mas continua sem bloquear a fila do pedido. Ate existir contrato externo, migracao dos jobs ativos e corte idempotente, esta fila deve permanecer disponivel.

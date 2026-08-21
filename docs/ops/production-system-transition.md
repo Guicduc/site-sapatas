@@ -11,13 +11,13 @@ O site Next.js continua sendo a fonte de verdade comercial. Ele e responsavel po
 
 CAD, Grasshopper, fatiamento, jobs de impressora, leases, retries, maquinas e artefatos gerados pertencem ao sistema externo de producao. Esses dados tecnicos nao devem virar uma segunda fonte de verdade comercial nem criar estados CAD no pedido.
 
-O sistema externo devera buscar trabalho pago por uma API autenticada e idempotente. Devera reportar de volta somente marcos comerciais grossos, suficientes para o site atualizar o acompanhamento do pedido. A integracao final, incluindo contrato, autenticacao, idempotencia e formato dos eventos, ainda precisa ser definida e implementada.
+O limite de integracao do site esta implementado em `docs/ops/production-system-integration.md`: pull autenticado de trabalho pago, acknowledgement idempotente e retorno somente de `accepted`, `produced` e `failed`. O sistema externo, sua homologacao e o corte operacional ainda nao existem; a integracao fica desativada por padrao.
 
 ## Estado durante a transicao
 
 O site ja possui uma fila local `print_jobs` para gerar arquivos a partir do contrato CAD. `lib/cad-contract.js` monta o payload e participa da ingestao dessa fila; `lib/print-job-store.js` persiste snapshots, idempotencia, leases, retries, artefatos e erros. As rotas `/api/admin/print-jobs/*` sao protegidas por acesso administrativo.
 
-Essa fila e uma ponte operacional existente, nao o sistema externo acordado. Ela deve permanecer ativa ate que o contrato externo exista, os jobs ativos tenham sido migrados ou reconciliados e exista um corte idempotente com rollback operacional claro. A migracao nao esta implementada.
+Essa fila e uma ponte operacional existente, nao o sistema externo acordado. Ela deve permanecer ativa ate que o sistema externo exista, os jobs ativos tenham sido migrados ou reconciliados e exista um corte idempotente com rollback operacional claro. `production_work_routes` impede que um pedido seja roteado simultaneamente para a ponte e para o pull externo.
 
 Enquanto a ponte existir:
 
@@ -31,12 +31,12 @@ Enquanto a ponte existir:
 
 1. O site cria o pedido local, recalcula seus valores no servidor e persiste o snapshot comercial.
 2. O pagamento aprovado torna o trabalho elegivel para a API de producao.
-3. O sistema externo busca o trabalho de forma autenticada e idempotente, usando o snapshot necessario para fabricar.
+3. O sistema externo busca o trabalho pelo contrato autenticado, repete o pull ate o acknowledgement e usa apenas o snapshot comprado necessario para fabricar.
 4. O sistema externo executa CAD, Grasshopper, slice e impressao, incluindo sua propria operacao de maquinas, leases, retries e artefatos.
 5. O sistema externo envia eventos idempotentes de marcos comerciais; o site persiste apenas o estado necessario para admin e conta do cliente.
 6. No inicio, o operador continua podendo registrar esses marcos manualmente no admin para nao depender da integracao externa.
 
-O contrato de eventos deve identificar de forma estavel o pedido, o item ou lote quando necessario, o marco, o instante e uma chave de idempotencia. Nao deve aceitar que um evento tecnico interno exponha ou altere diretamente dados comerciais fora das regras do site.
+O contrato usa `workId`, `eventId`, marco e instante. O payload e allowlisted e nao aceita evento tecnico interno, texto livre de erro ou alteracao comercial fora das regras do site. `shipped` ficou fora da versao 1 para preservar as regras atuais de expedicao e notificacao.
 
 ## Corte obrigatorio
 

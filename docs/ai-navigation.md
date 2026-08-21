@@ -51,10 +51,14 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `GET/POST /api/admin/outbox`: mostra status/erros e permite retry administrativo de falhas terminais.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
 - `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
+- `GET /api/production/v1/work`: pull autenticado de snapshots pagos ainda nao reconhecidos pelo sistema externo.
+- `POST /api/production/v1/work/[id]/ack`: acknowledgement idempotente que remove o trabalho de pulls posteriores.
+- `POST /api/production/v1/milestones`: registra somente `accepted`, `produced` e `failed` no fulfillment comercial.
+- `GET /api/production/v1/health`: estado autenticado do handoff e do roteamento; usa credencial dedicada, nunca a credencial humana do admin.
 - `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
 - `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
 - `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
-- A arquitetura de transicao entre o site e um sistema externo de producao esta em `docs/ops/production-system-transition.md`; a migracao ainda nao foi implementada.
+- A arquitetura de transicao esta em `docs/ops/production-system-transition.md` e o contrato implementado em `docs/ops/production-system-integration.md`. Ele permanece desativado ate homologacao e corte deliberado; `print_jobs` continua como ponte.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
 - `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
 

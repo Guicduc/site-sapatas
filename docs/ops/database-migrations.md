@@ -33,7 +33,8 @@ migrations versionadas para alterar o banco.
 7. Verifique `/api/integrations/health` e a fila em `/api/admin/outbox`.
 
 A ordem migration antes do deploy é obrigatória porque o código publicado já
-espera `post_payment_outbox`. Rollback do aplicativo não remove migrations
+espera `post_payment_outbox` e as tabelas de roteamento/handoff de producao.
+Rollback do aplicativo não remove migrations
 aditivas nem apaga eventos pendentes.
 
 ## Migration transacional crítica
@@ -42,3 +43,12 @@ aditivas nem apaga eventos pendentes.
 duplicadas antes de criar o índice único. Ela também valida documentos antigos.
 Se houver CPF/CNPJ histórico fora do formato de 11 ou 14 dígitos, corrija esses
 dados antes de executar a migration.
+
+## Fronteira do sistema de producao
+
+`20260821_production_system_handoff.sql` cria snapshots imutaveis, estado de
+acknowledgement, eventos idempotentes e o roteamento exclusivo entre
+`print_jobs` e o sistema externo. A migration marca pedidos com jobs existentes
+ou producao manual ja iniciada como `legacy_print_queue`. Aplique-a antes de publicar o codigo, mesmo com
+`PRODUCTION_SYSTEM_MODE=disabled`, porque a sincronizacao da ponte consulta o
+roteamento duravel.
