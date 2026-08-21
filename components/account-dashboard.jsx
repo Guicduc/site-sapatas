@@ -310,7 +310,13 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
     paid: orders.filter((order) => PAID.has(order.paymentStatus)).length,
     progress: orders.filter((order) => !isFinishedOrder(order)).length
   }), [orders]);
+  const attentionOrders = orders.filter((order) => PAYMENT_ACTION_NEEDED.has(order.paymentStatus) && !isFinishedOrder(order));
   const visibleOrders = orders.filter((order) => matchesFilter(order, filter));
+
+  function showPaymentOrders() {
+    setFilter("payment");
+    window.requestAnimationFrame(() => document.getElementById("pedidos")?.scrollIntoView({ behavior: "smooth" }));
+  }
 
   async function logout() {
     if (demo) {
@@ -390,12 +396,16 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
   return (
     <section className="account-shell">
       <header className="account-heading">
-        <div>
+        <div className="account-heading__copy">
           <p className="eyebrow">Minha conta</p>
           <h1>Olá, {firstName(customer?.name) || "cliente"}.</h1>
-          <p>Aqui está o registro comercial vinculado a {email}.</p>
+          <p>Acompanhe pedidos, pagamentos e dados de entrega em um só lugar.</p>
+          <span className="account-heading__email"><small>Conta vinculada</small>{email}</span>
         </div>
-        <button className="button button-secondary" type="button" onClick={logout}>{demo ? "Limpar testes" : "Sair"}</button>
+        <div className="account-heading__actions">
+          <Link className="button button-primary" href="/catalogo">Fazer novo pedido</Link>
+          <button className="button button-secondary" type="button" onClick={logout}>{demo ? "Limpar testes" : "Sair da conta"}</button>
+        </div>
       </header>
 
       {!demo && !hasPassword && (
@@ -428,18 +438,32 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
 
       <div className="account-layout">
         <nav className="account-nav" aria-label="Seções da conta">
-          <a href="#visao-geral">Visão geral</a>
-          <a href="#pedidos">Pedidos</a>
-          <a href="#dados">Meus dados</a>
-          <a href={hasPassword ? "#seguranca" : "#criar-senha"}>Segurança</a>
-          <a href="#ajuda">Ajuda e privacidade</a>
+          <p>Seções da conta</p>
+          <a href="#visao-geral"><span>Visão geral</span><small>Resumo</small></a>
+          <a href="#pedidos"><span>Pedidos</span><small>{orders.length}</small></a>
+          <a href="#dados"><span>Meus dados</span><small>Cadastro</small></a>
+          <a href={hasPassword ? "#seguranca" : "#criar-senha"}><span>Segurança</span><small>{hasPassword ? "Senha" : "Configurar"}</small></a>
+          <a href="#ajuda"><span>Ajuda</span><small>Suporte</small></a>
         </nav>
 
         <div className="account-content">
           <section id="visao-geral" className="account-section" aria-labelledby="overview-title">
             <div className="account-section__heading">
-              <div><p className="eyebrow">Visão geral</p><h2 id="overview-title">Sua relação com a Baseforma</h2></div>
-              <Link className="button button-primary" href="/catalogo">Novo pedido</Link>
+              <div><p className="eyebrow">Visão geral</p><h2 id="overview-title">Resumo da conta</h2><p>Os números abaixo consideram todos os pedidos vinculados a este e-mail.</p></div>
+            </div>
+            <div className={`account-priority${attentionOrders.length ? " account-priority--attention" : ""}`}>
+              <div>
+                <p className="eyebrow">Próximo passo</p>
+                <h3>{getPriorityTitle(attentionOrders, summary.progress, orders.length)}</h3>
+                <p>{getPriorityDescription(attentionOrders, summary.progress, orders.length)}</p>
+              </div>
+              {attentionOrders.length > 0 ? (
+                <button className="button button-primary" type="button" onClick={showPaymentOrders}>Revisar pagamento</button>
+              ) : orders.length > 0 ? (
+                <a className="button button-secondary" href="#pedidos">Ver pedidos</a>
+              ) : (
+                <Link className="button button-primary" href="/catalogo">Começar pedido</Link>
+              )}
             </div>
             <dl className="account-metrics">
               <div><dt>Pedidos</dt><dd>{orders.length}</dd></div>
@@ -451,12 +475,14 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
 
           <section id="pedidos" className="account-section" aria-labelledby="orders-title">
             <div className="account-section__heading">
-              <div><p className="eyebrow">Pedidos</p><h2 id="orders-title">Histórico e andamento</h2></div>
-              <div className="account-filters" aria-label="Filtrar pedidos">
-                {FILTERS.map(([value, label]) => (
-                  <button key={value} type="button" className={filter === value ? "is-active" : ""} onClick={() => setFilter(value)} aria-pressed={filter === value}>{label}</button>
-                ))}
-              </div>
+              <div><p className="eyebrow">Pedidos</p><h2 id="orders-title">Histórico e andamento</h2><p>Abra um pedido para consultar medidas, entrega, pagamento e valores.</p></div>
+            </div>
+            <div className="account-filters" aria-label="Filtrar pedidos">
+              {FILTERS.map(([value, label]) => (
+                <button key={value} type="button" className={filter === value ? "is-active" : ""} onClick={() => setFilter(value)} aria-pressed={filter === value}>
+                  <span>{label}</span><small>{orders.filter((order) => matchesFilter(order, value)).length}</small>
+                </button>
+              ))}
             </div>
             {paymentError && <p className="account-alert account-alert--error" role="alert">{paymentError}</p>}
             {visibleOrders.length ? (
@@ -469,7 +495,7 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
           </section>
 
           <section id="dados" className="account-section" aria-labelledby="data-title">
-            <div className="account-section__heading"><div><p className="eyebrow">Cadastro</p><h2 id="data-title">Meus dados</h2></div></div>
+            <div className="account-section__heading"><div><p className="eyebrow">Cadastro</p><h2 id="data-title">Meus dados</h2><p>Informações recuperadas dos pedidos vinculados à conta.</p></div></div>
             <dl className="account-profile">
               <div><dt>Nome</dt><dd>{customer?.name || "Não informado"}</dd></div>
               <div><dt>E-mail da conta</dt><dd>{email}</dd></div>
@@ -482,22 +508,22 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
             <p className="account-note">Para alterar e-mail ou contato sem perder o vínculo com pedidos anteriores, fale com o atendimento.</p>
           </section>
 
-          <section id="ajuda" className="account-section" aria-labelledby="help-title">
-            <div className="account-section__heading"><div><p className="eyebrow">Suporte</p><h2 id="help-title">Ajuda e privacidade</h2></div></div>
-            <div className="account-help">
-              <div><h3>Precisa falar sobre um pedido?</h3><p>Envie o número do pedido para agilizar a análise.</p><a href={`mailto:${brand.email}?subject=Ajuda com pedido Baseforma`}>Enviar e-mail</a></div>
-              <div><h3>Seus dados</h3><p>Solicite acesso, correção ou exclusão de dados pelo canal oficial.</p><a href={`mailto:${brand.email}?subject=Privacidade e dados pessoais`}>{brand.email}</a></div>
-              <div><h3>Dúvidas frequentes</h3><p>Consulte compatibilidade, preço, prazo, material e acabamento.</p><Link href="/faq">Abrir FAQ</Link></div>
-            </div>
-          </section>
-
           {!demo && hasPassword && <section id="seguranca" className="account-section" aria-labelledby="security-title">
-            <div className="account-section__heading"><div><p className="eyebrow">Segurança</p><h2 id="security-title">Proteja o acesso à sua conta</h2></div></div>
+            <div className="account-section__heading"><div><p className="eyebrow">Segurança</p><h2 id="security-title">Acesso à conta</h2><p>Gerencie sua senha e as sessões abertas em outros dispositivos.</p></div></div>
             <form className="account-help" onSubmit={savePassword}>
               <div><h3>Alterar senha</h3><p>Use pelo menos 15 caracteres. Espaços e acentos são aceitos.</p><label className="field"><span>Nova senha</span><input type="password" minLength="15" maxLength="128" autoComplete="new-password" required value={securityPassword} onChange={(event) => setSecurityPassword(event.target.value)} /></label><button className="button button-primary" type="submit" disabled={securitySubmitting}>{securitySubmitting ? "Atualizando..." : "Atualizar senha"}</button></div>
               <div><h3>Outros dispositivos</h3><p>Encerre sessões abertas em outros navegadores.</p><button type="button" className="button button-secondary" disabled={securitySubmitting} onClick={revokeOtherSessions}>Sair dos outros dispositivos</button></div>
             </form>
           </section>}
+
+          <section id="ajuda" className="account-section" aria-labelledby="help-title">
+            <div className="account-section__heading"><div><p className="eyebrow">Suporte</p><h2 id="help-title">Ajuda e privacidade</h2><p>Escolha o canal de acordo com o assunto.</p></div></div>
+            <div className="account-help">
+              <div><small>Pedidos</small><h3>Ajuda com uma compra</h3><p>Inclua o número do pedido para agilizar a análise.</p><a href={`mailto:${brand.email}?subject=Ajuda com pedido Baseforma`}>Enviar e-mail</a></div>
+              <div><small>Privacidade</small><h3>Seus dados pessoais</h3><p>Solicite acesso, correção ou exclusão de dados pelo canal oficial.</p><a href={`mailto:${brand.email}?subject=Privacidade e dados pessoais`}>{brand.email}</a></div>
+              <div><small>Informações</small><h3>Dúvidas frequentes</h3><p>Consulte compatibilidade, preço, prazo, material e acabamento.</p><Link href="/faq">Abrir FAQ</Link></div>
+            </div>
+          </section>
         </div>
       </div>
     </section>
@@ -507,47 +533,71 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
 function OrderRow({ order, onPay }) {
   const latestPayment = order.payments?.[0];
   const payable = isPayableOrder(order.status);
+  const clientStatus = getClientOrderStatusLabel(order);
 
   return (
-    <details className="account-order">
+    <details className={`account-order account-order--${statusTone(order)}`} id={`pedido-${order.id}`}>
       <summary>
-        <span className={`status-dot status-dot--${statusTone(order)}`} aria-hidden="true" />
-        <span><strong>{order.orderNumber}</strong><small>{formatDate(order.createdAt)} · {order.items.length || "Projeto especial"} {order.items.length === 1 ? "item" : "itens"}</small></span>
-        <span className="account-order__status"><strong>{getClientOrderStatusLabel(order)}</strong><small>Pagamento {getPaymentStatusLabel(order.paymentStatus).toLowerCase()}</small></span>
-        <strong className="account-order__total">{formatCurrency(order.totalBrl)}</strong>
+        <span className="account-order__identity"><small>Pedido</small><strong>{order.orderNumber}</strong><span>{formatDate(order.createdAt)} · {formatItemCount(order)}</span></span>
+        <span className="account-order__status"><small>Situação</small><strong>{clientStatus}</strong><span>Pagamento {getPaymentStatusLabel(order.paymentStatus).toLowerCase()}</span></span>
+        <span className="account-order__total"><small>Total</small><strong>{formatCurrency(order.totalBrl)}</strong></span>
+        <span className="account-order__toggle" aria-hidden="true" />
       </summary>
       <div className="account-order__detail">
-        <div className="order-progress" aria-label={`Andamento: ${getClientOrderStatusLabel(order)}`}>
-          {buildSteps(order).map((step) => <span key={step.label} className={step.done ? "is-done" : ""}><i aria-hidden="true" />{step.label}</span>)}
-        </div>
-        <dl className="order-facts">
-          <div><dt>Pedido</dt><dd>{order.orderNumber}</dd></div>
-          <div><dt>Última atualização</dt><dd>{formatDate(order.updatedAt)}</dd></div>
-          <div><dt>Status</dt><dd>{getClientOrderStatusLabel(order)}</dd></div>
-          <div><dt>Pagamento</dt><dd>{latestPayment ? `${getPaymentStatusLabel(latestPayment.status)} · ${formatCurrency(latestPayment.amountBrl)}` : getPaymentStatusLabel(order.paymentStatus)}</dd></div>
-        </dl>
-        <div className="account-address">
-          <strong>Entrega deste pedido</strong>
-          <span>{formatAddress(order.shippingAddress) || "Endereço não registrado neste pedido."}</span>
-        </div>
-        {order.items.length > 0 && <div className="order-items">{order.items.map((item) => (
-          <article key={item.id}>
-            <div><p className="eyebrow">{item.categoryName}</p><h3>{item.formatName}</h3><code>{item.sku}</code></div>
-            <dl>{visibleItemValues(item.values).map(([key, value]) => <div key={key}><dt>{formatKey(key)}</dt><dd>{formatSpecValue(key, value)}</dd></div>)}<div><dt>Cor</dt><dd>{item.color || "Não informada"}</dd></div><div><dt>Quantidade</dt><dd>{item.quantity}</dd></div></dl>
-            <strong>{formatCurrency(item.totalPriceBrl)}</strong>
-          </article>
-        ))}</div>}
-        {order.commerce && (
-          <dl className="checkout-totals account-order__totals">
-            <div><dt>Produtos</dt><dd>{formatCurrency(order.commerce.itemsSubtotalBrl)}</dd></div>
-            <div><dt>Desconto</dt><dd>{order.commerce.discount?.applied ? `-${formatCurrency(order.commerce.discount.amountBrl)}` : formatCurrency(0)}</dd></div>
-            <div><dt>Frete</dt><dd>{formatCurrency(order.commerce.shipping?.amountBrl || 0)}</dd></div>
-            <div className="checkout-totals__total"><dt>Total</dt><dd>{formatCurrency(order.commerce.totalBrl)}</dd></div>
-          </dl>
-        )}
-        <div className="account-order__actions">
-          {payable && <button className="button button-primary" type="button" onClick={() => onPay(order.id)}>Pagar agora</button>}
-          <a className="button button-secondary" href={`mailto:${brand.email}?subject=${encodeURIComponent(`Ajuda com pedido ${order.orderNumber}`)}`}>Ajuda por e-mail</a>
+        <section className="account-order__tracking" aria-labelledby={`tracking-${order.id}`}>
+          <div className="account-order__block-heading"><div><p className="eyebrow">Acompanhamento</p><h3 id={`tracking-${order.id}`}>{clientStatus}</h3></div><small>Atualizado em {formatDate(order.updatedAt)}</small></div>
+          <div className="order-progress" aria-label={`Andamento: ${clientStatus}`}>
+            {buildSteps(order).map((step) => <span key={step.label} className={step.done ? "is-done" : ""}><i aria-hidden="true" />{step.label}</span>)}
+          </div>
+        </section>
+
+        <div className="account-order__columns">
+          <div className="account-order__main">
+            <section className="account-order__block" aria-labelledby={`items-${order.id}`}>
+              <div className="account-order__block-heading"><div><p className="eyebrow">Especificações</p><h3 id={`items-${order.id}`}>Itens do pedido</h3></div><small>{formatItemCount(order)}</small></div>
+              {order.items.length > 0 ? <div className="order-items">{order.items.map((item) => (
+                <article key={item.id}>
+                  <div className="order-item__identity"><p>{item.categoryName}</p><h4>{item.formatName}</h4><code>{item.sku}</code></div>
+                  <dl>{visibleItemValues(item.values).map(([key, value]) => <div key={key}><dt>{formatKey(key)}</dt><dd>{formatSpecValue(key, value)}</dd></div>)}<div><dt>Cor</dt><dd>{item.color || "Não informada"}</dd></div><div><dt>Quantidade</dt><dd>{item.quantity}</dd></div></dl>
+                  <strong className="order-item__price">{formatCurrency(item.totalPriceBrl)}</strong>
+                </article>
+              ))}</div> : <p className="account-note">As especificações deste projeto especial são acompanhadas pelo atendimento.</p>}
+            </section>
+          </div>
+
+          <aside className="account-order__sidebar" aria-label={`Resumo do pedido ${order.orderNumber}`}>
+            {payable && <div className="account-order__payment-action"><p className="eyebrow">Ação necessária</p><h3>Pagamento pendente</h3><p>Conclua o pagamento para liberar as próximas etapas do pedido.</p><button className="button button-primary" type="button" onClick={() => onPay(order.id)}>Pagar agora</button></div>}
+
+            <section className="account-order__block" aria-labelledby={`payment-${order.id}`}>
+              <div className="account-order__block-heading"><h3 id={`payment-${order.id}`}>Pagamento</h3><span className={`account-status account-status--${statusTone(order)}`}>{getPaymentStatusLabel(order.paymentStatus)}</span></div>
+              <dl className="account-order__facts">
+                <div><dt>Situação</dt><dd>{getPaymentStatusLabel(order.paymentStatus)}</dd></div>
+                <div><dt>Valor</dt><dd>{latestPayment ? formatCurrency(latestPayment.amountBrl) : formatCurrency(order.totalBrl)}</dd></div>
+              </dl>
+            </section>
+
+            <section className="account-order__block" aria-labelledby={`delivery-${order.id}`}>
+              <div className="account-order__block-heading"><h3 id={`delivery-${order.id}`}>Entrega</h3><span className="account-status">{order.fulfillment?.shipment?.label || "Aguardando"}</span></div>
+              <p className="account-order__address">{formatAddress(order.shippingAddress) || "Endereço não registrado neste pedido."}</p>
+              {order.fulfillment?.shipment?.carrier && <dl className="account-order__facts"><div><dt>Transportadora</dt><dd>{order.fulfillment.shipment.carrier}</dd></div>{order.fulfillment.shipment.trackingCode && <div><dt>Rastreio</dt><dd>{order.fulfillment.shipment.trackingCode}</dd></div>}</dl>}
+            </section>
+
+            {order.commerce && (
+              <section className="account-order__block" aria-labelledby={`totals-${order.id}`}>
+                <h3 id={`totals-${order.id}`}>Resumo de valores</h3>
+                <dl className="checkout-totals account-order__totals">
+                  <div><dt>Produtos</dt><dd>{formatCurrency(order.commerce.itemsSubtotalBrl)}</dd></div>
+                  <div><dt>Desconto</dt><dd>{order.commerce.discount?.applied ? `-${formatCurrency(order.commerce.discount.amountBrl)}` : formatCurrency(0)}</dd></div>
+                  <div><dt>Frete</dt><dd>{formatCurrency(order.commerce.shipping?.amountBrl || 0)}</dd></div>
+                  <div className="checkout-totals__total"><dt>Total</dt><dd>{formatCurrency(order.commerce.totalBrl)}</dd></div>
+                </dl>
+              </section>
+            )}
+
+            <div className="account-order__actions">
+              <a className="button button-secondary" href={`mailto:${brand.email}?subject=${encodeURIComponent(`Ajuda com pedido ${order.orderNumber}`)}`}>Pedir ajuda</a>
+            </div>
+          </aside>
         </div>
       </div>
     </details>
@@ -583,6 +633,27 @@ function buildSteps(order) {
 
 function isFinishedOrder(order) {
   return FINISHED.has(order.status) || SHIPMENT_DONE.has(order.fulfillment?.shipment?.status);
+}
+
+function getPriorityTitle(attentionOrders, progressCount, orderCount) {
+  if (attentionOrders.length === 1) return `${attentionOrders[0].orderNumber} aguarda pagamento`;
+  if (attentionOrders.length > 1) return `${attentionOrders.length} pedidos aguardam pagamento`;
+  if (progressCount === 1) return "1 pedido está em andamento";
+  if (progressCount > 1) return `${progressCount} pedidos estão em andamento`;
+  if (orderCount > 0) return "Nenhuma ação pendente";
+  return "Sua conta está pronta";
+}
+
+function getPriorityDescription(attentionOrders, progressCount, orderCount) {
+  if (attentionOrders.length > 0) return "Revise a situação e conclua o pagamento para o pedido seguir para produção.";
+  if (progressCount > 0) return "A produção e a entrega seguem o andamento indicado em cada pedido.";
+  if (orderCount > 0) return "Seus pedidos anteriores continuam disponíveis para consulta e recompra.";
+  return "Configure seu primeiro produto para iniciar um pedido.";
+}
+
+function formatItemCount(order) {
+  if (!order.items.length) return "Projeto especial";
+  return `${order.items.length} ${order.items.length === 1 ? "item" : "itens"}`;
 }
 
 function getClientOrderStatusLabel(order) {
