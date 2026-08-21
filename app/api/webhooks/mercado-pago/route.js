@@ -7,13 +7,14 @@ import {
   verifyMercadoPagoSignature
 } from "@/lib/mercado-pago";
 import { persistAndDispatchMercadoPagoUpdate } from "@/lib/post-payment-dispatch";
+import { parseMercadoPagoWebhookPayload } from "@/lib/commercial-contracts";
 
 export async function POST(request) {
   let payload;
   const requestUrl = new URL(request.url);
 
   try {
-    payload = await request.json();
+    payload = parseMercadoPagoWebhookPayload(await request.json());
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
