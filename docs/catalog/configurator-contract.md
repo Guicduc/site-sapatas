@@ -51,7 +51,7 @@ Tipos suportados inicialmente:
 
 Cada parametro dimensional deve possuir `role`. O papel descreve significado geometrico sem acoplar a interface ao nome do slider. Chaves continuam estaveis porque integram SKU, dataset e Grasshopper.
 
-Ao selecionar polegadas, o configurador apresenta e edita as medidas como fracoes binarias em passos de 1/16 de polegada. A interface reduz a fracao para a forma usual, por exemplo `1/4`, `3/8`, `7/16` ou `1 1/4`. O slider, o teclado e a entrada manual seguem o mesmo passo. Os limites exibidos usam a primeira e a ultima fracao de 1/16 contidas no intervalo fabricavel. Valores internos, SKU, precificacao, carrinho, pedido e contrato CAD continuam em milimetros.
+Ao selecionar polegadas, o configurador apresenta e edita as medidas como fracoes binarias em passos de 1/16 de polegada. A interface reduz a fracao para a forma usual, por exemplo `1/4`, `3/8`, `7/16` ou `1 1/4`. O slider, o teclado e a entrada manual seguem o mesmo passo. Os limites exibidos usam a primeira e a ultima fracao de 1/16 contidas no intervalo fabricavel. Ao retornar para milimetros, a interface exibe no maximo uma casa decimal. Valores internos, SKU, precificacao, carrinho, pedido e contrato CAD continuam em milimetros com a precisao original.
 
 Parametros condicionais usam `dependsOn`. Quando a condicao estiver inativa, o parametro:
 

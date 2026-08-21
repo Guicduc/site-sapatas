@@ -5,6 +5,7 @@ import {
   INCH_FRACTION_DENOMINATOR,
   INCH_FRACTION_STEP,
   MEASUREMENT_SYSTEMS,
+  MILLIMETER_DECIMAL_PLACES,
   formatMeasurement,
   formatMeasurementValue,
   getCanonicalMeasurementRange,
@@ -42,6 +43,14 @@ test("aceita fracoes e equivalentes decimais alinhados ao passo imperial", () =>
   assert.equal(normalizeMeasurementInput("1,25", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "31.75");
   assert.equal(normalizeMeasurementInput("1 1/4", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "31.75");
   assert.equal(normalizeMeasurementInput("7/16", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "11.1125");
+});
+
+test("limita a apresentacao em milimetros a uma casa decimal", () => {
+  assert.equal(MILLIMETER_DECIMAL_PLACES, 1);
+  assert.equal(toDisplayMeasurement(31.75, "mm", MEASUREMENT_SYSTEMS.METRIC), 31.8);
+  assert.equal(formatMeasurementValue(31.75, "mm", MEASUREMENT_SYSTEMS.METRIC), "31.8");
+  assert.equal(formatMeasurementValue(50, "mm", MEASUREMENT_SYSTEMS.METRIC), "50");
+  assert.equal(formatMeasurement(28.575, "mm", MEASUREMENT_SYSTEMS.METRIC), "28.6 mm");
 });
 
 test("usa somente fracoes de 1/16 contidas nos limites fabricaveis", () => {
@@ -85,7 +94,7 @@ test("slider imperial encaixa e avanca no proximo dezesseis avos", () => {
 });
 
 test("alternancia repetida muda somente a apresentacao", () => {
-  const canonicalValues = Object.freeze({ diametro: 31.8, alturaBase: 6 });
+  const canonicalValues = Object.freeze({ diametro: 31.75, alturaBase: 6 });
   let system = MEASUREMENT_SYSTEMS.METRIC;
 
   for (let index = 0; index < 100; index += 1) {
@@ -99,7 +108,8 @@ test("alternancia repetida muda somente a apresentacao", () => {
   }
 
   assert.equal(system, MEASUREMENT_SYSTEMS.METRIC);
-  assert.deepEqual(canonicalValues, { diametro: 31.8, alturaBase: 6 });
+  assert.equal(formatMeasurementValue(canonicalValues.diametro, "mm", system), "31.8");
+  assert.deepEqual(canonicalValues, { diametro: 31.75, alturaBase: 6 });
 });
 
 test("payload do pedido conserva medidas canonicas e remove estado de apresentacao", () => {
