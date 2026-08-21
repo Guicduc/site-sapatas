@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   fetchMercadoPagoPayment,
+  isMercadoPagoWebhookConfigured,
   mapMercadoPagoPaymentStatus,
   verifyMercadoPagoSignature
 } from "@/lib/mercado-pago";
@@ -108,7 +109,11 @@ export async function POST(request) {
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, provider: "mercado_pago" });
+  const configured = isMercadoPagoWebhookConfigured();
+  return NextResponse.json(
+    { ok: configured, provider: "mercado_pago", signatureConfigured: configured },
+    { status: configured ? 200 : 503 }
+  );
 }
 
 function normalizeLocalStatus(status) {

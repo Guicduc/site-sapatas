@@ -159,6 +159,14 @@ create table if not exists account_rate_limits (
 );
 create index if not exists account_rate_limits_window_idx on account_rate_limits(window_started_at);
 
+-- Limite duravel para endpoints anonimos, usando somente hash do cliente.
+create table if not exists request_rate_limits (
+  key text primary key,
+  window_started_at timestamptz not null,
+  attempts integer not null default 0
+);
+create index if not exists request_rate_limits_window_idx on request_rate_limits(window_started_at);
+
 -- Fulfillment operacional fica em orders.metadata->'fulfillment'.
 -- Estrutura atual:
 -- {
