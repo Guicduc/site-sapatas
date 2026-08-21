@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { FamilyCard } from "@/components/family-card";
 import { StructuredData } from "@/components/structured-data";
-import { buildWhatsAppUrl, formatCurrency } from "@/lib/format";
+import { buildMailtoUrl, formatCurrency } from "@/lib/format";
 import {
   brand,
   colorMap,
@@ -42,7 +42,8 @@ export default async function FamilyPage({ params }) {
   }
 
   const relatedFamilies = getRelatedFamilies(family.slug);
-  const whatsappMessage = `Oi, quero comprar a família ${family.name} e confirmar a melhor variante para o meu projeto.`;
+  const contactSubject = `Família ${family.name}: confirmar variante`;
+  const contactBody = `Olá, quero comprar a família ${family.name} e confirmar a melhor variante para o meu projeto.`;
 
   return (
     <>
@@ -173,11 +174,9 @@ export default async function FamilyPage({ params }) {
               ) : (
                 <a
                   className="button button-primary button-block"
-                  href={buildWhatsAppUrl(brand.whatsappNumber, whatsappMessage)}
-                  rel="noreferrer"
-                  target="_blank"
+                  href={buildMailtoUrl(brand.email, contactSubject, contactBody)}
                 >
-                  Confirmar a variante por WhatsApp
+                  Confirmar a variante por e-mail
                 </a>
               )}
               <Link

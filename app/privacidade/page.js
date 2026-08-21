@@ -144,9 +144,9 @@ export default function PrivacyPage() {
             carregados como pixels ou scripts de publicidade nas páginas.
           </p>
           <p>
-            Links para WhatsApp e o checkout do Mercado Pago só abrem quando você escolhe essas
-            ações. As respectivas plataformas passam a aplicar suas próprias políticas quando
-            você as acessa.
+            O checkout do Mercado Pago só abre quando você escolhe pagar. A partir daí, aquela
+            plataforma passa a aplicar as próprias políticas. Os demais contatos do site usam
+            e-mail, sem script de terceiros carregado na página.
           </p>
         </div>
       </section>

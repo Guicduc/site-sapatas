@@ -11,6 +11,8 @@ export default function sitemap() {
     "/processo",
     "/projeto-especial",
     "/faq",
+    "/termos",
+    "/trocas",
     "/privacidade"
   ].map((path) => ({
     url: `${siteUrl}${path}`,

@@ -48,7 +48,7 @@ const faqSections = [
       {
         question: "O pedido já sai com nota fiscal?",
         answer:
-          "A nota fiscal é emitida após a aprovação do pagamento. Confira os dados de faturamento no pedido para evitar pendências antes do envio."
+          "Sim. A nota fiscal eletrônica é emitida automaticamente depois que o pagamento é aprovado, com os dados informados no pedido. Por isso o checkout exige CPF ou CNPJ: dados incorretos geram pendência fiscal antes da expedição."
       }
     ]
   },
@@ -88,6 +88,33 @@ const faqSections = [
         question: "Quando devo abrir um projeto especial?",
         answer:
           "Abra projeto especial quando a medida passar da faixa publicada, a geometria não existir no catálogo ou a aplicação tiver carga, exposição ou tolerância crítica."
+      }
+    ]
+  },
+  {
+    id: "pos-compra",
+    eyebrow: "Depois da compra",
+    title: "Cancelamento, devolução e garantia",
+    description:
+      "Peças sob medida também têm direito de arrependimento. As regras completas ficam nas páginas de condições de venda e de trocas.",
+    items: [
+      {
+        question: "Posso cancelar o pedido?",
+        answer:
+          "Sem custo enquanto o pagamento não for aprovado. Depois da aprovação a produção começa e a peça passa a ser feita para o seu pedido, então o cancelamento antes da expedição depende do estágio da produção. Peça por e-mail o quanto antes, com o número do pedido.",
+        link: { href: "/trocas", label: "Ver política de cancelamento" }
+      },
+      {
+        question: "Posso devolver se eu desistir da compra?",
+        answer:
+          "Sim. Por ser compra a distância, você tem 7 dias corridos após o recebimento para desistir sem justificar, inclusive em itens configurados sob medida. A devolução do valor pago inclui o frete do pedido, e o custo do envio de retorno é da Baseforma.",
+        link: { href: "/trocas", label: "Como solicitar a devolução" }
+      },
+      {
+        question: "E se a peça chegar diferente ou com defeito?",
+        answer:
+          "Se a peça não corresponder ao pedido, a troca é feita sem custo. Para vício aparente, o prazo de reclamação é de 90 dias após o recebimento e a Baseforma tem até 30 dias para sanar o problema. Peça diferente do esperado por medida informada errada não é defeito, mas ainda cabe no prazo de 7 dias.",
+        link: { href: "/trocas", label: "Trocas e devoluções" }
       }
     ]
   }
@@ -164,6 +191,11 @@ export default function FaqPage() {
                   <details key={item.question} open={sectionIndex === 0 && index === 0}>
                     <summary>{item.question}</summary>
                     <p>{item.answer}</p>
+                    {item.link ? (
+                      <Link className="faq-routing__link" href={item.link.href}>
+                        {item.link.label}
+                      </Link>
+                    ) : null}
                   </details>
                 ))}
               </div>
