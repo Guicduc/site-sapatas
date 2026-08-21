@@ -14,6 +14,7 @@ const MeasurementSystemContext = createContext(MEASUREMENT_SYSTEMS.METRIC);
 
 const geometryRenderers = Object.freeze({
   "tube-round": TubeRound,
+  "tube-round-spherical": TubeRoundSpherical,
   "tube-rect": TubeRect,
   "tube-oblong": TubeOblong,
   "base-round": BaseRound,
@@ -146,6 +147,82 @@ function TubeRound({ format, values, activeKey, onSelect }) {
       <Dimension x1={baseLeft - 48} y1={neckTopY} x2={baseLeft - 48} y2={baseTopY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={baseLeft - 48} y1={baseTopY} x2={baseLeft - 48} y2={baseBottomY} label={`${baseHeightValue} mm`} paramKey="alturaBase" activeKey={activeKey} onSelect={onSelect} />
       <Dimension x1={neckRight} y1={neckTopY - 22} x2={neckRight + wall} y2={neckTopY - 22} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
+    </>
+  );
+}
+
+function TubeRoundSpherical({ format, values, activeKey, onSelect }) {
+  const diameterValue = Number(values.diametroBase || 28.9);
+  const wallValue = Number(values.paredeTubo || 2);
+  const neckHeightValue = Number(values.alturaPescoco || 17);
+  const diameter = scaleRangeDimension(diameterValue, {
+    maxValue: parameterMax(format, "diametroBase", 150),
+    maxSize: 230,
+    minSize: 32,
+    readableCurve: 40
+  });
+  const sectionScale = diameter / Math.max(diameterValue, 0.1);
+  const wall = clamp(wallValue * sectionScale, 4, Math.max(4, diameter * 0.22));
+  const innerDiameter = Math.max(10, diameter - wall * 2);
+  const neckHeight = clamp(neckHeightValue * 2.8, 32, 98);
+  const ribOutset = clamp(diameter * 0.045, 4, 7);
+  const ribHeight = clamp(diameter * 0.035, 5, 8);
+  const topCx = 360;
+  const topCy = topViewY;
+  const frontCx = 360;
+  const radius = diameter / 2;
+  const sphereBottomY = baseBottomY;
+  const sphereEquatorY = sphereBottomY - radius;
+  const neckTopY = sphereEquatorY - neckHeight;
+  const neckLeft = frontCx - innerDiameter / 2;
+  const neckRight = frontCx + innerDiameter / 2;
+  const innerWall = Math.max(4, wall * 0.72);
+  const innerLeft = neckLeft + innerWall;
+  const innerRight = neckRight - innerWall;
+  const ribCount = 3;
+  const ribGap = neckHeight / (ribCount + 1);
+
+  return (
+    <>
+      <ViewTitle x={viewLabelX} y={topCy - 8} lines={["Vista", "superior"]} />
+      <ViewTitle x={viewLabelX} y={sphereBottomY + 20} lines={["Corte", "A-A"]} />
+
+      <line className="technical-centerline" x1={topCx} x2={topCx} y1={topCy - radius - 20} y2={topCy + radius + 20} />
+      <line className="technical-centerline" x1={topCx - radius - 20} x2={topCx + radius + 20} y1={topCy} y2={topCy} />
+      <circle className="part" cx={topCx} cy={topCy} r={radius} />
+      <circle className="part muted" cx={topCx} cy={topCy} r={innerDiameter / 2} />
+      <circle className="void" cx={topCx} cy={topCy} r={Math.max(3, innerDiameter / 2 - innerWall)} />
+      <Dimension x1={topCx - radius} y1={topCy - radius - 28} x2={topCx + radius} y2={topCy - radius - 28} label={`${diameterValue} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={topCx + innerDiameter / 2} y1={topCy + 18} x2={topCx + radius} y2={topCy + 18} label={`${wallValue} mm`} paramKey="paredeTubo" activeKey={activeKey} onSelect={onSelect} />
+
+      <line className="technical-centerline" x1={frontCx} x2={frontCx} y1={neckTopY - 20} y2={sphereBottomY + 18} />
+      <path
+        className="part muted"
+        d={`M ${frontCx - radius} ${sphereEquatorY} A ${radius} ${radius} 0 0 0 ${frontCx + radius} ${sphereEquatorY} Z`}
+      />
+      <path
+        className="section-hatch-fill"
+        d={`M ${neckLeft} ${neckTopY} H ${innerLeft} V ${sphereEquatorY} H ${neckLeft} Z
+            M ${innerRight} ${neckTopY} H ${neckRight} V ${sphereEquatorY} H ${innerRight} Z`}
+      />
+      <rect className="void" x={innerLeft} y={neckTopY} width={Math.max(2, innerRight - innerLeft)} height={neckHeight} />
+      {Array.from({ length: ribCount }, (_, index) => {
+        const ribY = neckTopY + ribGap * (index + 1);
+        return (
+          <rect
+            className="part muted"
+            key={ribY}
+            x={neckLeft - ribOutset}
+            y={ribY - ribHeight / 2}
+            width={innerDiameter + ribOutset * 2}
+            height={ribHeight}
+            rx={ribHeight / 2}
+          />
+        );
+      })}
+      <line className="technical-outline-heavy" x1={frontCx - radius} x2={frontCx + radius} y1={sphereEquatorY} y2={sphereEquatorY} />
+      <Dimension x1={frontCx - radius} y1={sphereBottomY + 28} x2={frontCx + radius} y2={sphereBottomY + 28} label={`${diameterValue} mm`} paramKey="diametroBase" activeKey={activeKey} onSelect={onSelect} />
+      <Dimension x1={frontCx - radius - 48} y1={neckTopY} x2={frontCx - radius - 48} y2={sphereEquatorY} label={`${neckHeightValue} mm`} paramKey="alturaPescoco" activeKey={activeKey} onSelect={onSelect} />
     </>
   );
 }

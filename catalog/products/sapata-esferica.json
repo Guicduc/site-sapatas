@@ -1,0 +1,73 @@
+{
+  "productId": "sapata-esferica",
+  "status": "active",
+  "name": "Sapata esférica",
+  "description": "Para tubos redondos que precisam de apoio esférico e encaixe interno por pressão.",
+  "category": { "slug": "sapata-esferica", "formatSlug": "esferica" },
+  "seo": { "familySlug": "sapata-esferica" },
+  "skuPrefix": "BF-ES-PI",
+  "sku": {
+    "versionMarker": "V2",
+    "parameterOrder": ["diametroBase", "paredeTubo", "alturaPescoco"],
+    "parameterCodes": {
+      "diametroBase": "DB",
+      "paredeTubo": "PT",
+      "alturaPescoco": "AP"
+    },
+    "colorCodes": { "Preto": "PR", "Branco": "BR", "Cinza": "CZ", "Marrom": "MR" }
+  },
+  "material": "TPU",
+  "colors": ["Preto", "Branco", "Cinza", "Marrom"],
+  "finishes": [],
+  "leadTimeBaseDays": 5,
+  "generationMode": "local_manual",
+  "manufacturing": {
+    "tubeInnerSpan": {
+      "sizeKeys": ["diametroBase"],
+      "sizeOffsetsMm": {},
+      "wallThicknessKey": "paredeTubo",
+      "minimumMm": 5
+    }
+  },
+  "drawingType": "tube-round-spherical",
+  "ui": {
+    "fixation": "press-fit interno",
+    "summaryName": "Sapata esférica",
+    "applications": ["cadeiras tubulares", "mesas", "estruturas metálicas", "reposição"]
+  },
+  "visuals": [
+    { "role": "family", "src": "/products/final/sapata-esferica-family.png", "alt": "Família de sapatas esféricas para tubos redondos em diferentes medidas e cores" },
+    { "role": "product", "variantId": "padrao", "src": "/products/final/sapata-esferica-product.png", "alt": "Sapata esférica preta para tubo redondo em vista de produto final" },
+    { "role": "manual", "src": "/products/final/sapata-esferica-manual.png", "alt": "Sequência de instalação da sapata esférica por encaixe em tubo redondo" },
+    { "role": "usage", "src": "/products/final/sapata-esferica-uso.png", "alt": "Sapata esférica aplicada na extremidade de uma estrutura tubular" }
+  ],
+  "notes": ["Informe o diâmetro externo e a parede real do tubo; a esfera acompanha o diâmetro externo."],
+  "parameters": [
+    { "key": "diametroBase", "label": "Diâmetro externo do tubo (Ø)", "type": "dimension", "unit": "mm", "min": 20, "max": 75, "step": 0.1, "default": 28.9, "role": "primary-width" },
+    { "key": "paredeTubo", "label": "Parede do tubo", "type": "dimension", "unit": "mm", "min": 0.8, "max": 6, "step": 0.1, "default": 2, "role": "wall-thickness" },
+    { "key": "alturaPescoco", "label": "Altura de encaixe", "type": "dimension", "unit": "mm", "min": 17, "max": 35, "step": 1, "default": 17, "role": "neck-height" }
+  ],
+  "variants": [
+    {
+      "id": "padrao",
+      "code": "PD",
+      "public": true,
+      "cad": {
+        "script": "Produtos/Scripts-GH/Sapata_Esferica.gh",
+        "modelVersion": "tube-round-spherical-gh-v1",
+        "sliderOrder": ["diametroBase", "paredeTubo", "alturaPescoco"],
+        "technicalDefaults": {
+          "ringThicknessMm": 1.5,
+          "ringDivisionCount": 6,
+          "pointDisplaySize": 2,
+          "meshToleranceMm": 0.15
+        }
+      },
+      "pricing": {
+        "surfaceId": "sapata-esferica:esferica:padrao",
+        "strategy": "sliced_dataset",
+        "saleMultiplier": 2.5
+      }
+    }
+  ]
+}

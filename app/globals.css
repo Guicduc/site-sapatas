@@ -1887,7 +1887,7 @@ textarea {
 
 .quantity-stepper {
   display: grid;
-  grid-template-columns: 40px minmax(54px, 1fr) 40px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
   width: 152px;
   padding: 3px;
@@ -6797,27 +6797,23 @@ summary {
 }
 
 @media (min-width: 981px) {
-  .configurator-order-slot.is-docked {
-    min-height: var(--configurator-order-height, 0);
-  }
-
   .configurator-side {
-    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.7fr);
-    gap: 14px;
+    grid-template-columns: minmax(408px, 0.95fr) minmax(0, 1.45fr);
+    gap: 16px;
     align-items: center;
     margin-top: 12px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     border: 0;
     border-radius: var(--radius);
     background: oklch(0.945 0.018 170);
   }
 
   .configurator-side .option-panel {
-    grid-template-columns: minmax(110px, 0.8fr) minmax(130px, 1.1fr);
+    grid-template-columns: minmax(120px, 0.72fr) minmax(220px, 1.28fr);
     align-items: center;
-    gap: 8px 14px;
+    gap: 12px;
     min-width: 0;
-    padding-right: 14px;
+    padding-right: 16px;
   }
 
   .configurator-side .option-panel > .eyebrow {
@@ -6825,8 +6821,10 @@ summary {
   }
 
   .configurator-side .color-field {
-    grid-template-columns: auto 46px minmax(0, 1fr);
+    grid-column: auto;
+    grid-template-columns: auto 44px minmax(0, 1fr);
     gap: 6px;
+    align-items: center;
   }
 
   .configurator-side .color-field__value {
@@ -6837,25 +6835,20 @@ summary {
 
   .configurator-side .option-panel .quantity-field {
     grid-column: auto;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(128px, 1fr);
     gap: 8px;
+    align-items: center;
   }
 
   .configurator-side .quantity-stepper {
-    grid-template-columns: 34px minmax(48px, 1fr) 34px;
-    width: min(132px, 100%);
+    width: min(144px, 100%);
     min-width: 0;
-    padding: 2px;
-  }
-
-  .configurator-side .quantity-stepper button,
-  .configurator-side .quantity-stepper input {
-    min-height: 34px;
   }
 
   .configurator-side .summary-panel {
-    grid-template-columns: minmax(110px, 0.72fr) minmax(150px, 1fr) minmax(150px, auto);
-    gap: 8px 14px;
+    grid-template-columns: minmax(110px, 0.72fr) minmax(170px, 1fr) minmax(170px, auto);
+    align-items: center;
+    gap: 12px;
     min-width: 0;
   }
 
@@ -6864,31 +6857,33 @@ summary {
     min-width: 0;
   }
 
-  .configurator-side .summary-heading h2,
-  .configurator-side .summary-heading > span {
-    overflow-wrap: anywhere;
-  }
-
   .configurator-side .summary-heading h2 {
     font-size: 0.98rem;
-  }
-
-  .configurator-side .summary-heading > span {
-    font-size: 0.7rem;
   }
 
   .configurator-side .summary-panel .summary-stats {
     grid-column: 2;
     grid-row: 1;
+    grid-template-columns: repeat(2, minmax(76px, 1fr));
     gap: 10px;
+    border-top: 0;
+  }
+
+  .configurator-side .summary-panel .summary-stats article {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .configurator-side .summary-panel .summary-stats article:first-child {
+    grid-column: auto;
   }
 
   .configurator-side .summary-panel .button-block,
   .configurator-side .summary-panel .button-secondary {
     grid-column: 3;
     width: auto;
-    min-width: min(100%, 190px);
-    min-height: 40px;
+    min-width: min(100%, 180px);
+    min-height: 44px;
     justify-self: end;
     padding-inline: 16px;
   }
@@ -6899,17 +6894,5 @@ summary {
 
   .configurator-side .summary-panel .button-secondary {
     grid-row: 2;
-  }
-
-  .configurator-order-slot.is-docked .configurator-side {
-    position: fixed;
-    right: auto;
-    bottom: 12px;
-    left: 50%;
-    z-index: 30;
-    width: min(var(--content), calc(100vw - 24px));
-    margin: 0;
-    box-shadow: 0 -10px 30px rgba(24, 28, 29, 0.14);
-    transform: translateX(-50%);
   }
 }
