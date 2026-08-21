@@ -1,0 +1,13 @@
+import type { ImmutableOrderSnapshot, ProductionAcknowledgementInput, ProductionMilestone, ProductionMilestoneInput, ProductionStatus } from "./commercial-contract-types.js";
+export const PRODUCTION_HANDOFF_SCHEMA_VERSION: 1;
+export const PRODUCTION_MILESTONE: Readonly<Record<string, ProductionMilestone>>;
+export const PRODUCTION_FAILURE_REASON: Readonly<Record<string, string>>;
+export function buildProductionWorkSnapshot(order: unknown, workId?: string): ImmutableOrderSnapshot;
+export function isProductionEligibleOrder(order: unknown): boolean;
+export function buildProductionWorkId(orderId: unknown): string;
+export function normalizeAcknowledgementInput(input?: Partial<ProductionAcknowledgementInput>): Required<ProductionAcknowledgementInput>;
+export function normalizeProductionMilestoneInput(input?: Partial<ProductionMilestoneInput>): { workId: string; eventId: string; milestone: ProductionMilestone; occurredAt: string; failureReason: string };
+export function resolveProductionMilestoneTransition(currentStatus: ProductionStatus, milestone: ProductionMilestone): { status: ProductionStatus; changed: boolean };
+export function buildMilestoneFulfillmentPatch(input: { milestone: ProductionMilestone }, transition: { status: ProductionStatus }): { eventType: string; production: { status: ProductionStatus } };
+export function hashCanonical(value: unknown): string;
+export function productionHandoffError(code: string, message: string): Error & { code: string };
