@@ -52,12 +52,15 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
 - `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
 - `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
+- A arquitetura de transicao entre o site e um sistema externo de producao esta em `docs/ops/production-system-transition.md`; a migracao ainda nao foi implementada.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
 - `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
 
 ## Dados de catalogo
 
 O ponto principal e `catalog/products/*.json`, carregado por `lib/product-registry.js`.
+
+O registry e manualmente curado: os manifests sao imports explicitos e ordenados em `lib/product-registry.js`. Ao adicionar produto, atualize o manifest, o registry e o conteudo editorial relacionado; nao existe descoberta automatica de manifests.
 
 - `catalog/categories.json`: metadados e ordem das categorias.
 - `productCategories`: projecao serializavel exibida no catalogo e no configurador.
@@ -88,13 +91,7 @@ Use `lib/site-data.js` para conteudo editorial e SEO:
 
 O FAQ publicado vive em `app/faq/page.js` (conteudo local a pagina), nao em `lib/site-data.js`.
 
-As familias atuais publicadas sao:
-
-- `sapata-tubo-redondo`
-- `sapata-tubo-quadrado`
-- `sapata-tubo-oblongo`
-- `sapata-lisa-redonda`
-- `sapata-lisa-quadrada`
+O total de familias/produtos ativos deve ser derivado dos manifests ativos em `catalog/products/`, e nao hard-coded neste mapa. As paginas editoriais em `lib/site-data.js` continuam sendo responsabilidade manual e precisam ser revisadas quando um manifest novo ou alterado muda a cobertura publica.
 
 ## Componentes centrais
 
@@ -129,6 +126,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `docs/ops/production-system-transition.md`: limite de responsabilidade, fluxo alvo e criterios de corte para o sistema externo de producao.
 - `lib/print-job.js` e `lib/print-job-store.js`: contrato, idempotencia, persistencia, lease, artefatos e retries dos jobs de geracao de arquivos.
 - `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
@@ -140,7 +138,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - O schema SQL tambem esta documentado em `docs/ops/database.sql`.
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
 - A conta usa OTP por e-mail e senha opcional. O cookie HttpOnly contem um token opaco aleatorio; somente o hash e persistido em `customer_account_sessions`. Pedidos verificados ficam associados a `customer_accounts`, e a primeira entrada migra os pedidos que ja tinham sido confirmados no fluxo anterior. O acesso temporario pos-checkout continua limitado ao pedido recem-criado.
-- `lib/cad-contract.js` descreve os modelos e monta o payload manual do Grasshopper, mas nao participa de status, fila ou bloqueio operacional.
+- `lib/cad-contract.js` resolve o contrato CAD, monta o payload manual exibido no admin e participa da ingestao idempotente de `print_jobs`; o job continua separado dos status e bloqueios comerciais do pedido.
 
 ## Pagamento
 
