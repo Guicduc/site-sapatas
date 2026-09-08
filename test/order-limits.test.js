@@ -4,11 +4,19 @@ import test from "node:test";
 import {
   assertOrderPayloadLimits,
   assertShippingPayloadLimits,
+  getAnonymousOrderRateLimitKey,
   MAX_ORDER_BODY_BYTES,
   MAX_ORDER_ITEMS,
   parseLimitedJsonRequest
 } from "../lib/order-limits.js";
 import { normalizeShippingItems } from "../lib/shipping.js";
+
+test("trocar User-Agent nao reinicia o limite de pedidos do mesmo IP", () => {
+  const request = (userAgent) => new Request("https://example.com/api/orders", {
+    headers: { "x-vercel-forwarded-for": "192.0.2.1", "user-agent": userAgent }
+  });
+  assert.equal(getAnonymousOrderRateLimitKey(request("first")), getAnonymousOrderRateLimitKey(request("second")));
+});
 
 test("rejeita corpo acima de 64 KB pelo header e pelo conteúdo real", async () => {
   const declared = new Request("https://example.com/api/orders", {
