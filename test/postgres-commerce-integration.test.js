@@ -9,7 +9,7 @@ import {
   getOrderById,
   recordMercadoPagoUpdate
 } from "../lib/order-store.js";
-import { claimNextOutboxEvent, completeOutboxEvent } from "../lib/outbox-store.js";
+import { claimNextOutboxEvent, completeOutboxEvent, failOutboxEvent } from "../lib/outbox-store.js";
 
 // Run against a disposable database with docs/ops/database.sql already applied.
 test("Postgres commerce transactions", { skip: !process.env.TEST_DATABASE_URL }, async (t) => {
@@ -89,6 +89,22 @@ test("Postgres commerce transactions", { skip: !process.env.TEST_DATABASE_URL },
       await assert.rejects(() => getOrCreatePendingMercadoPagoPayment(draft.id, () => {
         assert.fail("paid order must not call the payment provider");
       }), { code: "order_not_payable" });
+    });
+
+    await t.test("current approval bypasses old mail backlog and failures omit provider details", async () => {
+      const draft = fixture();
+      await createOrder(draft);
+      for (const [paymentId, status] of [["old1", "rejected"], ["old2", "rejected"], ["old3", "rejected"], ["current", "approved"]]) {
+        await recordMercadoPagoUpdate({orderId: draft.id, paymentId: `${draft.id}-${paymentId}`, status, amountBrl: 42, raw: {status}});
+      }
+      const first = await claimNextOutboxEvent({orderId: draft.id, paymentId: `${draft.id}-current`});
+      const second = await claimNextOutboxEvent({orderId: draft.id, paymentId: `${draft.id}-current`});
+      assert.deepEqual(new Set([first.event.type, second.event.type]), new Set(["focus_nfe_invoice", "payment_customer_email"]));
+      assert.equal(await claimNextOutboxEvent({orderId: draft.id, paymentId: `${draft.id}-current`}), null);
+      const failure = await failOutboxEvent(first.event.id, first.leaseToken, Object.assign(new Error("private@example.com token=secret"), {code: "invalid token=secret"}));
+      assert.equal(failure.status, "queued");
+      assert.equal(failure.lastError.code, "outbox_processing_failed");
+      assert.doesNotMatch(JSON.stringify(failure.lastError), /private|secret/);
     });
 
     await t.test("concurrent promotion reservations persist only the winning order", async () => {

@@ -65,5 +65,5 @@ test("Postgres drains only the paid order after commit by default", async () => 
     processingMode: () => "inline",
     processOutbox: async (options) => { calls.push(options); return {}; }
   });
-  assert.deepEqual(calls, ["commit", { orderId: "order-1", limit: 3, workerId: "payment-request" }]);
+  assert.deepEqual(calls, ["commit", { orderId: "order-1", paymentId: "mp-1", limit: 3, workerId: "payment-request" }]);
 });
