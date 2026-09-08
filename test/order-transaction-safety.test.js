@@ -85,6 +85,43 @@ test("transicoes paralelas preservam metadados de pagamento e fulfillment", asyn
   assert.equal(order.metadata.fulfillment.shipment.carrier, "Correios");
 });
 
+test("tentativas da mesma preferencia preservam a aprovacao e o historico", async () => {
+  const draft = buildDraft("multiple-attempts");
+  await createOrder(draft);
+  await getOrCreatePendingMercadoPagoPayment(draft.id, async () => buildPayment(draft.id, "attempts"));
+  const update = (paymentId, status) => recordMercadoPagoUpdate({
+    orderId: draft.id, preferenceId: "preference-attempts", paymentId,
+    status, amountBrl: draft.totalBrl, raw: { id: paymentId, status }
+  });
+  await update("approved-attempt", "approved");
+  await update("rejected-attempt", "rejected");
+  let order = await getOrderById(draft.id);
+  assert.equal(order.paymentStatus, "approved");
+  assert.equal(order.status, "paid_ready_for_production");
+  assert.equal(order.payments.length, 2);
+  assert.equal(order.payments.find((item) => item.providerPaymentId === "approved-attempt").status, "approved");
+  await assert.rejects(() => getOrCreatePendingMercadoPagoPayment(draft.id, async () => buildPayment(draft.id, "unexpected")), { code: "order_not_payable" });
+
+  await update("approved-attempt", "refunded");
+  order = await getOrderById(draft.id);
+  assert.equal(order.paymentStatus, "refunded");
+});
+
+test("snapshot antigo nao desfaz aprovacao nem reembolso do mesmo pagamento", async () => {
+  const draft = buildDraft("stale-attempt");
+  await createOrder(draft);
+  const update = (status, updatedAt) => recordMercadoPagoUpdate({
+    orderId: draft.id, paymentId: "stale-payment", status, amountBrl: draft.totalBrl,
+    raw: { status, date_last_updated: updatedAt }
+  });
+  await update("approved", "2026-08-21T12:00:00Z");
+  await update("pending", "2026-08-21T11:00:00Z");
+  assert.equal((await getOrderById(draft.id)).paymentStatus, "approved");
+  await update("refunded", "2026-08-21T13:00:00Z");
+  await update("approved", "2026-08-21T12:00:00Z");
+  assert.equal((await getOrderById(draft.id)).paymentStatus, "refunded");
+});
+
 test("limite anônimo persiste entre tentativas locais", async () => {
   const key = "order-create:test-client";
   assert.equal(await consumeOrderCreationRateLimit(key, 2, 900), true);
