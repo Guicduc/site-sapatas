@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { calculateClientPricePreview } from "../lib/client-pricing-preview.js";
+import { restoreClientCart, updateClientCartItem } from "../lib/client-cart.js";
 import {
   calculatePriceBreakdown,
   getInitialValues,
@@ -32,6 +33,36 @@ test("compact client previews track authoritative prices across public surfaces"
       }
     }
   }
+});
+
+test("preview resolves serialized false toggles like the order engine", () => {
+  const format = productCategories.find((category) => category.slug === "sapata-base-lisa").formats[0];
+  for (const pescoco of [false, 0, "0", "false", true, 1, "1", "true"]) {
+    const values = { ...getInitialValues(format), pescoco };
+    const preview = calculateClientPricePreview(format, values, 4);
+    const authoritative = calculatePriceBreakdown(format, values, 4);
+    assert.equal(preview.surfaceId, authoritative.surfaceId);
+    assert.equal(preview.totalPriceBrl, authoritative.totalPriceBrl);
+  }
+});
+
+test("saved carts reject non-arrays and refresh legacy prices, SKUs and quantities", () => {
+  for (const saved of ["null", "{}", "42", '"cart"', "[null]"]) {
+    assert.deepEqual(restoreClientCart(saved), []);
+  }
+  const category = productCategories[0];
+  const format = category.formats[0];
+  const values = getInitialValues(format);
+  const [item] = restoreClientCart(JSON.stringify([{
+    id: "legacy", categorySlug: category.slug, formatSlug: format.slug,
+    values, sku: "old-sku", unitPriceBrl: 999, priceBrl: 999, quantity: 1
+  }]));
+  assert.match(item.sku, /-V2-/);
+  assert.equal(item.priceBrl, calculateClientPricePreview(format, values).totalPriceBrl);
+  const updated = updateClientCartItem(item, 30);
+  assert.equal(updated.priceBrl, item.unitPriceBrl * 30);
+  assert.equal(updated.priceBreakdown.quantity, 30);
+  assert.equal(updated.leadTimeDays, format.leadTimeBaseDays + 2);
 });
 
 function representativeConfigurations(format) {
