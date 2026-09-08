@@ -705,7 +705,7 @@ function ConfiguratorFields({
           <div
             className="parameter-slider"
             style={{
-              "--value-position": `${getValuePosition(values[parameter.key], parameter)}%`
+              "--value-position": `${getValuePosition(values[parameter.key], canonicalDisplayRange)}%`
             }}
           >
             <div
@@ -713,8 +713,8 @@ function ConfiguratorFields({
               role="slider"
               tabIndex={parameter.dependsOn && !values[parameter.dependsOn] ? -1 : 0}
               aria-label={parameter.label}
-              aria-valuemin={toDisplayMeasurement(canonicalDisplayRange.min, parameter.unit, measurementSystem)}
-              aria-valuemax={toDisplayMeasurement(canonicalDisplayRange.max, parameter.unit, measurementSystem)}
+              aria-valuemin={toDisplayMeasurement(Math.min(canonicalDisplayRange.min, Number(values[parameter.key] ?? parameter.min)), parameter.unit, measurementSystem)}
+              aria-valuemax={toDisplayMeasurement(Math.max(canonicalDisplayRange.max, Number(values[parameter.key] ?? parameter.min)), parameter.unit, measurementSystem)}
               aria-valuenow={toDisplayMeasurement(values[parameter.key] ?? parameter.min, parameter.unit, measurementSystem)}
               aria-valuetext={formatMeasurement(values[parameter.key] ?? parameter.min, parameter.unit, measurementSystem)}
               aria-disabled={parameter.dependsOn && !values[parameter.dependsOn] ? "true" : undefined}
@@ -937,7 +937,8 @@ function getPointerValue(event, parameter, measurementSystem) {
   const ratio = rect.width > 0
     ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
     : 0;
-  const rawValue = parameter.min + ratio * (parameter.max - parameter.min);
+  const range = getCanonicalMeasurementRange(parameter, measurementSystem);
+  const rawValue = range.min + ratio * (range.max - range.min);
 
   return snapMeasurementValue(rawValue, parameter, measurementSystem);
 }
