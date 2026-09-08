@@ -442,7 +442,7 @@ export function AccountDashboard({ email, orders, demo = false, passwordAvailabl
           <a href="#visao-geral"><span>Visão geral</span><small>Resumo</small></a>
           <a href="#pedidos"><span>Pedidos</span><small>{orders.length}</small></a>
           <a href="#dados"><span>Meus dados</span><small>Cadastro</small></a>
-          <a href={hasPassword ? "#seguranca" : "#criar-senha"}><span>Segurança</span><small>{hasPassword ? "Senha" : "Configurar"}</small></a>
+          {!demo && <a href={hasPassword ? "#seguranca" : "#criar-senha"}><span>Segurança</span><small>{hasPassword ? "Senha" : "Configurar"}</small></a>}
           <a href="#ajuda"><span>Ajuda</span><small>Suporte</small></a>
         </nav>
 
@@ -579,7 +579,7 @@ function OrderRow({ order, onPay }) {
             <section className="account-order__block" aria-labelledby={`delivery-${order.id}`}>
               <div className="account-order__block-heading"><h3 id={`delivery-${order.id}`}>Entrega</h3><span className="account-status">{order.fulfillment?.shipment?.label || "Aguardando"}</span></div>
               <p className="account-order__address">{formatAddress(order.shippingAddress) || "Endereço não registrado neste pedido."}</p>
-              {order.fulfillment?.shipment?.carrier && <dl className="account-order__facts"><div><dt>Transportadora</dt><dd>{order.fulfillment.shipment.carrier}</dd></div>{order.fulfillment.shipment.trackingCode && <div><dt>Rastreio</dt><dd>{order.fulfillment.shipment.trackingCode}</dd></div>}</dl>}
+              {(order.fulfillment?.shipment?.carrier || order.fulfillment?.shipment?.trackingCode) && <dl className="account-order__facts">{order.fulfillment.shipment.carrier && <div><dt>Transportadora</dt><dd>{order.fulfillment.shipment.carrier}</dd></div>}{order.fulfillment.shipment.trackingCode && <div><dt>Rastreio</dt><dd>{order.fulfillment.shipment.trackingCode}</dd></div>}</dl>}
             </section>
 
             {order.commerce && (
