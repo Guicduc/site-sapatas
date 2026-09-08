@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { processOutboxBatch } from "../lib/outbox-processor.js";
+import { dispatchOutboxEvent, processOutboxBatch } from "../lib/outbox-processor.js";
 import {
   buildPostPaymentOutboxEvents,
   enqueueOutboxEvents,
@@ -102,4 +102,24 @@ test("retry usa backoff exponencial limitado", () => {
     if (previous === undefined) delete process.env.OUTBOX_RETRY_SECONDS;
     else process.env.OUTBOX_RETRY_SECONDS = previous;
   }
+});
+
+
+test("delayed rejected email is suppressed after approval", async () => {
+  let sent = false;
+  const result = await dispatchOutboxEvent({ type: OUTBOX_EVENT.PAYMENT_CUSTOMER_EMAIL, orderId: "o", payload: {paymentStatus: "rejected", paymentId: "old"} }, {
+    getOrder: async () => ({status: "paid_ready_for_production", paymentStatus: "approved"}),
+    notifyPayment: async () => { sent = true; }
+  });
+  assert.equal(sent, false);
+  assert.equal(result.outcome, "customer_notification_no_longer_allowed");
+});
+
+test("queued email keeps its original provider identity on retry", async () => {
+  let identity;
+  await dispatchOutboxEvent({ type: OUTBOX_EVENT.PAYMENT_CUSTOMER_EMAIL, orderId: "o", payload: {paymentStatus: "approved", paymentId: "original"} }, {
+    getOrder: async () => ({status: "paid_ready_for_production", paymentStatus: "approved", payments: [{providerPaymentId: "newer"}]}),
+    notifyPayment: async (_order, _status, paymentId) => {identity = paymentId; return {sent:true};}
+  });
+  assert.equal(identity, "original");
 });

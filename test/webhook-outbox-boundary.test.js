@@ -11,6 +11,7 @@ test("Postgres retorna depois da persistencia sem chamar provedores externos", a
       return { id: "order-1", paymentStatus: "approved" };
     },
     mode: () => "postgres",
+    processingMode: () => "async",
     dispatchLocal: async () => sequence.push("external_provider_called")
   });
   assert.equal(order.id, "order-1");
@@ -23,6 +24,7 @@ test("falha de persistencia impede acknowledgement e efeitos", async () => {
     persistAndDispatchMercadoPagoUpdate(paymentInput(), {
       persist: async () => { throw new Error("database unavailable"); },
       mode: () => "postgres",
+    processingMode: () => "async",
       dispatchLocal: async () => { dispatched = true; }
     }),
     /database unavailable/
@@ -53,3 +55,15 @@ function paymentInput() {
     raw: { id: "mp-1" }
   };
 }
+
+
+test("Postgres drains only the paid order after commit by default", async () => {
+  const calls = [];
+  await persistAndDispatchMercadoPagoUpdate(paymentInput(), {
+    persist: async () => { calls.push("commit"); return { id: "order-1" }; },
+    mode: () => "postgres",
+    processingMode: () => "inline",
+    processOutbox: async (options) => { calls.push(options); return {}; }
+  });
+  assert.deepEqual(calls, ["commit", { orderId: "order-1", limit: 3, workerId: "payment-request" }]);
+});

@@ -108,6 +108,46 @@ test("snapshot de producao usa allowlist e exclui dados comerciais, pessoais e C
   assert.deepEqual(findForbiddenKeys(snapshot, forbidden), []);
 });
 
+test("snapshot rejeita dados comprados que seriam truncados ou alterados", () => {
+  const invalidItems = [
+    { quantity: 0 }, { quantity: -1 }, { quantity: 1.5 }, { quantity: 10001 },
+    { quantity: NaN }, { quantity: Infinity }, { quantity: "4" },
+    { values: {} }, { values: null }, { values: [] },
+    { values: { diametro: NaN } }, { values: { diametro: Infinity } },
+    { values: { diametro: null } }, { values: { diametro: { nested: 28 } } },
+    { sku: "X".repeat(161) }
+  ];
+  for (const invalid of invalidItems) {
+    const order = buildPaidOrder();
+    Object.assign(order.items[0], invalid);
+    assert.throws(() => buildProductionWorkSnapshot(order), { code: "production_work_invalid_snapshot" });
+  }
+  const order = buildPaidOrder();
+  order.items.push(structuredClone(order.items[0]));
+  assert.throws(() => buildProductionWorkSnapshot(order), { code: "production_work_invalid_snapshot" });
+});
+
+test("revisao de pagamento impede staging, acknowledgement e novos marcos", async () => {
+  const order = buildPaidOrder();
+  order.metadata.paymentReview = { reason: "amount_mismatch" };
+  assert.throws(() => buildProductionWorkSnapshot(order), { code: "production_work_not_eligible" });
+  const database = fakeProductionDatabase(buildPaidOrder());
+  const dependencies = { withTransaction: database.withTransaction, query: database.client.query };
+  assert.equal(await stageProductionHandoff(database.client, order), null);
+  const handoff = await stageProductionHandoff(database.client, buildPaidOrder());
+  const stored = database.orders.get(order.id);
+  stored.metadata.paymentReview = order.metadata.paymentReview;
+  await assert.rejects(() => acknowledgeProductionWork({
+    workId: handoff.id, idempotencyKey: "review-ack"
+  }, dependencies), { code: "production_order_not_active" });
+  delete stored.metadata.paymentReview;
+  await acknowledgeProductionWork({ workId: handoff.id, idempotencyKey: "review-ack" }, dependencies);
+  stored.metadata.paymentReview = order.metadata.paymentReview;
+  await assert.rejects(() => recordProductionMilestone({
+    workId: handoff.id, eventId: "review-event", milestone: "accepted", occurredAt: "2026-08-21T11:00:00Z"
+  }, dependencies), { code: "production_order_not_active" });
+});
+
 test("valida marcos comerciais sem regressao e reduz falha a motivo coarse", () => {
   assert.deepEqual(resolveProductionMilestoneTransition("queued", "accepted"), {
     status: "in_production", changed: true
@@ -355,6 +395,12 @@ test("Postgres serializa ack e marcos concorrentes quando TEST_DATABASE_URL exis
     const workId = (await pullProductionWork({ limit: 50 })).works
       .find((work) => work.order.orderId === orderId)?.workId;
     assert.ok(workId);
+    await pool.query(`update orders set metadata = metadata || '{"paymentReview":{"reason":"amount_mismatch"}}'::jsonb where id = $1`, [orderId]);
+    assert.equal((await pullProductionWork({ limit: 50 })).works.some((work) => work.workId === workId), false);
+    await assert.rejects(() => acknowledgeProductionWork({ workId, idempotencyKey: `ack:${orderId}` }), {
+      code: "production_order_not_active"
+    });
+    await pool.query(`update orders set metadata = metadata - 'paymentReview' where id = $1`, [orderId]);
     const acknowledgements = await Promise.all([
       acknowledgeProductionWork({ workId, idempotencyKey: `ack:${orderId}` }),
       acknowledgeProductionWork({ workId, idempotencyKey: `ack:${orderId}` })
@@ -401,6 +447,7 @@ function fakeProductionDatabase(order) {
   const client = {
     async query(sql, params = []) {
       const statement = String(sql).replace(/\s+/g, " ").trim();
+      if (statement.startsWith("select o.id from orders o")) return { rows: [] };
       if (statement.startsWith("select o.* from orders o")) {
         const rows = [...orders.values()].filter((row) => !handoffs.has(`production-work-v1:${row.id}`));
         return { rows: rows.slice(0, Number(params[2] || 10)) };

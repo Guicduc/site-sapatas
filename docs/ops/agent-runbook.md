@@ -43,7 +43,7 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
 8. A mesma transacao enfileira e-mail e NF-e em `post_payment_outbox`.
-9. O processador chama Resend e `lib/invoice-provider.js` fora do webhook.
+9. No modo padrao `inline`, o processador chama Resend e `lib/invoice-provider.js` apos o commit, no mesmo request. `async` exige agenda homologada antes da ativacao.
 
 Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` -> `Produzido` -> expedicao. A preparacao CAD e manual e nao cria status, gate ou bloqueio no pedido.
 

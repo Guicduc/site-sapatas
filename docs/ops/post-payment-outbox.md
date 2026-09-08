@@ -1,8 +1,14 @@
 # Fila pós-pagamento
 
 Com Postgres, o webhook do Mercado Pago confirma o pagamento e cria os eventos
-da fila na mesma transação. Depois do commit ele responde `200`; Resend e Focus
-NFe não fazem parte do tempo de resposta do webhook.
+da fila na mesma transação. Por padrão, `OUTBOX_PROCESSING_MODE=inline` processa
+até três eventos desse pedido após o commit, antes de responder ao webhook.
+Isso preserva o envio imediato sem depender de um agendador ainda não instalado.
+
+`OUTBOX_PROCESSING_MODE=async` responde após o commit e deixa os provedores para
+um processador separado. Ative somente depois de homologar a agenda e os retries.
+Falhas em ambos os modos permanecem na fila; no modo inline, monitore e reprocesse
+as pendências pela API administrativa. Não há retry autônomo sem agendador.
 
 Eventos atuais:
 
@@ -37,7 +43,7 @@ com backoff exponencial até `OUTBOX_MAX_ATTEMPTS`; depois ficam `failed` com
 erro sanitizado. Lease expirado pode ser retomado. Um lease expirado na última
 tentativa vira falha terminal.
 
-Não há cron em `vercel.json` por padrão. Antes de habilitar, confirme a
+Não há cron em `vercel.json` por padrão. Mantenha o modo inline até habilitar e testar o processador. Antes de habilitar, confirme a
 frequência disponível no plano e o atraso operacional aceitável para e-mail e
 NF-e. Depois do deploy, faça uma chamada manual controlada e só então ative a
 agenda.
