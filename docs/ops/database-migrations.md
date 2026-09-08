@@ -9,7 +9,7 @@ npm run db:migrate
 ```
 
 O runner ordena os arquivos pelo nome, usa advisory lock no Postgres, calcula
-SHA-256 e registra cada arquivo em `schema_migrations` na mesma transação do
+SHA-256 com finais de linha normalizados para LF e registra cada arquivo em `schema_migrations` na mesma transação do
 SQL. Um arquivo já aplicado não pode ser editado. Crie outra migration.
 
 ## Banco novo

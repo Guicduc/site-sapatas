@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { runMigrations } from "../lib/db-migrations.js";
+import { migrationChecksum, runMigrations } from "../lib/db-migrations.js";
 
 test("aplica migrations em ordem uma vez e rejeita alteração posterior", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "baseforma-migrations-"));
@@ -86,3 +86,9 @@ function fakeMigrationPool({ failSql = "" } = {}) {
     get releases() { return releases; }
   };
 }
+
+
+test("migration checksums are stable across Windows and Linux checkouts", () => {
+  assert.equal(migrationChecksum("select 1;\r\n"), migrationChecksum("select 1;\n"));
+  assert.notEqual(migrationChecksum("select 1;\n"), migrationChecksum("select 2;\n"));
+});

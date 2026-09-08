@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { restoreClientCart, updateClientCartItem } from "@/lib/client-cart";
 
 const CartContext = createContext(null);
 const storageKey = "baseforma-cart";
@@ -14,7 +15,7 @@ export function CartProvider({ children }) {
       const saved = window.localStorage.getItem(storageKey);
 
       if (saved) {
-        setItems(JSON.parse(saved));
+        setItems(restoreClientCart(saved));
       }
     } catch {
       setItems([]);
@@ -49,7 +50,7 @@ export function CartProvider({ children }) {
         setItems((current) =>
           current.map((item) =>
             item.id === id
-              ? buildUpdatedQuantityItem(item, safeQuantity)
+              ? updateClientCartItem(item, safeQuantity)
               : item
           )
         );
@@ -77,14 +78,3 @@ export function useCart() {
   return value;
 }
 
-function buildUpdatedQuantityItem(item, quantity) {
-  return {
-    ...item,
-    quantity,
-    priceBrl: roundMoney(Number(item.unitPriceBrl || 0) * quantity)
-  };
-}
-
-function roundMoney(value) {
-  return Math.round(value * 100) / 100;
-}

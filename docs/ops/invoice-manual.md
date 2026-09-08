@@ -18,8 +18,9 @@ Este documento registra o fluxo fiscal com `INVOICE_PROVIDER=focus_nfe`: a emiss
 5. `erro_autorizacao`/`denegado` marcam `api_failed` com a mensagem da SEFAZ nas notas; o botao "Emitir NF" permite reenviar apos correcao.
 
 Falhas do processador ficam visiveis em `/api/admin/outbox` e seguem a politica
-de lease/retry de `docs/ops/post-payment-outbox.md`. O webhook nao espera a
-Focus NFe antes de responder ao Mercado Pago.
+de lease/retry de `docs/ops/post-payment-outbox.md`. O modo padrao `inline` espera
+a tentativa de envio apos o commit. Somente o modo `async`, com processador
+agendado homologado, responde sem aguardar a Focus NFe.
 
 ### Registro do gancho (uma vez por ambiente)
 
