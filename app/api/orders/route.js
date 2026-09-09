@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   ORDER_ACCESS_COOKIE,
   createOrderAccessToken,
+  getAccountSession,
   getOrderAccess,
   getOrderAccessCookieOptions
 } from "@/lib/account-session";
@@ -72,7 +73,10 @@ export async function POST(request) {
       };
       return NextResponse.json({ order: toAccountOrder(demoOrder), demo: true }, { status: 201 });
     }
-    const order = await createOrder(orderDraft);
+    const accountSession = await getAccountSession();
+    const order = await createOrder(orderDraft, {
+      verifiedAccount: accountSession
+    });
     await notifyOrderCreated(order);
     await cancelReplacedOrder(payload.replacesOrderId, order.id);
 
