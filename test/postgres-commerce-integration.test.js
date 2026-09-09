@@ -45,6 +45,34 @@ test("Postgres commerce transactions", { skip: !process.env.TEST_DATABASE_URL },
       assert.equal((await getOrderById(draft.id)).payments.length, 1);
     });
 
+    await t.test("pending provider payment reuses its locked checkout preference", async () => {
+      const draft = fixture();
+      await createOrder(draft);
+      const initial = await getOrCreatePendingMercadoPagoPayment(
+        draft.id,
+        async () => buildPayment(draft.id)
+      );
+      await recordMercadoPagoUpdate({
+        orderId: draft.id,
+        preferenceId: initial.payment.providerPreferenceId,
+        paymentId: randomUUID(),
+        status: "pending",
+        amountBrl: draft.totalBrl,
+        raw: { status: "pending" }
+      });
+
+      let providerCalls = 0;
+      const resumed = await getOrCreatePendingMercadoPagoPayment(draft.id, async () => {
+        providerCalls += 1;
+        return buildPayment(draft.id);
+      });
+
+      assert.equal(providerCalls, 0);
+      assert.equal(resumed.reused, true);
+      assert.equal(resumed.payment.id, initial.payment.id);
+      assert.equal((await getOrderById(draft.id)).status, "payment_pending");
+    });
+
     await t.test("duplicate approvals stage one invoice and leases cannot be claimed twice", async () => {
       const draft = fixture();
       await createOrder(draft);

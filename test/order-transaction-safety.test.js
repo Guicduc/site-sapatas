@@ -12,6 +12,7 @@ import {
   recordMercadoPagoUpdate,
   updateOrderFulfillmentState
 } from "../lib/order-store.js";
+import { isPayableOrder, ORDER_STATUS } from "../lib/order-status.js";
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
 const originalStorePath = process.env.ORDER_STORE_LOCAL_PATH;
@@ -53,6 +54,58 @@ test("duas tentativas simultaneas criam uma unica preferencia pendente", async (
   assert.equal(providerCalls, 1);
   assert.equal(first.payment.id, second.payment.id);
   assert.deepEqual([first.reused, second.reused].sort(), [false, true]);
+});
+
+test("pagamento pendente reutiliza a preferencia mesmo depois de receber id do provedor", async () => {
+  const draft = buildDraft("pending-provider-payment");
+  await createOrder(draft);
+  const initial = await getOrCreatePendingMercadoPagoPayment(
+    draft.id,
+    async () => buildPayment(draft.id, "pending-provider-payment")
+  );
+
+  await recordMercadoPagoUpdate({
+    orderId: draft.id,
+    preferenceId: initial.payment.providerPreferenceId,
+    paymentId: "pix-pending",
+    status: "pending",
+    amountBrl: draft.totalBrl,
+    raw: { id: "pix-pending", status: "pending" }
+  });
+
+  let providerCalls = 0;
+  const resumed = await getOrCreatePendingMercadoPagoPayment(draft.id, async () => {
+    providerCalls += 1;
+    return buildPayment(draft.id, "duplicate");
+  });
+  const order = await getOrderById(draft.id);
+
+  assert.equal(order.status, ORDER_STATUS.PAYMENT_PENDING);
+  assert.equal(providerCalls, 0);
+  assert.equal(resumed.reused, true);
+  assert.equal(resumed.payment.id, initial.payment.id);
+  assert.equal(resumed.payment.providerPaymentId, "pix-pending");
+  assert.equal(resumed.payment.checkoutUrl, initial.payment.checkoutUrl);
+});
+
+test("somente pedidos com pagamento em aberto aceitam checkout", () => {
+  for (const status of [
+    ORDER_STATUS.PENDING_PAYMENT,
+    ORDER_STATUS.PAYMENT_PENDING,
+    ORDER_STATUS.PAYMENT_FAILED
+  ]) {
+    assert.equal(isPayableOrder(status), true, status);
+  }
+
+  for (const status of [
+    ORDER_STATUS.NEEDS_TECHNICAL_REVIEW,
+    ORDER_STATUS.PAID,
+    ORDER_STATUS.PAID_PENDING_REVIEW,
+    ORDER_STATUS.PAID_READY_FOR_PRODUCTION,
+    ORDER_STATUS.CANCELLED
+  ]) {
+    assert.equal(isPayableOrder(status), false, status);
+  }
 });
 
 test("transicoes paralelas preservam metadados de pagamento e fulfillment", async () => {
