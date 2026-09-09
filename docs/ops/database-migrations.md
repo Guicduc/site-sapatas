@@ -58,3 +58,10 @@ acknowledgement, eventos idempotentes e o roteamento exclusivo entre
 ou producao manual ja iniciada como `legacy_print_queue`. Aplique-a antes de publicar o codigo, mesmo com
 `PRODUCTION_SYSTEM_MODE=disabled`, porque a sincronizacao da ponte consulta o
 roteamento duravel.
+
+## Bancos com recursos ainda nao usados
+
+`20260820_runtime_store_baseline.sql` cria idempotentemente as tabelas antes
+criadas sob demanda pelos stores de pedidos, conta, carrinho e print_jobs.
+Ela roda antes dos deltas de 21/08, inclusive em bancos onde a fila nunca
+foi acessada. Preserva tabelas e dados existentes.
