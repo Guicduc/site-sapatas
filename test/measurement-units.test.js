@@ -2,14 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  INCH_DECIMAL_PLACES,
+  INCH_FRACTION_DENOMINATOR,
+  INCH_FRACTION_STEP,
   MEASUREMENT_SYSTEMS,
+  MILLIMETER_DECIMAL_PLACES,
   formatMeasurement,
   formatMeasurementValue,
+  getCanonicalMeasurementRange,
   getDisplayRange,
   measurementSystemReducer,
   normalizeMeasurementInput,
   parseMeasurementInput,
+  snapMeasurementValue,
+  stepMeasurementValue,
   toDisplayMeasurement
 } from "../lib/measurement-units.js";
 import { buildConfiguratorOrderPayload } from "../lib/order-payload.js";
@@ -21,45 +26,75 @@ const parameter = {
   unit: "mm"
 };
 
-test("converte milimetros para polegadas com precisao explicita", () => {
-  assert.equal(INCH_DECIMAL_PLACES, 3);
+test("exibe polegadas como fracoes reduzidas em passos de dezesseis avos", () => {
+  assert.equal(INCH_FRACTION_DENOMINATOR, 16);
+  assert.equal(INCH_FRACTION_STEP, 0.0625);
   assert.equal(toDisplayMeasurement("", "mm", MEASUREMENT_SYSTEMS.IMPERIAL), null);
   assert.equal(toDisplayMeasurement(25.4, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), 1);
-  assert.equal(formatMeasurementValue(31.75, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "1.25");
-  assert.equal(formatMeasurement(31.75, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "1.25 pol");
+  assert.equal(formatMeasurementValue(6.35, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "1/4");
+  assert.equal(formatMeasurementValue(9.525, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "3/8");
+  assert.equal(formatMeasurementValue(11.1125, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "7/16");
+  assert.equal(formatMeasurementValue(31.75, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "1 1/4");
+  assert.equal(formatMeasurement(31.75, "mm", MEASUREMENT_SYSTEMS.IMPERIAL), "1 1/4 pol");
+});
+
+test("aceita fracoes e equivalentes decimais alinhados ao passo imperial", () => {
   assert.equal(normalizeMeasurementInput("1.25", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "31.75");
   assert.equal(normalizeMeasurementInput("1,25", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "31.75");
   assert.equal(normalizeMeasurementInput("1 1/4", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "31.75");
+  assert.equal(normalizeMeasurementInput("7/16", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "11.1125");
 });
 
-test("valida os limites sem alterar silenciosamente a medida", () => {
+test("limita a apresentacao em milimetros a uma casa decimal", () => {
+  assert.equal(MILLIMETER_DECIMAL_PLACES, 1);
+  assert.equal(toDisplayMeasurement(31.75, "mm", MEASUREMENT_SYSTEMS.METRIC), 31.8);
+  assert.equal(formatMeasurementValue(31.75, "mm", MEASUREMENT_SYSTEMS.METRIC), "31.8");
+  assert.equal(formatMeasurementValue(50, "mm", MEASUREMENT_SYSTEMS.METRIC), "50");
+  assert.equal(formatMeasurement(28.575, "mm", MEASUREMENT_SYSTEMS.METRIC), "28.6 mm");
+});
+
+test("usa somente fracoes de 1/16 contidas nos limites fabricaveis", () => {
   const range = getDisplayRange(parameter, MEASUREMENT_SYSTEMS.IMPERIAL);
 
-  assert.deepEqual(range, { min: "0.118", max: "5.906", step: 0.001, unit: "pol" });
-  assert.equal(normalizeMeasurementInput(range.min, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "3");
-  assert.equal(normalizeMeasurementInput(range.max, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "150");
-  assert.equal(normalizeMeasurementInput("0.117", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
-  assert.equal(normalizeMeasurementInput("5.907", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
-  assert.equal(normalizeMeasurementInput("0", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
-  assert.equal(normalizeMeasurementInput("999", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
-  assert.equal(normalizeMeasurementInput("not-a-number", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
+  assert.deepEqual(range, { min: "1/8", max: "5 7/8", step: 0.0625, unit: "pol" });
+  assert.deepEqual(
+    getCanonicalMeasurementRange(parameter, MEASUREMENT_SYSTEMS.IMPERIAL),
+    { min: 3.175, max: 149.225 }
+  );
+  assert.equal(normalizeMeasurementInput(range.min, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "3.175");
+  assert.equal(normalizeMeasurementInput(range.max, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "149.225");
+  assert.equal(normalizeMeasurementInput("1/16", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
+  assert.equal(normalizeMeasurementInput("5 15/16", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
   assert.match(
-    parseMeasurementInput("999", parameter, MEASUREMENT_SYSTEMS.IMPERIAL).error,
-    /entre 0\.118 e 5\.906 pol/
+    parseMeasurementInput("5 15/16", parameter, MEASUREMENT_SYSTEMS.IMPERIAL).error,
+    /entre 1\/8 e 5 7\/8 pol/
   );
 });
 
-test("preserva medidas especificas sem forcar o passo do slider", () => {
+test("rejeita fracoes fora do passo comercial sem arredondar silenciosamente", () => {
   assert.equal(normalizeMeasurementInput("30,37", parameter, MEASUREMENT_SYSTEMS.METRIC), "30.37");
   assert.equal(normalizeMeasurementInput("1/2", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "12.7");
+  assert.equal(normalizeMeasurementInput("1/3", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
+  assert.equal(normalizeMeasurementInput("1.3", parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "");
   assert.match(
     parseMeasurementInput("1/0", parameter, MEASUREMENT_SYSTEMS.IMPERIAL).error,
-    /decimal ou fração/
+    /fração em passos de 1\/16/
   );
+  assert.match(
+    parseMeasurementInput("1/3", parameter, MEASUREMENT_SYSTEMS.IMPERIAL).error,
+    /passos de 1\/16 pol/
+  );
+});
+
+test("slider imperial encaixa e avanca no proximo dezesseis avos", () => {
+  assert.equal(snapMeasurementValue(28, parameter, MEASUREMENT_SYSTEMS.IMPERIAL), "28.575");
+  assert.equal(stepMeasurementValue(28, parameter, MEASUREMENT_SYSTEMS.IMPERIAL, 1), "28.575");
+  assert.equal(stepMeasurementValue(28, parameter, MEASUREMENT_SYSTEMS.IMPERIAL, -1), "26.9875");
+  assert.equal(stepMeasurementValue(28.575, parameter, MEASUREMENT_SYSTEMS.IMPERIAL, 1), "30.1625");
 });
 
 test("alternancia repetida muda somente a apresentacao", () => {
-  const canonicalValues = Object.freeze({ diametro: 31.8, alturaBase: 6 });
+  const canonicalValues = Object.freeze({ diametro: 31.75, alturaBase: 6 });
   let system = MEASUREMENT_SYSTEMS.METRIC;
 
   for (let index = 0; index < 100; index += 1) {
@@ -73,7 +108,8 @@ test("alternancia repetida muda somente a apresentacao", () => {
   }
 
   assert.equal(system, MEASUREMENT_SYSTEMS.METRIC);
-  assert.deepEqual(canonicalValues, { diametro: 31.8, alturaBase: 6 });
+  assert.equal(formatMeasurementValue(canonicalValues.diametro, "mm", system), "31.8");
+  assert.deepEqual(canonicalValues, { diametro: 31.75, alturaBase: 6 });
 });
 
 test("payload do pedido conserva medidas canonicas e remove estado de apresentacao", () => {
