@@ -4,6 +4,7 @@ import { createHash, randomInt } from "node:crypto";
 import {
   ACCOUNT_COOKIE,
   getAccountCookieOptions,
+  getAccountSession,
   hashAccountCode,
   normalizeAccountEmail
 } from "@/lib/account-session";
@@ -15,7 +16,7 @@ import {
   verifyOrderEmail
 } from "@/lib/order-store";
 import { consumeAccountRateLimit } from "@/lib/order-store";
-import { establishAccountFromVerifiedOrder, findCustomerAccount, issueAccountSession, verifyPassword } from "@/lib/account-auth";
+import { establishAccountFromVerifiedOrder, findCustomerAccount, issueAccountSession, revokeAccountSession, verifyPassword } from "@/lib/account-auth";
 import { sendAccountAccessCodeEmail } from "@/lib/transactional-email";
 
 export async function POST(request) {
@@ -112,6 +113,10 @@ function genericAuthFailure() {
 }
 
 export async function DELETE() {
+  const session = await getAccountSession();
+  if (session?.accountId && session.token) {
+    await revokeAccountSession(session.accountId, session.token);
+  }
   const response = NextResponse.json(
     { authenticated: false },
     { headers: { "Cache-Control": "no-store" } }
