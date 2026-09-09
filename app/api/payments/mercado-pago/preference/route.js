@@ -3,20 +3,10 @@ import { NextResponse } from "next/server";
 import { getAccountSession, getOrderAccess } from "@/lib/account-session";
 import {
   createMercadoPagoPreference,
-  getMercadoPagoCheckoutUrl,
-  getPreferenceReuseWindowMinutes
+  getMercadoPagoCheckoutUrl
 } from "@/lib/mercado-pago";
-import { createPayment, getLatestPaymentForOrder, getOrderById, getOrderForAccountId } from "@/lib/order-store";
+import { getOrCreatePendingMercadoPagoPayment, getOrderById, getOrderForAccountId } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
-
-function isReusablePendingPayment(payment) {
-  if (!payment?.checkoutUrl || payment.status !== PAYMENT_STATUS.PENDING) return false;
-
-  const createdAt = Date.parse(payment.createdAt || payment.updatedAt || "");
-  if (!Number.isFinite(createdAt)) return false;
-
-  return Date.now() - createdAt <= getPreferenceReuseWindowMinutes() * 60 * 1000;
-}
 
 export async function POST(request) {
   try {
@@ -55,47 +45,49 @@ export async function POST(request) {
       );
     }
 
-    const existingPayment = await getLatestPaymentForOrder(order.id);
+    const result = await getOrCreatePendingMercadoPagoPayment(order.id, async () => {
+      const preference = await createMercadoPagoPreference(order);
+      const checkoutUrl = getMercadoPagoCheckoutUrl(preference);
 
-    if (isReusablePendingPayment(existingPayment)) {
-      return NextResponse.json({
-        payment: { status: existingPayment.status, amountBrl: existingPayment.amountBrl },
-        checkoutUrl: existingPayment.checkoutUrl
-      });
-    }
+      if (!checkoutUrl) {
+        const error = new Error("Mercado Pago criou a preferencia, mas nao retornou URL de checkout.");
+        error.code = "mercado_pago_checkout_url_missing";
+        throw error;
+      }
 
-    const preference = await createMercadoPagoPreference(order);
-    const checkoutUrl = getMercadoPagoCheckoutUrl(preference);
+      return {
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        provider: "mercado_pago",
+        providerPreferenceId: preference.id,
+        providerPaymentId: null,
+        status: PAYMENT_STATUS.PENDING,
+        checkoutUrl,
+        amountBrl: order.totalBrl,
+        raw: preference,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    });
+    const payment = result?.payment;
 
-    if (!checkoutUrl) {
+    if (!payment) {
       return NextResponse.json(
-        {
-          error: "mercado_pago_checkout_url_missing",
-          message: "Mercado Pago criou a preferencia, mas nao retornou URL de checkout."
-        },
-        { status: 502 }
+        { error: "order_not_found", message: "Pedido não encontrado." },
+        { status: 404 }
       );
     }
-    const payment = await createPayment({
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      provider: "mercado_pago",
-      providerPreferenceId: preference.id,
-      providerPaymentId: null,
-      status: PAYMENT_STATUS.PENDING,
-      checkoutUrl,
-      amountBrl: order.totalBrl,
-      raw: preference,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
 
     return NextResponse.json({
       payment: { status: payment.status, amountBrl: payment.amountBrl },
-      checkoutUrl
+      checkoutUrl: payment.checkoutUrl
     });
   } catch (error) {
-    const status = error.code === "missing_mercado_pago_token" ? 503 : 502;
+    const status = error.code === "missing_mercado_pago_token"
+      ? 503
+      : error.code === "order_not_payable"
+        ? 409
+        : 502;
 
     return NextResponse.json(
       {

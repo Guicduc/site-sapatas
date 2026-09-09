@@ -2,15 +2,13 @@ import { NextResponse } from "next/server";
 
 import { getAccountSession, getOrderAccess } from "@/lib/account-session";
 import { toAccountOrder } from "@/lib/account-view";
-import { requestInvoiceAfterPayment } from "@/lib/invoice-provider";
 import {
   hasMercadoPagoCredentials,
   mapMercadoPagoPaymentStatus,
   searchMercadoPagoPaymentsByReference
 } from "@/lib/mercado-pago";
-import { getOrderById, getOrderForAccountId, recordMercadoPagoUpdate } from "@/lib/order-store";
-import { ORDER_STATUS } from "@/lib/order-status";
-import { notifyPaymentResolved } from "@/lib/transactional-email";
+import { getOrderById, getOrderForAccountId } from "@/lib/order-store";
+import { persistAndDispatchMercadoPagoUpdate } from "@/lib/post-payment-dispatch";
 
 // Reconciliação ativa com o Mercado Pago: consulta os pagamentos do pedido por
 // external_reference e grava o resultado, sem depender do webhook. Chamado no
@@ -50,7 +48,7 @@ export async function POST(request) {
     }
 
     const status = mapMercadoPagoPaymentStatus(payment.status);
-    const updatedOrder = await recordMercadoPagoUpdate({
+    const updatedOrder = await persistAndDispatchMercadoPagoUpdate({
       orderId: order.id,
       preferenceId: payment.preference_id || null,
       paymentId: String(payment.id),
@@ -58,14 +56,6 @@ export async function POST(request) {
       amountBrl: payment.transaction_amount,
       raw: payment
     });
-    // Um pagamento tardio pode chegar depois de o checkout ter substituido e
-    // cancelado o pedido. Registre e alerte esse caso, mas jamais envie e-mail
-    // de confirmacao ou emita NF-e para ele.
-    if (updatedOrder?.status !== ORDER_STATUS.CANCELLED && !updatedOrder?.metadata?.paymentReview) {
-      await notifyPaymentResolved(updatedOrder, updatedOrder?.paymentStatus || status);
-      await requestInvoiceAfterPayment(updatedOrder, payment);
-    }
-
     return NextResponse.json({
       reconciled: true,
       paymentId: payment.id,

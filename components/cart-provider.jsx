@@ -1,15 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-
-import {
-  buildConfigurationSku,
-  calculateLeadTime,
-  calculatePriceBreakdown,
-  getCategoryBySlug,
-  getFormat,
-  isLegacySku
-} from "@/lib/configurator-data";
+import { restoreClientCart, updateClientCartItem } from "@/lib/client-cart";
 
 const CartContext = createContext(null);
 const storageKey = "baseforma-cart";
@@ -23,7 +15,7 @@ export function CartProvider({ children }) {
       const saved = window.localStorage.getItem(storageKey);
 
       if (saved) {
-        setItems(JSON.parse(saved).map(migrateLegacyItem));
+        setItems(restoreClientCart(saved));
       }
     } catch {
       setItems([]);
@@ -58,7 +50,7 @@ export function CartProvider({ children }) {
         setItems((current) =>
           current.map((item) =>
             item.id === id
-              ? buildUpdatedQuantityItem(item, safeQuantity)
+              ? updateClientCartItem(item, safeQuantity)
               : item
           )
         );
@@ -86,55 +78,3 @@ export function useCart() {
   return value;
 }
 
-function migrateLegacyItem(item) {
-  if (!isLegacySku(item?.sku)) {
-    return item;
-  }
-
-  const category = getCategoryBySlug(item.categorySlug);
-  const format = category ? getFormat(category, item.formatSlug) : null;
-
-  if (!format) {
-    return item;
-  }
-
-  const quantity = Math.max(1, Number(item.quantity || 1));
-  const priceBreakdown = calculatePriceBreakdown(format, item.values || {}, quantity);
-
-  return {
-    ...item,
-    sku: buildConfigurationSku(format, item.values || {}, { color: item.color }),
-    quantity,
-    unitPriceBrl: priceBreakdown.unitPriceBrl,
-    priceBrl: priceBreakdown.totalPriceBrl,
-    priceBreakdown,
-    leadTimeDays: calculateLeadTime(format, quantity)
-  };
-}
-
-function buildUpdatedQuantityItem(item, quantity) {
-  const category = getCategoryBySlug(item.categorySlug);
-  const format = category ? getFormat(category, item.formatSlug) : null;
-
-  if (!format) {
-    return {
-      ...item,
-      quantity,
-      priceBrl: roundMoney(Number(item.unitPriceBrl || 0) * quantity)
-    };
-  }
-
-  const priceBreakdown = calculatePriceBreakdown(format, item.values || {}, quantity);
-
-  return {
-    ...item,
-    quantity,
-    unitPriceBrl: priceBreakdown.unitPriceBrl,
-    priceBrl: priceBreakdown.totalPriceBrl,
-    priceBreakdown
-  };
-}
-
-function roundMoney(value) {
-  return Math.round(value * 100) / 100;
-}

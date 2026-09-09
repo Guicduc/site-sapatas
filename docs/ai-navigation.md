@@ -47,17 +47,26 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/shipping/quote`: calcula frete para o checkout. Usa `SHIPPING_PROVIDER=melhor_envio` quando configurado e fallback manual quando nao houver token/CEP de origem.
 - `POST /api/payments/mercado-pago/preference`: cria preferencia de pagamento para pedido pagavel.
 - `POST /api/webhooks/mercado-pago`: recebe atualizacoes de pagamento do Mercado Pago.
+- `GET/POST /api/admin/outbox/process`: processa lotes dos efeitos pos-pagamento enfileirados.
+- `GET/POST /api/admin/outbox`: mostra status/erros e permite retry administrativo de falhas terminais.
 - `GET /api/webhooks/mercado-pago`: health check simples do webhook.
 - `GET /api/integrations/health`: health check administrativo de banco, Mercado Pago, frete, e-mail, sessoes e nota fiscal. Exige cookie admin ou token administrativo.
+- `GET /api/production/v1/work`: pull autenticado de snapshots pagos ainda nao reconhecidos pelo sistema externo.
+- `POST /api/production/v1/work/[id]/ack`: acknowledgement idempotente que remove o trabalho de pulls posteriores.
+- `POST /api/production/v1/milestones`: registra somente `accepted`, `produced` e `failed` no fulfillment comercial.
+- `GET /api/production/v1/health`: estado autenticado do handoff e do roteamento; usa credencial dedicada, nunca a credencial humana do admin.
 - `GET/POST /api/admin/print-jobs`: lista ou cria jobs idempotentes de geracao de arquivos. Aceita origens alem do pedido do site e exige acesso administrativo.
 - `POST /api/admin/print-jobs/claim`: reserva um job com lease para um worker externo.
 - `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
+- A arquitetura de transicao esta em `docs/ops/production-system-transition.md` e o contrato implementado em `docs/ops/production-system-integration.md`. Ele permanece desativado ate homologacao e corte deliberado; `print_jobs` continua como ponte.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
 - `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
 
 ## Dados de catalogo
 
 O ponto principal e `catalog/products/*.json`, carregado por `lib/product-registry.js`.
+
+O registry e manualmente curado: os manifests sao imports explicitos e ordenados em `lib/product-registry.js`. Ao adicionar produto, atualize o manifest, o registry e o conteudo editorial relacionado; nao existe descoberta automatica de manifests.
 
 - `catalog/categories.json`: metadados e ordem das categorias.
 - `productCategories`: projecao serializavel exibida no catalogo e no configurador.
@@ -88,13 +97,7 @@ Use `lib/site-data.js` para conteudo editorial e SEO:
 
 O FAQ publicado vive em `app/faq/page.js` (conteudo local a pagina), nao em `lib/site-data.js`.
 
-As familias atuais publicadas sao:
-
-- `sapata-tubo-redondo`
-- `sapata-tubo-quadrado`
-- `sapata-tubo-oblongo`
-- `sapata-lisa-redonda`
-- `sapata-lisa-quadrada`
+O total de familias/produtos ativos deve ser derivado dos manifests ativos em `catalog/products/`, e nao hard-coded neste mapa. As paginas editoriais em `lib/site-data.js` continuam sendo responsabilidade manual e precisam ser revisadas quando um manifest novo ou alterado muda a cobertura publica.
 
 ## Componentes centrais
 
@@ -111,9 +114,23 @@ As familias atuais publicadas sao:
 
 O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `lib/order-status.js`.
 
+`lib/db.js` centraliza pool e transacoes PostgreSQL. Requests nao executam DDL.
+O bootstrap esta em `docs/ops/database.sql`; alteracoes usam o runner e os
+arquivos versionados descritos em `docs/ops/database-migrations.md`.
+
+`listOrders` e as listas de conta/e-mail carregam itens, pagamentos e revisoes
+em tres consultas por lote, alem da consulta principal. O custo nao cresce em
+tres queries extras por pedido.
+
+`lib/outbox-store.js` grava e reserva os efeitos pos-pagamento. O webhook
+persiste pagamento, transicao do pedido e eventos na mesma transacao. O
+processador em `lib/outbox-processor.js` envia e-mail e solicita NF-e depois do
+commit.
+
 ## Ajustes comerciais
 
-- `lib/commerce-adjustments.js`: regras compartilhadas de cupom, desconto e frete estimado.
+- `lib/commerce-adjustments.js`: aritmetica publica de desconto e frete estimado, sem catalogo de cupons.
+- `lib/promotion-policy.js`: modulo exclusivo do servidor com definicoes, validade e elegibilidade de promocoes; usos restritos sao reservados em `promotion_redemptions` durante a mesma transacao do pedido.
 - O carrinho usa esse modulo para preview, mas `lib/order-validation.js` recalcula tudo no servidor antes de salvar o pedido.
 - Quando frete/desconto alteram o total, `lib/mercado-pago.js` envia uma linha consolidada ao Mercado Pago para manter o valor cobrado igual ao `order.totalBrl`.
 - `lib/cart-recovery.js`: recuperacao de carrinho com hash de token, IP hasheado, recalculo server-side dos itens e retencao por `CART_RECOVERY_RETENTION_DAYS`.
@@ -129,6 +146,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
+- `docs/ops/production-system-transition.md`: limite de responsabilidade, fluxo alvo e criterios de corte para o sistema externo de producao.
 - `lib/print-job.js` e `lib/print-job-store.js`: contrato, idempotencia, persistencia, lease, artefatos e retries dos jobs de geracao de arquivos.
 - `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
@@ -140,7 +158,7 @@ O fluxo de pedidos fica em `lib/order-validation.js`, `lib/order-store.js` e `li
 - O schema SQL tambem esta documentado em `docs/ops/database.sql`.
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
 - A conta usa OTP por e-mail e senha opcional. O cookie HttpOnly contem um token opaco aleatorio; somente o hash e persistido em `customer_account_sessions`. Pedidos verificados ficam associados a `customer_accounts`, e a primeira entrada migra os pedidos que ja tinham sido confirmados no fluxo anterior. O acesso temporario pos-checkout continua limitado ao pedido recem-criado.
-- `lib/cad-contract.js` descreve os modelos e monta o payload manual do Grasshopper, mas nao participa de status, fila ou bloqueio operacional.
+- `lib/cad-contract.js` resolve o contrato CAD, monta o payload manual exibido no admin e participa da ingestao idempotente de `print_jobs`; o job continua separado dos status e bloqueios comerciais do pedido.
 
 ## Pagamento
 

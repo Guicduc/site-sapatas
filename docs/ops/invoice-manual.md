@@ -11,11 +11,16 @@ Este documento registra o fluxo fiscal com `INVOICE_PROVIDER=focus_nfe`: a emiss
 
 ## Fluxo automatico
 
-1. Webhook do Mercado Pago confirma pagamento aprovado.
-2. `requestInvoiceAfterPayment` monta o payload da NF-e (destinatario, itens com NCM/CFOP/CSOSN, frete, desconto rateado e totais) e envia `POST /v2/nfe?ref={referenciaAlfanumerica}` para a Focus NFe. A referencia e derivada de forma estavel do UUID do pedido porque a Focus nao aceita caracteres especiais.
+1. Webhook do Mercado Pago confirma pagamento e enfileira `focus_nfe_invoice` na mesma transacao.
+2. O processador da fila chama `requestInvoiceAfterPayment`, que monta o payload da NF-e (destinatario, itens com NCM/CFOP/CSOSN, frete, desconto rateado e totais) e envia `POST /v2/nfe?ref={referenciaAlfanumerica}` para a Focus NFe. A referencia e derivada de forma estavel do UUID do pedido porque a Focus nao aceita caracteres especiais.
 3. Resposta `processando_autorizacao` deixa a NF como `api_pending`; `autorizado` grava numero, serie, chave de acesso e link do DANFE (`api_issued`).
 4. Quando a SEFAZ conclui o processamento, a Focus NFe notifica `POST /api/webhooks/focus-nfe` (gancho autenticado por `FOCUS_NFE_WEBHOOK_TOKEN`); o endpoint reconsulta `GET /v2/nfe/{ref}` e atualiza o pedido automaticamente. O botao "Atualizar status da NF" no admin continua disponivel como fallback manual.
 5. `erro_autorizacao`/`denegado` marcam `api_failed` com a mensagem da SEFAZ nas notas; o botao "Emitir NF" permite reenviar apos correcao.
+
+Falhas do processador ficam visiveis em `/api/admin/outbox` e seguem a politica
+de lease/retry de `docs/ops/post-payment-outbox.md`. O modo padrao `inline` espera
+a tentativa de envio apos o commit. Somente o modo `async`, com processador
+agendado homologado, responde sem aguardar a Focus NFe.
 
 ### Registro do gancho (uma vez por ambiente)
 

@@ -15,6 +15,8 @@ Escopo fixo da operacao:
 - Confirmar que a publicacao sera feita pela branch `main`.
 - Confirmar `NEXT_PUBLIC_SITE_URL` com a URL publica final.
 - Confirmar `DATABASE_URL` ativo em producao e schema aplicado conforme `docs/ops/database.sql`.
+- Aplicar migrations antes do deploy conforme `docs/ops/database-migrations.md`.
+- Confirmar `OUTBOX_PROCESSOR_SECRET` ou `CRON_SECRET` e testar o processador conforme `docs/ops/post-payment-outbox.md`.
 - Confirmar segredos fortes e fora do repositorio:
   - `ADMIN_ACCESS_TOKEN`
   - `ADMIN_SESSION_SECRET`
@@ -111,6 +113,8 @@ GET /api/webhooks/mercado-pago
   - status do pedido;
   - historico administrativo;
   - e-mail transacional, quando aplicavel.
+- Confirmar que o webhook respondeu antes dos provedores externos e que a fila
+  saiu de `queued` para `succeeded` em `/api/admin/outbox`.
 - Se o webhook nao chegar, consultar logs do deploy antes de repetir pagamentos.
 
 ## 5. E-mail transacional

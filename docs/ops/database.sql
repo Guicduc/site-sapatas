@@ -3,6 +3,7 @@ create table if not exists customers (
   name text not null,
   contact text not null,
   email text,
+  document text check (document is null or document ~ '^([0-9]{11}|[0-9]{14})$'),
   created_at timestamptz not null default now()
 );
 
@@ -70,6 +71,44 @@ create index if not exists orders_status_idx on orders(status);
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists payments_order_id_idx on payments(order_id);
 create index if not exists payments_provider_payment_idx on payments(provider_payment_id);
+create unique index if not exists payments_one_active_mp_preference_idx
+  on payments(order_id)
+  where provider = 'mercado_pago'
+    and status = 'pending'
+    and provider_payment_id is null
+    and checkout_url is not null;
+
+-- Side effects pós-pagamento são enfileirados na mesma transação que grava o
+-- pagamento. O processador usa leases e os provedores recebem chaves estáveis.
+create table if not exists post_payment_outbox (
+  id text primary key,
+  event_type text not null check (
+    event_type in ('payment_customer_email', 'payment_review_email', 'focus_nfe_invoice')
+  ),
+  order_id text not null references orders(id) on delete cascade,
+  idempotency_key text not null unique,
+  payload jsonb not null default '{}'::jsonb,
+  status text not null default 'queued' check (
+    status in ('queued', 'processing', 'succeeded', 'failed')
+  ),
+  attempts integer not null default 0,
+  max_attempts integer not null default 8,
+  available_at timestamptz not null default now(),
+  worker_id text,
+  lease_token_hash text,
+  leased_until timestamptz,
+  last_error jsonb,
+  result jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  started_at timestamptz,
+  completed_at timestamptz
+);
+
+create index if not exists post_payment_outbox_claim_idx
+  on post_payment_outbox(status, available_at, created_at);
+create index if not exists post_payment_outbox_order_idx
+  on post_payment_outbox(order_id, created_at desc);
 
 -- Fila duravel para gerar arquivos de impressao. Nao referencia orders por FK
 -- porque source/source_id tambem aceitam jobs vindos de outras frentes.
@@ -106,6 +145,112 @@ create index if not exists print_jobs_claim_idx
 
 create index if not exists print_jobs_origin_idx
   on print_jobs (source, source_id, source_item_id);
+
+-- Roteamento duravel durante a transicao. Um pedido pertence a ponte legada
+-- ou ao sistema externo, nunca aos dois ao mesmo tempo.
+create table if not exists production_work_routes (
+  order_id text primary key references orders(id) on delete cascade,
+  route text not null check (route in ('legacy_print_queue', 'external')),
+  reason text,
+  decided_at timestamptz not null default now()
+);
+
+insert into production_work_routes (order_id, route, reason)
+select distinct p.source_id, 'legacy_print_queue', 'bootstrap_existing_print_job'
+from print_jobs p
+join orders o on o.id = p.source_id
+where p.source = 'site_order'
+on conflict (order_id) do nothing;
+
+insert into production_work_routes (order_id, route, reason)
+select o.id, 'legacy_print_queue', 'bootstrap_existing_manual_production'
+from orders o
+where o.status in ('in_production', 'cad_pending', 'cad_generated', 'ready_for_print', 'shipped')
+   or coalesce(o.metadata->'fulfillment'->'production'->>'status', '') in (
+     'in_production', 'quality_check', 'blocked', 'ready_to_ship', 'shipped'
+   )
+on conflict (order_id) do nothing;
+
+create index if not exists production_work_routes_route_idx
+  on production_work_routes(route, decided_at);
+
+-- Snapshot tecnico minimo e imutavel dos itens comprados. available_at nulo
+-- significa staging; somente o modo active libera o pull externo.
+create table if not exists production_handoffs (
+  id text primary key,
+  order_id text not null unique references orders(id) on delete cascade,
+  schema_version integer not null default 1 check (schema_version = 1),
+  snapshot jsonb not null,
+  snapshot_sha256 text not null,
+  available_at timestamptz,
+  delivery_count integer not null default 0,
+  first_delivered_at timestamptz,
+  last_delivered_at timestamptz,
+  acknowledged_at timestamptz,
+  acknowledgement_idempotency_key text unique,
+  acknowledged_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (jsonb_typeof(snapshot) = 'object'),
+  check (delivery_count >= 0)
+);
+
+create index if not exists production_handoffs_pull_idx
+  on production_handoffs(available_at, created_at, id)
+  where available_at is not null and acknowledged_at is null;
+
+create index if not exists production_handoffs_staged_idx
+  on production_handoffs(created_at, id)
+  where available_at is null and acknowledged_at is null;
+
+create table if not exists production_handoff_rejections (
+  order_id text primary key references orders(id) on delete cascade,
+  code text not null check (code in ('invalid_snapshot')),
+  details jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create or replace function reject_production_handoff_snapshot_update()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.order_id is distinct from old.order_id
+     or new.schema_version is distinct from old.schema_version
+     or new.snapshot is distinct from old.snapshot
+     or new.snapshot_sha256 is distinct from old.snapshot_sha256 then
+    raise exception 'production_handoff_snapshot_is_immutable';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists production_handoff_snapshot_immutable on production_handoffs;
+create trigger production_handoff_snapshot_immutable
+before update on production_handoffs
+for each row execute function reject_production_handoff_snapshot_update();
+
+-- Auditoria e idempotencia dos marcos comerciais reportados externamente.
+create table if not exists production_milestone_events (
+  id text primary key,
+  external_event_id text not null unique,
+  handoff_id text not null references production_handoffs(id) on delete cascade,
+  order_id text not null references orders(id) on delete cascade,
+  milestone text not null check (milestone in ('accepted', 'produced', 'failed')),
+  occurred_at timestamptz not null,
+  request_hash text not null,
+  failure_reason text check (
+    failure_reason is null or failure_reason in (
+      'production_error', 'quality_issue', 'material_unavailable',
+      'capacity_unavailable', 'unknown'
+    )
+  ),
+  result jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists production_milestone_events_order_idx
+  on production_milestone_events(order_id, occurred_at, created_at);
 
 create table if not exists account_access_codes (
   id text primary key,
@@ -151,6 +296,14 @@ create table if not exists account_rate_limits (
   attempts integer not null default 0
 );
 create index if not exists account_rate_limits_window_idx on account_rate_limits(window_started_at);
+
+-- Limite duravel para endpoints anonimos, usando somente hash do cliente.
+create table if not exists request_rate_limits (
+  key text primary key,
+  window_started_at timestamptz not null,
+  attempts integer not null default 0
+);
+create index if not exists request_rate_limits_window_idx on request_rate_limits(window_started_at);
 
 -- Fulfillment operacional fica em orders.metadata->'fulfillment'.
 -- Estrutura atual:
@@ -229,6 +382,23 @@ create index if not exists cart_recovery_leads_email_idx
 
 create index if not exists cart_recovery_leads_order_id_idx
   on cart_recovery_leads(order_id);
+
+-- Cupons de uso restrito reservam uma identidade pseudonimizada junto com o
+-- pedido. A chave nunca armazena CPF/CNPJ ou e-mail em claro nesta tabela.
+create table if not exists promotion_redemptions (
+  promotion_id text not null,
+  identity_hash text not null,
+  order_id text not null references orders(id) on delete cascade,
+  status text not null default 'reserved' check (status in ('reserved', 'redeemed')),
+  redeemed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (promotion_id, identity_hash),
+  unique (order_id, promotion_id)
+);
+
+create index if not exists promotion_redemptions_order_id_idx
+  on promotion_redemptions(order_id);
 
 -- Retencao operacional:
 -- a aplicacao remove leads antigos de recuperacao de carrinho usando

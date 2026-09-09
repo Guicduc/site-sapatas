@@ -2,16 +2,24 @@
 
 Este documento registra a regra operacional da fila de producao usada no admin.
 
+A direcao de longo prazo e descrita em `docs/ops/production-system-transition.md`. A fila abaixo continua sendo a ponte atual e nao deve ser tratada como a migracao para o sistema externo ja concluida.
+
+Durante a integracao, `production_work_routes` atribui cada pedido a
+`legacy_print_queue` ou `external`. A migration preserva como legados todos os
+pedidos que ja possuem `print_jobs`, o pull externo ignora esses pedidos e a
+sincronizacao do admin ignora pedidos ja roteados externamente. Nao apague essa
+decisao durante rollback.
+
 ## Objetivo
 
-Manter uma lista simples de pedidos pagos que aguardam producao. A preparacao de arquivos pode ser assistida por um worker externo, mas continua sem bloquear a fila do pedido.
+Manter uma lista simples de pedidos pagos que aguardam producao. A preparacao de arquivos pode ser assistida por um worker externo, mas continua sem bloquear a fila do pedido. Ate existir contrato externo, migracao dos jobs ativos e corte idempotente, esta fila deve permanecer disponivel.
 
 ## Duas filas, responsabilidades diferentes
 
-- `print_jobs`: orquestra a geracao de STL/3MF/preview a partir de um snapshot do contrato CAD. O site persiste e acompanha o job; Rhino, Grasshopper e Orca nao rodam no processo web.
+- `print_jobs`: orquestra a geracao de STL/3MF/preview a partir de um snapshot do contrato CAD. `lib/cad-contract.js` monta esse snapshot e participa da ingestao; o site persiste e acompanha o job, enquanto Rhino, Grasshopper e Orca nao rodam no processo web.
 - fila de producao em `orders.metadata.fulfillment`: organiza a producao fisica do pedido independentemente do estado dos jobs de arquivo.
 
-Separar essas etapas evita prender uma Server Action a um executavel local e permite que um worker Windows, uma estacao CAD ou outra frente usem o mesmo contrato.
+Separar essas etapas evita prender uma Server Action a um executavel local e permite que um worker Windows, uma estacao CAD ou outra frente usem o mesmo contrato. No desenho futuro, CAD, slice, maquinas, leases, retries e artefatos serao responsabilidade do sistema externo; esta fila nao deve ser removida antes do corte definido no documento de transicao.
 
 ## Entrada na fila de producao
 
@@ -47,9 +55,9 @@ Estados validos:
 
 Artefatos e erros permanecem no job e nao criam status, gate ou bloqueio CAD no pedido. A fila de producao continua simples (`Aguardando producao` -> `Produzido`), enquanto o admin usa os jobs como rastreio tecnico separado.
 
-## Contrato do worker
+## Contrato do worker atual
 
-Todas as rotas abaixo chamam `assertAdminAccess`. Um worker pode enviar `ADMIN_ACCESS_TOKEN` em `x-admin-token` ou `Authorization: Bearer ...`; o admin no navegador usa a sessao HttpOnly.
+Todas as rotas abaixo chamam `assertAdminAccess`. Um worker atual pode enviar `ADMIN_ACCESS_TOKEN` em `x-admin-token` ou `Authorization: Bearer ...`; o admin no navegador usa a sessao HttpOnly. Esse e o contrato tecnico da ponte atual, nao o contrato final do sistema externo de producao.
 
 1. `POST /api/admin/print-jobs/claim` com `{ "workerId": "cad-windows-01" }` reserva o proximo job por prioridade e retorna `job` + `claimToken`.
 2. O worker executa a geracao fora do site, usando apenas o snapshot em `job.contract` e `job.material`. Em `job.contract`, `configurationParameters` preserva as medidas informadas pelo cliente e `parameters` contem os valores finais que devem ser aplicados aos sliders do Grasshopper depois de `parameterTransforms`.
@@ -78,6 +86,8 @@ Use apenas estes estados no trabalho diario:
 
 - `Aguardando producao`: pedido pago aguardando o trabalho manual da operacao.
 - `Produzido`: producao concluida, pedido pronto para seguir para expedicao.
+
+O bloco `orders.metadata.fulfillment` e normalizado com `schemaVersion: 2`. Esse schema operacional e separado do `schemaVersion` dos jobs em `print_jobs`.
 
 ## Expedicao
 

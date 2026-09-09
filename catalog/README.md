@@ -5,7 +5,10 @@ O fluxo completo, incluindo CAD, Orca, imagens, pagina e configurador, esta em
 `docs/catalog/configurator-contract.md`.
 
 Fonte única de verdade para os produtos do catálogo. Cada produto é um JSON em
-`catalog/products/<productId>.json`, validado contra `catalog/product.schema.json`.
+`catalog/products/<productId>.json`, descrito por `catalog/product.schema.json`.
+Na prática, `npm run product:check` valida atualmente apenas um subconjunto do
+schema, além de invariantes entre manifests, dados de slice e o fallback legado;
+o schema não deve ser tratado como validação completa executada em runtime.
 As categorias (e suas rotas `/configurar/{slug}`) vivem em `catalog/categories.json`.
 
 ## Como criar um produto novo

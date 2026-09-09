@@ -38,7 +38,13 @@ export async function POST(request) {
 
 function errorResponse(error) {
   const code = error.code || error.message || "print_job_request_failed";
-  const status = code === "admin_unauthorized" ? 401 : code.startsWith("print_job_invalid") ? 400 : 500;
+  const status = code === "admin_unauthorized"
+    ? 401
+    : code === "print_job_external_route_conflict"
+      ? 409
+      : code.startsWith("print_job_invalid")
+        ? 400
+        : 500;
   return NextResponse.json(
     { error: code, message: error.message || "Nao foi possivel processar a fila de impressao." },
     { status }

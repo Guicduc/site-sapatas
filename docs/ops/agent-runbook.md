@@ -9,6 +9,9 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Frete real: `docs/ops/shipping-integration.md`.
 - Nota fiscal automatizada (Focus NFe): `docs/ops/invoice-manual.md`.
 - Banco de dados: `docs/ops/database.sql`.
+- Migrations e ordem de deploy: `docs/ops/database-migrations.md`.
+- Fila pos-pagamento: `docs/ops/post-payment-outbox.md`.
+- Integracao de producao: `docs/ops/production-system-integration.md`.
 - Variaveis de ambiente: `.env.example`.
 - Contexto de produto/design para UI: `PRODUCT.md`.
 - Privacidade, cookies e regra para novos scripts: `docs/ops/privacy-cookies.md`.
@@ -25,6 +28,8 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
 - O adaptador `INVOICE_PROVIDER=mercado_pago` (endpoint fiscal MP) permanece dormente; o Mercado Pago nao tem API publica de NF-e.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
+- A API externa de producao usa somente `PRODUCTION_SYSTEM_TOKEN`; nunca aceite o token/cookie humano do admin nessa fronteira.
+- `print_jobs` permanece ativo ate auditoria, migracao e corte. Preserve `production_work_routes` para nao duplicar o mesmo pedido entre a ponte e o sistema externo.
 
 Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova antes de publicar. Tambem remova variaveis de loja externa, rotas alternativas de pagamento, webhooks de plataforma de loja, bibliotecas dedicadas a esse provedor e textos que tratem esse caminho como futuro.
 
@@ -37,11 +42,17 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 5. `lib/order-store.js` persiste pedido e pagamentos.
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
-8. Pagamento aprovado aciona `lib/invoice-provider.js` para emitir a NF-e automaticamente via Focus NFe.
+8. A mesma transacao enfileira e-mail e NF-e em `post_payment_outbox`.
+9. No modo padrao `inline`, o processador chama Resend e `lib/invoice-provider.js` apos o commit, no mesmo request. `async` exige agenda homologada antes da ativacao.
 
 Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` -> `Produzido` -> expedicao. A preparacao CAD e manual e nao cria status, gate ou bloqueio no pedido.
 
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
+
+Definicoes de cupons vivem somente em `lib/promotion-policy.js`. `PRIMEIRO15` e o
+cupom privado de frete usam CPF/CNPJ pseudonimizado por HMAC e uma reserva atomica
+em `promotion_redemptions`; aplique a migration antes do deploy. Configure
+`PROMOTION_IDENTITY_SECRET` (com fallback operacional para `ACCOUNT_SESSION_SECRET`).
 
 ## Frete
 
@@ -62,6 +73,7 @@ Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total pre
   - `*`: `false`
 - O Vercel CLI pode nao estar instalado no ambiente local. Nesse caso, o deploy deve ser disparado por commit e push para `origin/main`.
 - Antes de pushar, rode `npm run build`.
+- Quando houver migration nova, rode `npm run db:migrate` no banco alvo antes do push para `main`.
 - Se `git push origin main` for recusado por remoto adiantado, use:
   1. `git fetch origin main`
   2. inspecione `git log --oneline --decorate --graph --max-count=8 --all`
