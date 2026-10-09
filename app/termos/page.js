@@ -121,7 +121,7 @@ export default function TermsPage() {
             valor mínimo e limite de desconto, e não são cumulativos entre si.
           </p>
           <p>
-            A nota fiscal eletrônica é emitida automaticamente após a aprovação do pagamento, com
+            A nota fiscal eletrônica é emitida após a aprovação do pagamento e antes da expedição, com
             os dados informados no pedido. Confira nome, CPF/CNPJ e endereço antes de finalizar:
             dados incorretos atrasam a emissão e podem exigir correção antes da expedição.
           </p>

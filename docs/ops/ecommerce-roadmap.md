@@ -12,7 +12,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Plataforma propria: catalogo, configurador, carrinho, checkout, pedido, conta do cliente e administracao rodam no proprio site.
 - Checkout externo de loja nao faz parte da arquitetura atual nem do roadmap futuro.
 - Frete tem adaptador real para Melhor Envio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
-- Nota fiscal e automatizada por API via Focus NFe (`lib/invoice-provider.js`): pagamento aprovado emite a NF-e automaticamente. O Mercado Pago nao tem API publica de NF-e; o adaptador de endpoint MP segue dormente.
+- Nota fiscal: a emissao automatica via Focus NFe (`lib/invoice-provider.js`) esta pausada temporariamente (`INVOICE_AUTOMATION_ENABLED` desligado). Pedidos pagos entram na fila "NF a emitir" do admin, com os dados fiscais calculados para emissao manual. O Mercado Pago nao tem API publica de NF-e; o adaptador de endpoint MP segue dormente.
 
 ## Ja implementado
 

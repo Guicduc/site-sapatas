@@ -10,12 +10,15 @@ import {
   buildProductionQueue,
   getInvoiceStatusLabel,
   INVOICE_STATUS,
+  isHomologationInvoice,
   normalizeFulfillment,
   PRODUCTION_STATUS,
   SHIPMENT_STATUS,
 } from "@/lib/fulfillment";
+import { formatBrTaxDocument } from "@/lib/br-tax-document";
+import { buildFocusNfePayload } from "@/lib/focus-nfe";
 import { formatCurrency } from "@/lib/format";
-import { getInvoiceConfig, isAutomatedInvoiceProvider } from "@/lib/invoice-config";
+import { getInvoiceConfig, getProviderLabel, isAutomatedInvoiceProvider } from "@/lib/invoice-config";
 import {
   canCancelInvoice,
   cancelInvoice,
@@ -41,6 +44,7 @@ const FILTERS = [
   { id: "pagamento", label: "Pagamento" },
   { id: "impressao", label: "Producao" },
   { id: "expedicao", label: "Expedicao" },
+  { id: "notafiscal", label: "NF a emitir" },
   { id: "concluidos", label: "Concluidos" }
 ];
 
@@ -77,7 +81,9 @@ const SIMPLE_INVOICE_OPTIONS = [
   { value: INVOICE_STATUS.MANUAL_ISSUED, label: "NF emitida no emissor" },
   { value: INVOICE_STATUS.API_PENDING, label: "NF automatica pendente" },
   { value: INVOICE_STATUS.API_ISSUED, label: "NF emitida via API" },
-  { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF automatica" }
+  { value: INVOICE_STATUS.API_FAILED, label: "Falha na NF automatica" },
+  { value: INVOICE_STATUS.NOT_REQUIRED, label: "NF nao requerida" },
+  { value: INVOICE_STATUS.CANCELLED, label: "NF cancelada" }
 ];
 
 const SIMPLE_SHIPMENT_OPTIONS = [
@@ -144,6 +150,10 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
         <article>
           <span>Prontos para expedir</span>
           <strong>{overview.readyToShip}</strong>
+        </article>
+        <article>
+          <span>NF a emitir</span>
+          <strong>{overview.invoicesToIssue}</strong>
         </article>
         <article>
           <span>Concluidos</span>
@@ -569,6 +579,9 @@ function AdminOrderCard({ row, access }) {
             <span className="admin-section-note">{productionStage}</span>
           </summary>
           <OperationForm order={order} fulfillment={fulfillment} access={access} invoiceConfig={getInvoiceConfig()} />
+          {!isAutomatedInvoiceProvider(getInvoiceConfig().provider) && needsInvoiceIssue(order, fulfillment) && (
+            <ManualInvoiceSheet order={order} invoiceConfig={getInvoiceConfig()} />
+          )}
           {isAutomatedInvoiceProvider(getInvoiceConfig().provider) && canRequestInvoice(order, fulfillment) && (
             <InvoiceRequestForm order={order} access={access} providerLabel={getInvoiceConfig().providerLabel} />
           )}
@@ -655,7 +668,9 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
         <p className="admin-note">
           {isAutomatedInvoiceProvider(invoiceConfig.provider)
             ? `Emissao automatica de NF-e via ${invoiceConfig.providerLabel} apos pagamento aprovado. Use este formulario apenas para conferencia e ajustes.`
-            : `Emissao fora do site em ${invoiceConfig.providerLabel}. Confira cadastro fiscal, itens, total pago, CFOP/NCM e ambiente antes de expedir.`}
+            : invoiceConfig.automationPaused
+              ? `Emissao automatica via ${getProviderLabel(invoiceConfig.configuredProvider)} pausada. Emita a NF-e no emissor com os dados para emissao manual e registre numero, serie e chave aqui como "NF emitida no emissor".`
+              : `Emissao fora do site em ${invoiceConfig.providerLabel}. Confira cadastro fiscal, itens, total pago, CFOP/NCM e ambiente antes de expedir.`}
         </p>
         <ul className="admin-note">
           <li>Pedido local: {order.orderNumber}</li>
@@ -695,6 +710,10 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
           <span>Emissao NF</span>
           <input name="invoiceIssuedAt" type="datetime-local" defaultValue={toDateTimeLocal(fulfillment.invoice.issuedAt)} />
         </label>
+        <label className="field field-wide">
+          <span>Notas da NF</span>
+          <textarea name="invoiceNotes" defaultValue={fulfillment.invoice.notes} rows={3} />
+        </label>
       </fieldset>
 
       <fieldset className="operation-form__group">
@@ -721,12 +740,8 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
           <input name="shippedAt" type="datetime-local" defaultValue={toDateTimeLocal(fulfillment.shipment.shippedAt)} />
         </label>
         <label className="field field-wide">
-          <span>Notas fiscais/expedicao</span>
-          <textarea
-            name="operationNotes"
-            defaultValue={[fulfillment.invoice.notes, fulfillment.shipment.notes].filter(Boolean).join("\n")}
-            rows={3}
-          />
+          <span>Notas de expedicao</span>
+          <textarea name="shipmentNotes" defaultValue={fulfillment.shipment.notes} rows={3} />
         </label>
       </fieldset>
 
@@ -735,6 +750,50 @@ function OperationForm({ order, fulfillment, access, invoiceConfig }) {
       </button>
     </form>
   );
+}
+
+function ManualInvoiceSheet({ order, invoiceConfig }) {
+  const sheet = buildManualInvoiceSheet(order, invoiceConfig);
+
+  return (
+    <section className="cad-form manual-invoice-sheet" aria-label={`Dados para emissao manual da NF do pedido ${order.orderNumber}`}>
+      <h3>Dados para emissao manual da NF-e</h3>
+      {sheet.error ? (
+        <p className="admin-note">Nao foi possivel montar os dados fiscais: {sheet.error}</p>
+      ) : (
+        <>
+          <ul className="admin-note">
+            <li>Destinatario: {sheet.payload.nome_destinatario} | {formatBrTaxDocument(sheet.payload.cnpj_destinatario || sheet.payload.cpf_destinatario)}</li>
+            <li>
+              Endereco: {[sheet.payload.logradouro_destinatario, sheet.payload.numero_destinatario, sheet.payload.complemento_destinatario].filter(Boolean).join(", ")}
+              {" | "}{sheet.payload.bairro_destinatario} | {sheet.payload.municipio_destinatario}/{sheet.payload.uf_destinatario} | CEP {sheet.payload.cep_destinatario}
+            </li>
+            <li>CFOP: {sheet.payload.items[0]?.cfop} | NCM: {sheet.payload.items[0]?.codigo_ncm} | CSOSN: {sheet.payload.items[0]?.icms_situacao_tributaria}</li>
+            {sheet.payload.items.map((item) => (
+              <li key={item.numero_item}>
+                Item {item.numero_item}: {item.descricao} | {item.quantidade_comercial} UN | {formatCurrency(item.valor_bruto)}
+                {item.valor_desconto ? ` | desconto ${formatCurrency(item.valor_desconto)}` : ""}
+              </li>
+            ))}
+            <li>
+              Produtos {formatCurrency(sheet.payload.valor_produtos)} | Desconto {formatCurrency(sheet.payload.valor_desconto)}
+              {" | "}Frete {formatCurrency(sheet.payload.valor_frete)} | Total NF {formatCurrency(sheet.payload.valor_total)}
+            </li>
+          </ul>
+          <CopyJsonButton text={JSON.stringify(sheet.payload, null, 2)} label="Copiar dados fiscais (JSON)" />
+        </>
+      )}
+    </section>
+  );
+}
+
+function buildManualInvoiceSheet(order, invoiceConfig) {
+  try {
+    // Ambiente "producao" so define o nome real do destinatario; nada e enviado a API.
+    return { payload: buildFocusNfePayload(order, { ...invoiceConfig, environment: "producao" }) };
+  } catch (error) {
+    return { error: error.message || "dados fiscais incompletos." };
+  }
 }
 
 function InvoiceRequestForm({ order, access, providerLabel }) {
@@ -796,7 +855,6 @@ async function updateOperation(formData) {
   const orderId = cleanFormValue(formData.get("orderId"));
   if (!orderId) return;
 
-  const operationNotes = cleanFormValue(formData.get("operationNotes"));
   const currentProductionStatus = cleanFormValue(formData.get("currentProductionStatus"));
   const currentInvoiceStatus = cleanFormValue(formData.get("currentInvoiceStatus"));
   const currentShipmentStatus = cleanFormValue(formData.get("currentShipmentStatus"));
@@ -827,7 +885,7 @@ async function updateOperation(formData) {
       series: cleanFormValue(formData.get("invoiceSeries")),
       accessKey: cleanFormValue(formData.get("invoiceAccessKey")),
       issuedAt: cleanFormValue(formData.get("invoiceIssuedAt")),
-      notes: operationNotes
+      notes: cleanFormValue(formData.get("invoiceNotes"))
     },
     shipment: {
       status: resolveSubmittedSimpleStatus({
@@ -838,7 +896,7 @@ async function updateOperation(formData) {
       carrier: cleanFormValue(formData.get("carrier")),
       trackingCode: cleanFormValue(formData.get("trackingCode")),
       shippedAt: cleanFormValue(formData.get("shippedAt")),
-      notes: operationNotes
+      notes: cleanFormValue(formData.get("shipmentNotes"))
     }
   });
 
@@ -1012,6 +1070,10 @@ function getRowFilters({ order, fulfillment }) {
     filters.push("expedicao");
   }
 
+  if (needsInvoiceIssue(order, fulfillment)) {
+    filters.push("notafiscal");
+  }
+
   if (isCompleted(order, fulfillment)) {
     filters.push("concluidos");
   }
@@ -1044,6 +1106,13 @@ function isCompleted(order, fulfillment) {
     || [SHIPMENT_STATUS.SHIPPED, SHIPMENT_STATUS.DELIVERED].includes(fulfillment.shipment.status);
 }
 
+function needsInvoiceIssue(order, fulfillment) {
+  return order.status !== ORDER_STATUS.CANCELLED
+    && !order.metadata?.paymentReview
+    && (canRequestInvoice(order, fulfillment)
+      || (order.paymentStatus === PAYMENT_STATUS.APPROVED && isHomologationInvoice(fulfillment.invoice)));
+}
+
 function canRequestInvoice(order, fulfillment) {
   if (order.paymentStatus !== PAYMENT_STATUS.APPROVED) return false;
 
@@ -1061,6 +1130,7 @@ function buildOrdersOverview(orders, rows, printQueueRows) {
     waitingPayment: rows.filter((row) => row.filters.includes("pagamento")).length,
     printQueue: printQueueRows.length,
     readyToShip: rows.filter((row) => row.fulfillment.production.status === PRODUCTION_STATUS.READY_TO_SHIP).length,
+    invoicesToIssue: rows.filter((row) => row.filters.includes("notafiscal")).length,
     completed: rows.filter((row) => row.filters.includes("concluidos")).length
   };
 }
@@ -1099,11 +1169,17 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
   }
 
   if (fulfillment.production.status === PRODUCTION_STATUS.READY_TO_SHIP) {
-    return {
-      tone: "success",
-      title: "Pronto para expedir",
-      detail: "Conferir NF e despachar."
-    };
+    return needsInvoiceIssue(order, fulfillment)
+      ? {
+        tone: "warning",
+        title: "Emitir NF antes de expedir",
+        detail: "Emita a NF-e no emissor e registre numero, serie e chave."
+      }
+      : {
+        tone: "success",
+        title: "Pronto para expedir",
+        detail: "Conferir NF e despachar."
+      };
   }
 
   if (fulfillment.production.status === PRODUCTION_STATUS.BLOCKED) {
@@ -1176,6 +1252,7 @@ function formatShippingAddress(order) {
 }
 
 function formatInvoiceShort(invoice) {
+  if (isHomologationInvoice(invoice)) return "NF de homologacao";
   return invoice.number ? `NF ${invoice.number}` : getInvoiceStatusLabel(invoice.status);
 }
 
@@ -1292,6 +1369,7 @@ function getFilterEmptyLabel(filter) {
     pagamento: "pagamento",
     impressao: "producao",
     expedicao: "expedicao",
+    notafiscal: "nota fiscal a emitir",
     concluidos: "concluidos"
   };
   return labels[filter] || "pedidos";

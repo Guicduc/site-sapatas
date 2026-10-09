@@ -2,6 +2,25 @@
 
 Este documento registra o fluxo fiscal com `INVOICE_PROVIDER=focus_nfe`: a emissao da NF-e e automatica, disparada pelo pagamento aprovado.
 
+## Pausa temporaria (estado atual)
+
+A emissao automatica esta **pausada**. A automacao so roda quando `INVOICE_AUTOMATION_ENABLED=true`; sem essa variavel, `getInvoiceConfig()` trata o provider efetivo como `manual` e preserva `INVOICE_PROVIDER`, tokens e webhook para o religamento.
+
+Enquanto a pausa durar:
+
+1. O webhook do Mercado Pago continua enfileirando o evento fiscal (`focus_nfe_invoice`) na mesma transacao do pagamento. O processador nao chama a Focus NFe: ele registra a NF do pedido como `manual_pending` ("NF pendente no emissor") com a nota "Emissao automatica via Focus NFe pausada".
+2. Em `/admin/pedidos?fila=notafiscal` ("NF a emitir") ficam todos os pedidos pagos, nao cancelados e sem revisao de pagamento cuja NF ainda nao foi emitida, cancelada ou marcada como nao requerida. O resumo do admin mostra o total.
+3. Cada pedido da fila mostra "Dados para emissao manual da NF-e": destinatario, CPF/CNPJ, endereco, CFOP/NCM/CSOSN, itens com desconto rateado, frete e total, calculados pelo mesmo montador do payload fiscal (nada e enviado a API). O botao "Copiar dados fiscais (JSON)" copia o conjunto completo. Se faltar dado (ex.: pedido sem CPF/CNPJ), a ficha mostra o motivo.
+4. A operacao emite a NF-e no emissor (painel Focus NFe ou emissor da SEFAZ) e registra no formulario "Operacao" do pedido: status "NF emitida no emissor", numero, serie, chave de 44 digitos e data. O pedido sai da fila.
+5. Notificacoes antigas da Focus em `/api/webhooks/focus-nfe` recebem `200` com `ignored: invoice_automation_paused`, para nao gerar reenvio infinito.
+6. O health check (`/api/integrations/health`) mostra `manual:focus_nfe_pausado`, e `npm run invoice:audit` marca `automation_enabled` para confirmacao.
+
+### Religar a emissao automatica
+
+1. Homologar uma emissao completa em `FOCUS_NFE_ENV=homologacao` e rodar `npm run invoice:audit`.
+2. Definir `INVOICE_AUTOMATION_ENABLED=true` no ambiente (Vercel Production) e publicar.
+3. Pedidos que ficaram em `manual_pending` nao sao reenviados sozinhos: emita manualmente ou use "Emitir NF via Focus NFe" no admin pedido a pedido.
+
 ## Decisao atual
 
 - A emissao de NF-e e **automatizada por API** via Focus NFe (`lib/invoice-provider.js`).

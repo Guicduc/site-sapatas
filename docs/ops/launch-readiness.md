@@ -7,7 +7,7 @@ Escopo fixo da operacao:
 - Checkout proprio do site.
 - Pagamento via Mercado Pago.
 - Frete por Melhor Envio quando homologado, com fallback manual preservado.
-- Nota fiscal automatizada por API via Focus NFe, com `INVOICE_PROVIDER=focus_nfe`. O adaptador `mercado_pago` segue dormente porque o Mercado Pago nao tem API publica de NF-e.
+- Nota fiscal via Focus NFe (`INVOICE_PROVIDER=focus_nfe`) com emissao automatica **pausada temporariamente**: sem `INVOICE_AUTOMATION_ENABLED=true`, a NF-e e emitida manualmente a partir da fila "NF a emitir" do admin. O adaptador `mercado_pago` segue dormente porque o Mercado Pago nao tem API publica de NF-e.
 - Admin protegido por sessao e token operacional.
 
 ## 1. Pre-lancamento

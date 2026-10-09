@@ -22,10 +22,10 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio do site deve continuar criando pedido local antes de gerar pagamento.
 - Frete real usa o adaptador Melhor Envio em `lib/shipping.js`; sem credenciais, o site deve continuar com fallback manual.
-- Nota fiscal e automatizada por API via Focus NFe (`INVOICE_PROVIDER=focus_nfe` + `FOCUS_NFE_TOKEN`); pagamento aprovado emite a NF-e automaticamente. Fluxo e pre-requisitos em `docs/ops/invoice-manual.md`.
+- Nota fiscal: a emissao automatica via Focus NFe esta **pausada temporariamente**. Ela so roda com `INVOICE_PROVIDER=focus_nfe`, `FOCUS_NFE_TOKEN` e `INVOICE_AUTOMATION_ENABLED=true`; sem a flag, o pagamento aprovado registra a NF como `manual_pending` (fila "NF a emitir" em `/admin/pedidos?fila=notafiscal`) e a operacao emite no emissor e registra numero, serie e chave no pedido. Fluxo, pausa e religamento em `docs/ops/invoice-manual.md`.
 - Antes de homologar ou virar o ambiente fiscal, rode `npm run invoice:audit`; o gancho exige `FOCUS_NFE_WEBHOOK_TOKEN` e deve apontar para `/api/webhooks/focus-nfe`.
 - O checkout exige CPF/CNPJ do cliente (validado no servidor) porque a NF-e exige documento do destinatario.
-- Sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
+- Com a automacao ativa e sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
 - O adaptador `INVOICE_PROVIDER=mercado_pago` (endpoint fiscal MP) permanece dormente; o Mercado Pago nao tem API publica de NF-e.
 - O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 - A API externa de producao usa somente `PRODUCTION_SYSTEM_TOKEN`; nunca aceite o token/cookie humano do admin nessa fronteira.
@@ -43,7 +43,7 @@ Se algum branch, PR ou merge trouxer outro checkout/plataforma externa, remova a
 6. `POST /api/payments/mercado-pago/preference` cria a preferencia Mercado Pago.
 7. `POST /api/webhooks/mercado-pago` atualiza status de pagamento e pedido.
 8. A mesma transacao enfileira e-mail e NF-e em `post_payment_outbox`.
-9. No modo padrao `inline`, o processador chama Resend e `lib/invoice-provider.js` apos o commit, no mesmo request. `async` exige agenda homologada antes da ativacao.
+9. No modo padrao `inline`, o processador chama Resend e `lib/invoice-provider.js` apos o commit, no mesmo request. `async` exige agenda homologada antes da ativacao. Com a NF-e pausada, o evento fiscal apenas marca a NF como `manual_pending`.
 
 Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` -> `Produzido` -> expedicao. A preparacao CAD e manual e nao cria status, gate ou bloqueio no pedido.
 
