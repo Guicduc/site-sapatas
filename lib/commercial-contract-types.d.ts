@@ -6,7 +6,7 @@ export type OrderStatus =
 
 export type PaymentStatus =
   | "pending" | "approved" | "rejected" | "cancelled"
-  | "expired" | "refunded" | "unknown";
+  | "expired" | "refunded" | "in_mediation" | "unknown";
 
 export type ProductionStatus =
   | "waiting_payment" | "queued" | "scheduled" | "in_production"
@@ -87,7 +87,7 @@ export type PromotionResult = {
 export type PublicPromotionResult = Omit<PromotionResult, "claim">;
 
 export type PaymentCustomerEmailPayload = { paymentStatus: "approved" | "rejected"; paymentId: string | null };
-export type PaymentReviewEmailPayload = { paymentId: string | null; review: { reason: string; providerPaymentId: string | null; paidAmountBrl: number | null; expectedAmountBrl: number | null; detectedAt: string | null } };
+export type PaymentReviewEmailPayload = { paymentId: string | null; review: { reason: string; providerPaymentId: string | null; paidAmountBrl: number | null; expectedAmountBrl: number | null; detectedAt: string | null; blocking?: false; providerStatus?: string; refundedAmountBrl?: number; currency?: string; otherPaymentIds?: string[] } };
 export type FocusNfeInvoicePayload = { paymentId: string | null };
 export type OutboxEvent =
   | { type: "payment_customer_email"; orderId: string; idempotencyKey: string; payload: PaymentCustomerEmailPayload }
@@ -109,5 +109,9 @@ export interface MercadoPagoPaymentPayload {
   external_reference?: string;
   preference_id?: string;
   transaction_amount?: number;
+  transaction_amount_refunded?: number;
+  currency_id?: string;
+  status_detail?: string;
+  date_last_updated?: string;
   metadata?: { order_id?: string };
 }

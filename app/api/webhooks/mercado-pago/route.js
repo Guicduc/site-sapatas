@@ -95,7 +95,7 @@ export async function GET() {
 }
 
 function normalizeLocalStatus(status) {
-  if (["approved", "rejected", "cancelled", "expired", "pending", "refunded"].includes(status)) {
+  if (["approved", "rejected", "cancelled", "expired", "pending", "refunded", "in_mediation"].includes(status)) {
     return status;
   }
 
