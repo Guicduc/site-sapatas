@@ -1,15 +1,14 @@
 import { Suspense } from "react";
 
 import { SpecialRequestBuilder } from "@/components/special-request-builder";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Projeto especial de sapatas",
   description:
     "Descreva a necessidade de uma sapata ou peça que não está disponível no catálogo da Baseforma.",
-  alternates: {
-    canonical: "/projeto-especial"
-  }
-};
+  path: "/projeto-especial"
+});
 
 export default function ProjetoEspecialPage() {
   return (

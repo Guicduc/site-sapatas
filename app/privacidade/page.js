@@ -1,10 +1,13 @@
 import { CookiePreferencesButton } from "@/components/cookie-preferences-button";
 import { brand } from "@/lib/site-data";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Privacidade e cookies",
-  description: "Tecnologias de armazenamento usadas pela Baseforma e como revisar suas preferências."
-};
+  description:
+    "Tecnologias de armazenamento usadas pela Baseforma e como revisar suas preferências.",
+  path: "/privacidade"
+});
 
 const storageItems = [
   {
