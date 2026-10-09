@@ -59,6 +59,34 @@ ou producao manual ja iniciada como `legacy_print_queue`. Aplique-a antes de pub
 `PRODUCTION_SYSTEM_MODE=disabled`, porque a sincronizacao da ponte consulta o
 roteamento duravel.
 
+## Indices de consultas quentes
+
+`20261009_hot_query_indexes.sql` cria somente indices (`create index if not
+exists`) para leitura de itens/revisoes por pedido, lookup do webhook por
+preferencia, contas por `lower(email)`, cupom por CPF/CNPJ e o join
+`orders.customer_id`. Nao altera dados. Como o runner usa transacao, os indices
+nao sao `concurrently`: em tabelas grandes a criacao bloqueia escritas na tabela
+durante alguns instantes, entao rode fora de horario de pico.
+
+Nao ha indice unico em `payments(provider, provider_payment_id)`. O codigo atual
+nao insere duplicatas (lookup e insert ocorrem sob lock do pedido), mas versoes
+anteriores a `315ba17` faziam check-then-insert sem transacao e podem ter
+deixado linhas duplicadas. Antes de propor esse indice, confira:
+
+```sql
+select provider, provider_payment_id, count(*)
+from payments
+where provider_payment_id is not null
+group by 1, 2
+having count(*) > 1;
+```
+
+O snapshot ainda contem `orders_fulfillment_*_idx` e
+`competitor_product_prices`, que nenhuma migration cria. Nenhuma consulta atual
+usa esses caminhos (os filtros de fulfillment usam `coalesce(...) <> all(...)`,
+que nao aproveita esses indices, e a tabela de concorrentes nao e lida pelo
+codigo), entao bancos criados so por migrations funcionam sem eles.
+
 ## Bancos com recursos ainda nao usados
 
 `20260820_runtime_store_baseline.sql` cria idempotentemente as tabelas antes
