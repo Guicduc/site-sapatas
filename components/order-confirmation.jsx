@@ -9,19 +9,21 @@ import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 import { readDemoOrders } from "@/components/demo-account";
 
 export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
-  const { clearCart } = useCart();
+  const { clearCart, loaded: cartLoaded } = useCart();
   const [orderId, setOrderId] = useState(initialOrderId);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(Boolean(initialOrderId));
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  // Espera o carrinho ser restaurado do storage; limpar antes disso seria
+  // desfeito pela restauracao. clearCart e estavel, entao roda uma vez.
   useEffect(() => {
-    if (initialPaymentResult === "success") {
+    if (cartLoaded && initialPaymentResult === "success") {
       clearCart();
       clearStoredPendingCheckout();
     }
-  }, [clearCart, initialPaymentResult]);
+  }, [cartLoaded, clearCart, initialPaymentResult]);
 
   useEffect(() => {
     if (orderId) {

@@ -88,16 +88,34 @@ export async function POST(request) {
     );
     return response;
   } catch (error) {
+    // So erros de validacao conhecidos (4xx) expõem a mensagem ao cliente;
+    // falhas internas (banco, configuracao) viram 500 generico.
+    if (!isClientError(error)) {
+      console.error("[orders] falha inesperada ao criar pedido", error);
+      return NextResponse.json(
+        {
+          error: "order_create_failed",
+          message: "Não foi possível criar o pedido agora. Tente novamente em instantes."
+        },
+        { status: 500 }
+      );
+    }
+
     const response = NextResponse.json(
       {
-        error: error.code || "order_create_failed",
-        message: error.message || "Não foi possível criar o pedido."
+        error: error.code || "order_validation_failed",
+        message: error.message || "Revise os dados do pedido.",
+        ...(Array.isArray(error.details) && error.details.length ? { details: error.details } : {})
       },
-      { status: error.status || 400 }
+      { status: error.status }
     );
     if (error.status === 429) response.headers.set("Retry-After", "900");
     return response;
   }
+}
+
+function isClientError(error) {
+  return Number.isInteger(error?.status) && error.status >= 400 && error.status < 500;
 }
 
 // Cancela o pedido anterior quando o checkout cria um substituto (o carrinho

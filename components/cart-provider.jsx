@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { restoreClientCart, updateClientCartItem } from "@/lib/client-cart";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { clampCartQuantity, restoreClientCart, updateClientCartItem } from "@/lib/client-cart";
 
 const CartContext = createContext(null);
 const storageKey = "baseforma-cart";
@@ -25,10 +25,48 @@ export function CartProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (loaded) {
+    if (!loaded) return;
+
+    try {
       window.localStorage.setItem(storageKey, JSON.stringify(items));
+    } catch {
+      // Storage cheio ou bloqueado nao pode derrubar o site: o carrinho segue
+      // em memoria nesta aba.
     }
   }, [items, loaded]);
+
+  // Callbacks estaveis: consumidores podem usa-los em dependencias de efeitos
+  // sem disparar novos renders a cada mudanca do carrinho.
+  const addItem = useCallback((item) => {
+    setItems((current) => [
+      ...current,
+      {
+        ...item,
+        quantity: clampCartQuantity(item.quantity),
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      }
+    ]);
+  }, []);
+
+  const updateQuantity = useCallback((id, quantity) => {
+    const safeQuantity = clampCartQuantity(quantity);
+    setItems((current) =>
+      current.map((item) =>
+        item.id === id
+          ? updateClientCartItem(item, safeQuantity)
+          : item
+      )
+    );
+  }, []);
+
+  const removeItem = useCallback((id) => {
+    setItems((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const clearCart = useCallback(() => {
+    // Mantem a mesma referencia quando ja esta vazio para nao gerar render.
+    setItems((current) => (current.length ? [] : current));
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -36,33 +74,12 @@ export function CartProvider({ children }) {
       loaded,
       count: items.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
       total: items.reduce((sum, item) => sum + Number(item.priceBrl || 0), 0),
-      addItem(item) {
-        setItems((current) => [
-          ...current,
-          {
-            ...item,
-            id: `${Date.now()}-${Math.random().toString(16).slice(2)}`
-          }
-        ]);
-      },
-      updateQuantity(id, quantity) {
-        const safeQuantity = Math.max(1, Number(quantity || 1));
-        setItems((current) =>
-          current.map((item) =>
-            item.id === id
-              ? updateClientCartItem(item, safeQuantity)
-              : item
-          )
-        );
-      },
-      removeItem(id) {
-        setItems((current) => current.filter((item) => item.id !== id));
-      },
-      clearCart() {
-        setItems([]);
-      }
+      addItem,
+      updateQuantity,
+      removeItem,
+      clearCart
     }),
-    [items]
+    [items, loaded, addItem, updateQuantity, removeItem, clearCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

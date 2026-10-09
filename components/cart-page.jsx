@@ -10,15 +10,18 @@ import {
   isValidBrTaxDocument,
   normalizeBrTaxDocument
 } from "@/lib/br-tax-document";
+import { MAX_CART_ITEM_QUANTITY } from "@/lib/client-cart";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { getCategoryBySlug, getFormat, productCategories } from "@/lib/client-configurator-data";
 import { formatCurrency } from "@/lib/format";
 import { buildConfiguratorOrderPayload } from "@/lib/order-payload";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
+import { getPostalCodeStateValidationMessage } from "@/lib/postal-code-region";
 import { saveDemoOrder } from "@/components/demo-account";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
 const pendingCheckoutStorageKey = "baseforma-pending-checkout";
+const lastOrderStorageKey = "baseforma-last-order-id";
 
 export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
@@ -82,6 +85,9 @@ export function CartPage() {
                       <input
                         type="number"
                         min="1"
+                        max={MAX_CART_ITEM_QUANTITY}
+                        step="1"
+                        inputMode="numeric"
                         value={item.quantity}
                         onChange={(event) => updateQuantity(item.id, event.target.value)}
                       />
@@ -222,7 +228,9 @@ function CheckoutForm({ cartTotal }) {
   const [shippingQuoteState, setShippingQuoteState] = useState({
     status: "idle",
     quote: null,
-    commerce: null
+    commerce: null,
+    key: "",
+    message: ""
   });
   const itemsSubtotal = items.reduce((sum, item) => sum + Number(item.priceBrl || item.totalPriceBrl || 0), 0);
   const localCommerce = calculateCommerceAdjustments({
@@ -238,10 +246,29 @@ function CheckoutForm({ cartTotal }) {
   const showDocumentError = Boolean(documentValidationMessage)
     && (documentTouched || documentDigits.length >= 11);
   const customerName = [name, lastName].map((part) => part.trim()).filter(Boolean).join(" ");
+  // So avalia a UF depois de digitada por completo, para nao alertar no meio
+  // da digitacao. O servidor aplica a mesma regra ao criar o pedido.
+  const regionValidationMessage = address.state.trim().length === 2
+    ? getPostalCodeStateValidationMessage(address)
+    : "";
+  const quoteSnapshotKey = JSON.stringify({
+    items,
+    postalCode: address.postalCode,
+    state: address.state,
+    couponCode,
+    email,
+    documentDigits
+  });
+  // Totais, frete e cupom so valem para a cotacao do snapshot atual; enquanto
+  // ela recarrega (ou aguarda o debounce) o envio fica bloqueado.
+  const quoteReady = shippingQuoteState.key === quoteSnapshotKey
+    && (shippingQuoteState.status === "quoted" || shippingQuoteState.status === "error");
   const canSubmit = items.length > 0 && name.trim() && lastName.trim() && email.trim() && contact.trim()
     && isValidBrTaxDocument(documentDigits)
     && address.postalCode.trim() && address.street.trim() && address.number.trim()
-    && address.city.trim() && address.state.trim().length === 2
+    && address.district.trim() && address.city.trim() && address.state.trim().length === 2
+    && !regionValidationMessage
+    && quoteReady
     && couponReady;
   const recoverySnapshotKey = JSON.stringify({
     items,
@@ -252,14 +279,6 @@ function CheckoutForm({ cartTotal }) {
     address,
     couponCode,
     commerceTotalBrl: commerce.totalBrl
-  });
-  const quoteSnapshotKey = JSON.stringify({
-    items,
-    postalCode: address.postalCode,
-    state: address.state,
-    couponCode,
-    email,
-    documentDigits
   });
 
   useEffect(() => {
@@ -366,10 +385,11 @@ function CheckoutForm({ cartTotal }) {
   useEffect(() => {
     const postalCode = String(address.postalCode || "").replace(/\D/g, "");
     if (!loaded || !items.length || postalCode.length < 8) {
-      setShippingQuoteState({ status: "idle", quote: null, commerce: null });
+      setShippingQuoteState({ status: "idle", quote: null, commerce: null, key: "", message: "" });
       return undefined;
     }
 
+    const snapshotKey = quoteSnapshotKey;
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       try {
@@ -396,12 +416,20 @@ function CheckoutForm({ cartTotal }) {
           setShippingQuoteState({
             status: "quoted",
             quote: payload.shippingQuote || null,
-            commerce: payload.commerce || null
+            commerce: payload.commerce || null,
+            key: snapshotKey,
+            message: ""
           });
         }
-      } catch {
+      } catch (quoteError) {
         if (!cancelled) {
-          setShippingQuoteState({ status: "idle", quote: null, commerce: null });
+          setShippingQuoteState({
+            status: "error",
+            quote: null,
+            commerce: null,
+            key: snapshotKey,
+            message: quoteError?.message || "Nao foi possivel cotar o frete."
+          });
         }
       }
     }, 550);
@@ -551,7 +579,7 @@ function CheckoutForm({ cartTotal }) {
       }
 
       setCreatedOrder(order);
-      window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+      rememberLastOrderId(order.id);
 
       if (order.demo) {
         saveDemoOrder(order);
@@ -588,7 +616,7 @@ function CheckoutForm({ cartTotal }) {
         clearPendingCheckout();
         order = await createNewOrder();
         setCreatedOrder(order);
-        window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+        rememberLastOrderId(order.id);
 
         if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
           clearPendingCheckout();
@@ -611,7 +639,7 @@ function CheckoutForm({ cartTotal }) {
         clearPendingCheckout();
         order = await createNewOrder();
         setCreatedOrder(order);
-        window.sessionStorage.setItem("baseforma-last-order-id", order.id);
+        rememberLastOrderId(order.id);
 
         if (order.status === ORDER_STATUS.NEEDS_TECHNICAL_REVIEW) {
           clearPendingCheckout();
@@ -720,7 +748,7 @@ function CheckoutForm({ cartTotal }) {
         <p className="checkout-section__description">Usaremos este endereço para calcular o frete e enviar seu pedido.</p>
         <div className="checkout-address__row checkout-address__row--postal">
           <label className="field checkout-field--postal"><span>CEP <RequiredMark /></span><input inputMode="numeric" autoComplete="shipping postal-code" required value={address.postalCode} placeholder="01001-000" onChange={(event) => updatePostalCode(event.target.value)} /></label>
-          <label className="field checkout-field--state"><span>UF <RequiredMark /></span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
+          <label className="field checkout-field--state"><span>UF <RequiredMark /></span><input maxLength="2" autoComplete="shipping address-level1" required value={address.state} aria-invalid={Boolean(regionValidationMessage)} aria-describedby={regionValidationMessage ? "address-region-error" : undefined} onChange={(event) => updateAddress("state", event.target.value.toUpperCase())} /></label>
         </div>
         <p
           className={`checkout-note checkout-address__lookup-status${postalCodeLookupState.status === "idle" ? " is-empty" : ""}${postalCodeLookupState.status === "not_found" || postalCodeLookupState.status === "error" ? " checkout-note--warning" : ""}`}
@@ -729,13 +757,18 @@ function CheckoutForm({ cartTotal }) {
         >
           {postalCodeLookupState.message}
         </p>
+        {regionValidationMessage && (
+          <p id="address-region-error" className="checkout-note checkout-note--warning" role="alert">
+            {regionValidationMessage}
+          </p>
+        )}
         <label className="field checkout-field--street"><span>Rua ou avenida <RequiredMark /></span><input autoComplete="shipping address-line1" required value={address.street} onChange={(event) => updateAddress("street", event.target.value)} /></label>
         <div className="checkout-address__row">
           <label className="field checkout-field--number"><span>Número <RequiredMark /></span><input autoComplete="shipping address-line2" required value={address.number} onChange={(event) => updateAddress("number", event.target.value)} /></label>
           <label className="field checkout-field--complement"><span>Complemento</span><input autoComplete="shipping address-line3" value={address.complement} onChange={(event) => updateAddress("complement", event.target.value)} /></label>
         </div>
         <div className="checkout-address__row">
-          <label className="field checkout-field--district"><span>Bairro</span><input autoComplete="shipping address-level3" value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
+          <label className="field checkout-field--district"><span>Bairro <RequiredMark /></span><input autoComplete="shipping address-level3" required value={address.district} onChange={(event) => updateAddress("district", event.target.value)} /></label>
           <label className="field checkout-field--city"><span>Cidade <RequiredMark /></span><input autoComplete="shipping address-level2" required value={address.city} onChange={(event) => updateAddress("city", event.target.value)} /></label>
         </div>
       </fieldset>
@@ -780,6 +813,11 @@ function CheckoutForm({ cartTotal }) {
       {shippingQuoteState.status === "loading" && (
         <p className="checkout-note">
           Consultando frete para o CEP informado.
+        </p>
+      )}
+      {shippingQuoteState.status === "error" && !regionValidationMessage && (
+        <p className="checkout-note checkout-note--warning" role="alert">
+          {shippingQuoteState.message}
         </p>
       )}
       {createdOrder && (
@@ -973,6 +1011,14 @@ function savePendingCheckout(pending) {
     window.localStorage.setItem(pendingCheckoutStorageKey, JSON.stringify(pending));
   } catch {
     // Storage indisponível não deve bloquear o checkout.
+  }
+}
+
+function rememberLastOrderId(orderId) {
+  try {
+    window.sessionStorage.setItem(lastOrderStorageKey, orderId);
+  } catch {
+    // Storage indisponivel nao deve bloquear o checkout.
   }
 }
 
