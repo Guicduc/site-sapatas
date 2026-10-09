@@ -9,6 +9,10 @@ import {
 import { persistAndDispatchMercadoPagoUpdate } from "@/lib/post-payment-dispatch";
 import { parseMercadoPagoWebhookPayload } from "@/lib/commercial-contracts";
 
+// Limite explicito da funcao: cobre os timeouts dos provedores (Mercado Pago
+// 10s, Melhor Envio 8s, Focus NFe 15s) e fica abaixo do lease da fila (120s).
+export const maxDuration = 60;
+
 export async function POST(request) {
   let payload;
   const requestUrl = new URL(request.url);

@@ -5,6 +5,7 @@ import { processOutboxBatch } from "@/lib/outbox-processor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(request) {
   return processRequest(request);
