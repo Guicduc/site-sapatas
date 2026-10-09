@@ -43,6 +43,21 @@ com backoff exponencial até `OUTBOX_MAX_ATTEMPTS`; depois ficam `failed` com
 erro sanitizado. Lease expirado pode ser retomado. Um lease expirado na última
 tentativa vira falha terminal.
 
+Falhas determinísticas não são repetidas e vão direto para `failed`
+(`NON_RETRYABLE_OUTBOX_CODES` em `lib/outbox-processor.js`): e-mail ou
+destinatário ausente, Resend sem chave/remetente, Resend 4xx (`send_rejected`,
+exceto 408/409/429), conflito de idempotência do Resend
+(`idempotency_conflict`), CPF/CNPJ ausente, credenciais fiscais ausentes e
+payload/total fiscal inválido. Corrija o dado ou a configuração e recoloque o
+evento em fila pelo `POST /api/admin/outbox`. Em `idempotency_conflict`, confira
+no log do Resend se o primeiro envio já foi entregue antes de reprocessar.
+Timeouts (`RESEND_TIMEOUT_MS`), 408, 429, 5xx e requisições idempotentes
+concorrentes continuam com retry.
+
+O corpo do e-mail de pagamento aprovado usa somente dados imutáveis do evento
+(a data exibida é a criação do evento na fila, não `payments.updated_at`), para
+que a mesma chave de idempotência do Resend sempre envie o mesmo corpo.
+
 Não há cron em `vercel.json` por padrão. Mantenha o modo inline até habilitar e testar o processador. Antes de habilitar, confirme a
 frequência disponível no plano e o atraso operacional aceitável para e-mail e
 NF-e. Depois do deploy, faça uma chamada manual controlada e só então ative a

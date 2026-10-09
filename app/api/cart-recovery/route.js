@@ -42,10 +42,14 @@ export async function POST(request) {
 
     return NextResponse.json({ recovery: lead }, { status: 201 });
   } catch (error) {
+    console.warn("[cart-recovery] save failed", {
+      name: error?.name || "Error",
+      message: String(error?.message || "").slice(0, 200)
+    });
     return NextResponse.json(
       {
         error: "cart_recovery_save_failed",
-        message: error.message || "Nao foi possivel salvar o carrinho."
+        message: "Nao foi possivel salvar o carrinho."
       },
       { status: 400 }
     );
