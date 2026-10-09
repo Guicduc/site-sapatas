@@ -332,6 +332,22 @@ test("schema versionado contem handoff, eventos e roteamento sem DDL no runtime"
   assert.doesNotMatch(runtimeStore, /\balter\s+table\b/i);
 });
 
+test("modo ativo nao libera handoff de pedido que ja possui print_jobs sem rota gravada", async () => {
+  const database = fakeProductionDatabase(buildPaidOrder());
+  database.printJobs.add("order-1");
+
+  const handoff = await stageProductionHandoff(database.client, buildPaidOrder());
+  assert.ok(handoff);
+  assert.equal(handoff.availableAt, null);
+  assert.equal(database.routes.has("order-1"), false);
+  assert.equal(database.handoffs.get(handoff.id).available_at, null);
+
+  database.printJobs.delete("order-1");
+  const released = await stageProductionHandoff(database.client, buildPaidOrder());
+  assert.ok(released.availableAt);
+  assert.equal(database.routes.get("order-1"), PRODUCTION_WORK_ROUTE.EXTERNAL);
+});
+
 test("snapshot historico invalido e isolado sem abortar pagamento ou pull", async () => {
   const database = fakeProductionDatabase(buildPaidOrder());
   const invalidOrder = {
@@ -442,6 +458,7 @@ function fakeProductionDatabase(order) {
   const routes = new Map();
   const events = new Map();
   const rejections = new Map();
+  const printJobs = new Set();
   let transactionTail = Promise.resolve();
 
   const client = {
@@ -495,6 +512,9 @@ function fakeProductionDatabase(order) {
             !row.available_at && !row.acknowledged_at && routes.get(row.order_id) !== "legacy_print_queue"
           )).slice(0, params[2])
         };
+      }
+      if (statement.startsWith("select 1 from print_jobs")) {
+        return { rows: printJobs.has(params[0]) ? [{ "?column?": 1 }] : [] };
       }
       if (statement.startsWith("insert into production_work_routes")) {
         if (!routes.has(params[0])) routes.set(params[0], params[1]);
@@ -608,7 +628,7 @@ function fakeProductionDatabase(order) {
     }
   }
 
-  return { orders, handoffs, routes, events, rejections, client, withTransaction };
+  return { orders, handoffs, routes, events, rejections, printJobs, client, withTransaction };
 }
 
 function buildPaidOrder() {
