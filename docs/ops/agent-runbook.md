@@ -72,6 +72,7 @@ em `promotion_redemptions`; aplique a migration antes do deploy. Configure
   - `main`: `true`
   - `*`: `false`
 - O Vercel CLI pode nao estar instalado no ambiente local. Nesse caso, o deploy deve ser disparado por commit e push para `origin/main`.
+- Com o CLI instalado, confirme a sessao com `vercel whoami` e o destino com `vercel project inspect site-sapatas --scope guicducs-projects --non-interactive`. Se a credencial estiver ausente ou invalida, renove pelo fluxo oficial de `vercel login`; nao altere a protecao do projeto. Variaveis de producao do tipo Secret nao sao devolvidas por `env pull`: execute tarefas que precisam delas no ambiente protegido da Vercel, sem imprimir valores nem criar rotas administrativas temporarias.
 - Antes de pushar, rode `npm run build`.
 - Quando houver migration nova, rode `npm run db:migrate` no banco alvo antes do push para `main`.
 - Se `git push origin main` for recusado por remoto adiantado, use:

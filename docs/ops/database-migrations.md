@@ -68,6 +68,13 @@ preferencia, contas por `lower(email)`, cupom por CPF/CNPJ e o join
 nao sao `concurrently`: em tabelas grandes a criacao bloqueia escritas na tabela
 durante alguns instantes, entao rode fora de horario de pico.
 
+Validacao em producao em 14/10/2026: a janela de restauracao de seis horas e o
+snapshot existente foram conferidos no Neon. Uma tarefa temporaria na Vercel,
+sem atribuir o dominio de producao, confirmou que este era o unico delta
+pendente, aplicou a migration, repetiu o runner com `applied: []` e verificou
+os seis indices em `pg_indexes`. Os segredos permaneceram no ambiente da
+Vercel. A tarefa nao foi adicionada ao build normal do projeto.
+
 Nao ha indice unico em `payments(provider, provider_payment_id)`. O codigo atual
 nao insere duplicatas (lookup e insert ocorrem sob lock do pedido), mas versoes
 anteriores a `315ba17` faziam check-then-insert sem transacao e podem ter
