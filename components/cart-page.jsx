@@ -232,13 +232,12 @@ function CheckoutForm({ cartTotal }) {
     key: "",
     message: ""
   });
+  const [quoteAttempt, setQuoteAttempt] = useState(0);
   const itemsSubtotal = items.reduce((sum, item) => sum + Number(item.priceBrl || item.totalPriceBrl || 0), 0);
   const localCommerce = calculateCommerceAdjustments({
     itemsSubtotalBrl: itemsSubtotal,
     shippingAddress: address
   });
-  const commerce = shippingQuoteState.commerce || localCommerce;
-  const couponReady = !couponCode || commerce.discount.applied;
   const documentDigits = normalizeBrTaxDocument(documentNumber);
   const documentValidationMessage = getBrTaxDocumentValidationMessage(documentNumber, {
     required: true
@@ -262,7 +261,10 @@ function CheckoutForm({ cartTotal }) {
   // Totais, frete e cupom so valem para a cotacao do snapshot atual; enquanto
   // ela recarrega (ou aguarda o debounce) o envio fica bloqueado.
   const quoteReady = shippingQuoteState.key === quoteSnapshotKey
-    && (shippingQuoteState.status === "quoted" || shippingQuoteState.status === "error");
+    && shippingQuoteState.status === "quoted"
+    && Boolean(shippingQuoteState.commerce);
+  const commerce = quoteReady ? shippingQuoteState.commerce : localCommerce;
+  const couponReady = !couponCode || commerce.discount.applied;
   const canSubmit = items.length > 0 && name.trim() && lastName.trim() && email.trim() && contact.trim()
     && isValidBrTaxDocument(documentDigits)
     && address.postalCode.trim() && address.street.trim() && address.number.trim()
@@ -438,7 +440,7 @@ function CheckoutForm({ cartTotal }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [loaded, quoteSnapshotKey]);
+  }, [loaded, quoteSnapshotKey, quoteAttempt]);
 
   useEffect(() => {
     if (!loaded || createdOrder || !canSaveRecoveryLead({ items, email, contact })) {
@@ -816,9 +818,16 @@ function CheckoutForm({ cartTotal }) {
         </p>
       )}
       {shippingQuoteState.status === "error" && !regionValidationMessage && (
-        <p className="checkout-note checkout-note--warning" role="alert">
-          {shippingQuoteState.message}
-        </p>
+        <div role="alert">
+          <p className="checkout-note checkout-note--warning">{shippingQuoteState.message}</p>
+          <button
+            className="button button-secondary"
+            type="button"
+            onClick={() => setQuoteAttempt((current) => current + 1)}
+          >
+            Tentar cotar novamente
+          </button>
+        </div>
       )}
       {createdOrder && (
         <div className="success-box" role="status">
