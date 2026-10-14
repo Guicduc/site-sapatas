@@ -97,7 +97,7 @@ A expedicao tambem deve ficar simples:
 - `Pronto para expedir`: impressao concluida e pacote pronto para saida/coleta.
 - `Expedido`: pedido saiu da operacao e deve ter rastreio ou registro de retirada.
 
-Nota fiscal nao faz parte da fila de producao. O Mercado Pago resolve pagamento e a NF-e e emitida automaticamente via Focus NFe apos a aprovacao; a expedicao apenas confere numero, chave e DANFE registrados no pedido.
+Nota fiscal nao faz parte da fila de producao. O Mercado Pago resolve pagamento. Durante a pausa da automacao Focus NFe, a operacao emite a NF-e no emissor a partir da fila "NF a emitir" e registra numero, serie e chave no admin antes da expedicao. O religamento segue `docs/ops/invoice-manual.md`.
 
 ## Ordenacao
 

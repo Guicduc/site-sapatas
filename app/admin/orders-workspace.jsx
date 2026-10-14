@@ -758,6 +758,12 @@ function ManualInvoiceSheet({ order, invoiceConfig }) {
   return (
     <section className="cad-form manual-invoice-sheet" aria-label={`Dados para emissao manual da NF do pedido ${order.orderNumber}`}>
       <h3>Dados para emissao manual da NF-e</h3>
+      {invoiceConfig.automationPaused && (
+        <p className="admin-note">
+          Se este pedido ja teve uma tentativa de emissao automatica, consulte a nota no painel Focus NFe antes de emitir outra.
+          Uma solicitacao anterior pode ter sido autorizada depois da pausa. Nesse caso, registre a nota existente neste pedido.
+        </p>
+      )}
       {sheet.error ? (
         <p className="admin-note">Nao foi possivel montar os dados fiscais: {sheet.error}</p>
       ) : (

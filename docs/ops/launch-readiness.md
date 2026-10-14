@@ -23,8 +23,6 @@ Escopo fixo da operacao:
   - `ACCOUNT_SESSION_SECRET`
   - `MERCADO_PAGO_ACCESS_TOKEN`
   - `MERCADO_PAGO_WEBHOOK_SECRET`
-  - `FOCUS_NFE_TOKEN`
-  - `FOCUS_NFE_WEBHOOK_TOKEN`
   - `RESEND_API_KEY`
 - Confirmar e-mails:
   - `ACCOUNT_EMAIL_FROM`
@@ -38,12 +36,11 @@ Escopo fixo da operacao:
   - Para lancamento manual: `SHIPPING_PROVIDER=manual`.
   - Para Melhor Envio homologado: `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Confirmar nota fiscal:
-  - `INVOICE_PROVIDER=focus_nfe`.
-  - `FOCUS_NFE_TOKEN` do ambiente correspondente.
-  - `FOCUS_NFE_ENV=homologacao` para teste controlado; `producao` somente depois da homologacao aprovada com a contabilidade.
-  - `FOCUS_NFE_WEBHOOK_TOKEN` definido e gancho registrado na Focus NFe conforme `docs/ops/invoice-manual.md`.
-  - Certificado A1 valido no painel Focus NFe e credenciamento de NF-e na SEFAZ.
-- Rodar `npm run invoice:audit` e corrigir todas as falhas antes do pedido fiscal de teste.
+  - Manter `INVOICE_PROVIDER=focus_nfe` e `INVOICE_AUTOMATION_ENABLED=false` durante a pausa.
+  - Definir quem acompanha a fila "NF a emitir" e confirmar acesso ao emissor fiscal.
+  - Conferir os dados fiscais do admin e registrar uma NF-e emitida manualmente antes da expedicao.
+  - Preservar tokens, gancho e configuracao Focus NFe existentes para o religamento futuro.
+- Antes de religar, rodar `npm run invoice:audit` com `FOCUS_NFE_TOKEN` e `FOCUS_NFE_WEBHOOK_TOKEN` do ambiente correspondente e cumprir a homologacao de `docs/ops/invoice-manual.md`.
 - Confirmar `PRODUCTION_DAILY_UNIT_CAPACITY` com a capacidade real do dia.
 - Rodar antes do deploy:
 
@@ -179,18 +176,14 @@ Ative apenas depois da homologacao descrita em `docs/ops/shipping-integration.md
 - Manter compra de etiqueta, impressao e rastreio como processo externo/manual, pois ainda nao estao implementados no site.
 - So trocar para `MELHOR_ENVIO_ENV=production` apos comparacao operacional aprovada.
 
-## 9. Nota fiscal Focus NFe
+## 9. Nota fiscal manual durante a pausa
 
-- Manter `INVOICE_PROVIDER=focus_nfe` e homologar primeiro com `FOCUS_NFE_ENV=homologacao`.
-- Confirmar no painel Focus NFe que o certificado A1 valido foi vinculado ao CNPJ emitente e que NF-e esta habilitada.
-- Registrar e auditar o gancho `nfe` para `https://www.baseforma.com.br/api/webhooks/focus-nfe` com header `Authorization`.
-- Emitir uma NF-e de teste a partir de um pedido pago controlado e conferir destinatario de homologacao, itens, desconto rateado, frete, CFOP, tributos, total, status e DANFE.
-- Validar CFOP, CSOSN e PIS/COFINS com a contabilidade antes de trocar para `FOCUS_NFE_ENV=producao` e usar o token produtivo.
-- Em `/admin/operacao`, conferir pedidos pagos e o estado da nota (`api_pending`, `api_issued`, `api_failed`).
-- Confirmar numero, serie, chave de 44 digitos e link do DANFE no pedido emitido.
-- Sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending`; tratar a pendencia antes da expedicao usando o registro manual como contingencia.
-- Antes da abertura real, virar `FOCUS_NFE_ENV=producao` com o token produtivo e repetir uma emissao de teste com valor baixo.
-- Nao voltar para NF manual sem pedido explicito.
+- Manter `INVOICE_AUTOMATION_ENABLED=false`; a ausencia da flag tambem pausa as chamadas fiscais.
+- Em `/admin/pedidos?fila=notafiscal`, conferir destinatario, CPF/CNPJ, endereco, itens, tributos, desconto, frete e total na ficha fiscal.
+- Emitir a NF-e no emissor e registrar status "NF emitida no emissor", numero, serie, chave de 44 digitos e data no pedido. Confirmar que ele saiu da fila antes da expedicao.
+- Notas de homologacao continuam na fila porque nao tem valor fiscal. Notificacoes antigas da Focus NFe sao ignoradas durante a pausa; conferir notas em andamento no painel do emissor.
+- Para religar, seguir `docs/ops/invoice-manual.md`: auditar credenciais e gancho mesmo com a automacao pausada, conferir certificado A1 e homologar uma emissao completa em ambiente isolado.
+- Depois da homologacao e da decisao de religamento, configurar token produtivo, `FOCUS_NFE_ENV=producao` e `INVOICE_AUTOMATION_ENABLED=true`. Pedidos que ficaram `manual_pending` exigem revisao individual.
 
 ## 10. Go/no-go
 
@@ -205,8 +198,8 @@ Abrir para pedidos reais somente se todos os itens abaixo estiverem verdadeiros:
 - E-mails essenciais testados ou atendimento manual preparado.
 - Admin acessivel e pedido teste visivel.
 - Frete manual validado ou Melhor Envio homologado.
-- Auditoria Focus NFe passou e uma emissao completa em homologacao foi conferida antes da virada para producao.
-- NF-e Focus NFe emitindo em `producao`, ou pendencia acompanhada com contingencia manual definida.
+- Emissor fiscal disponivel e responsavel definido para a fila "NF a emitir".
+- Registro de uma NF-e manual conferido no admin, com procedimento de emissao antes da expedicao. Se a automacao for religada, auditoria e homologacao Focus NFe concluidas antes da virada produtiva.
 - Paginas legais publicadas e com identificacao completa do fornecedor: `/termos`, `/trocas` e `/privacidade`.
 - Canal de atendimento do rodape monitorado por pessoa responsavel.
 - Geracao de arquivos definida: nao existe worker consumindo `POST /api/admin/print-jobs/claim`, entao a preparacao CAD dos pedidos pagos e manual.

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { getInvoiceConfig, INVOICE_PROVIDERS } from "../lib/invoice-config.js";
+import { buildFulfillmentMetadata, isHomologationInvoice } from "../lib/fulfillment.js";
 
 function withEnv(values, callback) {
   const previous = {};
@@ -50,4 +51,21 @@ test("provider manual nao e marcado como pausado", () => {
 
   assert.equal(config.provider, INVOICE_PROVIDERS.MANUAL);
   assert.equal(config.automationPaused, false);
+});
+
+test("NF manual emitida sai da pendencia mesmo com Focus em homologacao", () => {
+  withEnv({
+    INVOICE_PROVIDER: "focus_nfe",
+    INVOICE_AUTOMATION_ENABLED: "false",
+    FOCUS_NFE_ENV: "homologacao"
+  }, () => {
+    const fulfillment = buildFulfillmentMetadata({
+      metadata: { fulfillment: { invoice: { status: "manual_pending" } } }
+    }, {
+      invoice: { status: "manual_issued", number: "123", series: "1", accessKey: "1".repeat(44) }
+    });
+    assert.equal(fulfillment.invoice.mode, "manual");
+    assert.equal(fulfillment.invoice.status, "manual_issued");
+    assert.equal(isHomologationInvoice(fulfillment.invoice), false);
+  });
 });

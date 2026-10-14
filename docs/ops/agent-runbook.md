@@ -7,7 +7,7 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - Estrutura do projeto: `docs/ai-navigation.md`.
 - Estado operacional e backlog: `docs/ops/ecommerce-roadmap.md`.
 - Frete real: `docs/ops/shipping-integration.md`.
-- Nota fiscal automatizada (Focus NFe): `docs/ops/invoice-manual.md`.
+- Nota fiscal manual e automacao Focus NFe pausada: `docs/ops/invoice-manual.md`.
 - Banco de dados: `docs/ops/database.sql`.
 - Migrations e ordem de deploy: `docs/ops/database-migrations.md`.
 - Fila pos-pagamento: `docs/ops/post-payment-outbox.md`.

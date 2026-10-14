@@ -30,9 +30,9 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 
 ## Rotas administrativas
 
-- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, nota fiscal automatizada (Focus NFe) e expedicao.
+- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, fila manual de nota fiscal, com automacao Focus NFe pausada e expedicao.
 - `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
-- `/admin/operacao`: fila de producao, capacidade, nota fiscal automatizada (Focus NFe), expedicao e observacoes internas.
+- `/admin/operacao`: fila de producao, capacidade, fila manual de nota fiscal, com automacao Focus NFe pausada, expedicao e observacoes internas.
 - `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
 - `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`.
 
@@ -141,20 +141,20 @@ commit.
 - `lib/fulfillment.js`: estados e normalizacao de producao, nota fiscal operacional, expedicao e capacidade.
 - `lib/invoice-config.js`: configuracao fiscal (provider, CNPJ, NCM, CFOP, ambiente) compartilhada por admin e health check.
 - `lib/focus-nfe.js`: payload fiscal validado, referencia alfanumerica, rateio de desconto e URLs oficiais por ambiente.
-- `lib/invoice-provider.js`: emissao automatica de NF-e via Focus NFe apos pagamento aprovado (emissao, consulta e cancelamento); mantem adaptador `mercado_pago` dormente.
+- `lib/invoice-provider.js`: registra NF `manual_pending` apos pagamento aprovado enquanto `INVOICE_AUTOMATION_ENABLED` estiver desligado. Emissao, consulta e cancelamento via Focus NFe permanecem implementados para religamento; o adaptador `mercado_pago` segue dormente.
 - `scripts/audit-focus-nfe.mjs`: auditoria segura de provider, credenciais e gancho, com verificacao de empresa/certificado quando o token expoe esse endpoint, sem imprimir segredos.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
 - `docs/ops/production-system-transition.md`: limite de responsabilidade, fluxo alvo e criterios de corte para o sistema externo de producao.
 - `lib/print-job.js` e `lib/print-job-store.js`: contrato, idempotencia, persistencia, lease, artefatos e retries dos jobs de geracao de arquivos.
-- `docs/ops/invoice-manual.md`: fluxo de NF-e automatizada via Focus NFe, configuracao fiscal e contingencia manual.
+- `docs/ops/invoice-manual.md`: emissao manual atual, fila "NF a emitir", configuracao fiscal e requisitos para religar a Focus NFe.
 - `docs/ops/shipping-integration.md`: ativacao, variaveis e homologacao de frete real.
-- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. Nota fiscal e automatizada via Focus NFe com `INVOICE_PROVIDER=focus_nfe` e `FOCUS_NFE_TOKEN`; sem token, as NFs ficam pendentes.
+- Frete real tem adaptador Melhor Envio, mas so deve ser ativado com `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE` e `MELHOR_ENVIO_ACCESS_TOKEN`. A automacao fiscal Focus NFe esta pausada. Sem `INVOICE_AUTOMATION_ENABLED=true`, a operacao emite a NF-e no emissor e registra numero, serie e chave no admin.
 
 - Sem `DATABASE_URL`, pedidos sao persistidos em `.local-data/orders.dev.json`.
 - O armazenamento JSON e exclusivo de desenvolvimento; producao exige `DATABASE_URL`.
-- Com `DATABASE_URL`, `lib/order-store.js` cria e usa tabelas Postgres automaticamente.
+- Com `DATABASE_URL`, `lib/order-store.js` usa tabelas Postgres previamente criadas pelo bootstrap e pelas migrations; requests nao executam DDL.
 - O schema SQL tambem esta documentado em `docs/ops/database.sql`.
 - Status de pedido e pagamento ficam centralizados em `lib/order-status.js`.
 - A conta usa OTP por e-mail e senha opcional. O cookie HttpOnly contem um token opaco aleatorio; somente o hash e persistido em `customer_account_sessions`. Pedidos verificados ficam associados a `customer_accounts`, e a primeira entrada migra os pedidos que ja tinham sido confirmados no fluxo anterior. O acesso temporario pos-checkout continua limitado ao pedido recem-criado.

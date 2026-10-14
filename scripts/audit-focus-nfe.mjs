@@ -30,7 +30,7 @@ check(
     : "Emissao automatica pausada: defina INVOICE_AUTOMATION_ENABLED=true somente depois da homologacao."
 );
 
-if (checks.some((item) => !item.ok)) {
+if (checks.some((item) => item.ok === false)) {
   finish();
 } else {
   const baseUrl = getFocusNfeBaseUrl(environment);
