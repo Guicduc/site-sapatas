@@ -14,7 +14,7 @@ Eventos atuais:
 
 - `payment_customer_email`: comprovante ou falha de pagamento.
 - `payment_review_email`: alerta interno para pagamento tardio ou divergente.
-- `focus_nfe_invoice`: solicitação fiscal após pagamento aprovado.
+- `focus_nfe_invoice`: etapa fiscal apos pagamento aprovado. Durante a pausa (`INVOICE_AUTOMATION_ENABLED=false`), registra `manual_pending` e conclui o evento sem chamar a Focus NFe. Com a automacao ativa, solicita a emissao via API.
 
 ## Integridade do status de pagamento
 
@@ -39,7 +39,7 @@ Eventos atuais:
   O cancelamento fiscal após reembolso continua manual.
 
 `idempotency_key` é única. O Resend também recebe sua chave estável e a Focus
-NFe usa a referência estável derivada do pedido. O processamento é pelo menos
+NFe usa a referência estável derivada do pedido quando a automacao esta ativa. Pedidos cujo evento terminou durante a pausa nao sao reenviados automaticamente ao religar; a operacao deve revisar cada pendencia no admin. O processamento é pelo menos
 uma vez, portanto essas proteções do provedor são parte do contrato.
 
 ## Processamento e visibilidade

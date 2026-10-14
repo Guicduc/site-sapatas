@@ -12,6 +12,7 @@ const siteUrl = cleanText(process.env.NEXT_PUBLIC_SITE_URL || "https://www.basef
 const expectedWebhookUrl = `${siteUrl}/api/webhooks/focus-nfe`;
 const checks = [];
 
+const automationEnabled = ["true", "1", "yes", "on"].includes(cleanText(process.env.INVOICE_AUTOMATION_ENABLED).toLowerCase());
 const providerOk = cleanText(process.env.INVOICE_PROVIDER).toLowerCase() === "focus_nfe";
 const environmentOk = Boolean(rawEnvironment && environment);
 const issuerCnpjOk = issuerCnpj.length === 14;
@@ -21,8 +22,15 @@ check("environment", environmentOk, environmentOk ? `Ambiente ${environment} sel
 check("issuer_cnpj", issuerCnpjOk, issuerCnpjOk ? "CNPJ emitente tem 14 digitos." : "INVOICE_ISSUER_CNPJ deve ter 14 digitos.");
 check("api_token", Boolean(token), token ? "Token da API presente." : "FOCUS_NFE_TOKEN esta ausente ou vazio.");
 check("webhook_token", Boolean(webhookToken), webhookToken ? "Segredo do webhook presente." : "FOCUS_NFE_WEBHOOK_TOKEN esta ausente ou vazio.");
+check(
+  "automation_enabled",
+  automationEnabled ? true : null,
+  automationEnabled
+    ? "Emissao automatica habilitada (INVOICE_AUTOMATION_ENABLED=true)."
+    : "Emissao automatica pausada: defina INVOICE_AUTOMATION_ENABLED=true somente depois da homologacao."
+);
 
-if (checks.some((item) => !item.ok)) {
+if (checks.some((item) => item.ok === false)) {
   finish();
 } else {
   const baseUrl = getFocusNfeBaseUrl(environment);

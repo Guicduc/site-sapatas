@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { refreshInvoiceStatus } from "@/lib/invoice-provider";
+import { getInvoiceConfig } from "@/lib/invoice-config";
 import { getOrderIdFromFocusNfeReference } from "@/lib/focus-nfe";
 import { getOrderById } from "@/lib/order-store";
 
@@ -28,6 +29,12 @@ export async function POST(request) {
   }
 
   const reference = cleanText(payload?.ref);
+
+  // Com a emissao automatica pausada, notas antigas da Focus ainda podem notificar.
+  // Responder 2xx evita reenvio infinito; a operacao confere a nota no painel Focus.
+  if (getInvoiceConfig().automationPaused) {
+    return NextResponse.json({ received: true, ignored: "invoice_automation_paused", ref: reference || null });
+  }
 
   if (!reference) {
     return NextResponse.json({ received: true, ignored: "missing_ref" });

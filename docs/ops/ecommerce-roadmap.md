@@ -12,7 +12,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Plataforma propria: catalogo, configurador, carrinho, checkout, pedido, conta do cliente e administracao rodam no proprio site.
 - Checkout externo de loja nao faz parte da arquitetura atual nem do roadmap futuro.
 - Frete tem adaptador real para Melhor Envio, com fallback manual quando credenciais/CEP de origem nao estiverem configurados.
-- Nota fiscal e automatizada por API via Focus NFe (`lib/invoice-provider.js`): pagamento aprovado emite a NF-e automaticamente. O Mercado Pago nao tem API publica de NF-e; o adaptador de endpoint MP segue dormente.
+- Nota fiscal: a emissao automatica via Focus NFe (`lib/invoice-provider.js`) esta pausada temporariamente (`INVOICE_AUTOMATION_ENABLED` desligado). Pedidos pagos entram na fila "NF a emitir" do admin, com os dados fiscais calculados para emissao manual. O Mercado Pago nao tem API publica de NF-e; o adaptador de endpoint MP segue dormente.
 
 ## Ja implementado
 
@@ -28,11 +28,11 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Recuperacao de carrinho sem disparo automatico, com leads em `cart_recovery_leads` ou `.local-data/cart-recovery.dev.json`.
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.
 - Relatorios basicos em `/admin/relatorios`.
-- Operacao de producao, nota fiscal automatizada e expedicao em `/admin/operacao`.
+- Operacao de producao, registro manual de nota fiscal e expedicao em `/admin/operacao`.
 - Fluxo pos-pagamento simplificado em `Aguardando producao` -> `Produzido` -> expedicao; CAD permanece manual e fora dos estados do pedido.
 - Fila transicional duravel de geracao de arquivos em `print_jobs`, com ingestao idempotente dos contratos CAD de pedidos pagos, suporte a outras origens, leases/retries e processamento pesado externo ao site, sem criar gate ou status CAD no pedido. Ela permanece ate existir sistema externo homologado, reconciliacao dos jobs ativos e corte idempotente; nenhuma dessas etapas operacionais foi executada.
 - Fronteira desativada por padrao para o futuro sistema externo: snapshots comprados imutaveis e minimizados, pull/ack idempotente, marcos `accepted`/`produced`/`failed`, health e roteamento exclusivo contra `print_jobs`. O sistema externo, a homologacao dos jobs ativos e o corte ainda nao foram executados.
-- Emissao automatica de NF-e via Focus NFe em `lib/invoice-provider.js`, com numero, serie, chave de acesso e DANFE gravados nos metadados do pedido; fluxo e contingencia em `docs/ops/invoice-manual.md`.
+- Emissao manual de NF-e durante a pausa, com fila "NF a emitir" e dados fiscais no admin. A integracao Focus NFe permanece implementada para religamento; numero, serie e chave da nota emitida ficam nos metadados do pedido. Fluxo em `docs/ops/invoice-manual.md`.
 - Fila PostgreSQL duravel para e-mail e NF-e pos-pagamento, com enqueue transacional no webhook, idempotencia, leases, retries e inspecao administrativa.
 - Checkout coleta CPF/CNPJ do cliente com validacao de digitos verificadores no servidor, exigido pela NF-e.
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
@@ -61,8 +61,8 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Para frete real, definir `SHIPPING_PROVIDER=melhor_envio`, `SHIPPING_ORIGIN_POSTAL_CODE`, `MELHOR_ENVIO_ACCESS_TOKEN` e `MELHOR_ENVIO_USER_AGENT`.
 - Homologar dimensoes/peso de envio com pedidos reais antes de trocar `MELHOR_ENVIO_ENV` para `production`.
 - Confirmar `CART_RECOVERY_RETENTION_DAYS` conforme a politica de atendimento e privacidade.
-- Vincular o certificado digital A1 ja obtido a empresa na Focus NFe e configurar tokens nao vazios (homologacao primeiro, depois producao).
-- Homologar a emissao automatica com `FOCUS_NFE_ENV=homologacao` e validar CFOP/CSOSN com a contabilidade antes de trocar para `producao`.
+- Definir o responsavel pela fila "NF a emitir", conferir o emissor fiscal e validar os dados tributarios com a contabilidade. Emitir a NF-e e registrar numero, serie e chave antes da expedicao.
+- Manter `INVOICE_AUTOMATION_ENABLED=false` durante a pausa. Certificado, tokens, gancho e emissao de homologacao da Focus NFe sao requisitos para o religamento futuro, conforme `docs/ops/invoice-manual.md`.
 
 ## Backlog futuro
 
@@ -82,6 +82,6 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 
 1. Implementar usuarios administrativos nominais, papeis e auditoria.
 2. Homologar frete Melhor Envio em sandbox com token, CEP de origem, servicos permitidos e pedidos reais.
-3. Homologar a emissao automatica de NF-e na Focus NFe (token de homologacao, certificado A1, notas de teste) e virar para producao.
+3. Acompanhar a emissao manual de NF-e. Quando houver decisao de religar a Focus NFe, homologar certificado, gancho e emissao completa antes de ativar a automacao em producao.
 4. Adicionar testes E2E dos fluxos criticos.
 5. Implementar automacao de recuperacao de carrinho com consentimento.

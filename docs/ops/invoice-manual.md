@@ -1,15 +1,36 @@
-# Nota fiscal automatizada por API (Focus NFe)
+# Nota fiscal manual e automacao Focus NFe pausada
 
-Este documento registra o fluxo fiscal com `INVOICE_PROVIDER=focus_nfe`: a emissao da NF-e e automatica, disparada pelo pagamento aprovado.
+A operacao atual emite a NF-e manualmente no emissor e registra o resultado no admin. A integracao `INVOICE_PROVIDER=focus_nfe` permanece implementada para um religamento futuro.
+
+## Pausa temporaria (estado atual)
+
+A emissao automatica esta **pausada**. A automacao so roda quando `INVOICE_AUTOMATION_ENABLED=true`; sem essa variavel, `getInvoiceConfig()` trata o provider efetivo como `manual` e preserva `INVOICE_PROVIDER`, tokens e webhook para o religamento.
+
+Enquanto a pausa durar:
+
+1. O webhook do Mercado Pago continua enfileirando o evento fiscal (`focus_nfe_invoice`) na mesma transacao do pagamento. O processador nao chama a Focus NFe: ele registra a NF do pedido como `manual_pending` ("NF pendente no emissor") com a nota "Emissao automatica via Focus NFe pausada".
+2. Em `/admin/pedidos?fila=notafiscal` ("NF a emitir") ficam todos os pedidos pagos, nao cancelados e sem revisao de pagamento cuja NF ainda nao foi emitida, cancelada ou marcada como nao requerida. O resumo do admin mostra o total.
+3. Cada pedido da fila mostra "Dados para emissao manual da NF-e": destinatario, CPF/CNPJ, endereco, CFOP/NCM/CSOSN, itens com desconto rateado, frete e total, calculados pelo mesmo montador do payload fiscal (nada e enviado a API). O botao "Copiar dados fiscais (JSON)" copia o conjunto completo. Se faltar dado (ex.: pedido sem CPF/CNPJ), a ficha mostra o motivo.
+4. Antes de emitir manualmente um pedido com tentativa automatica anterior, a operacao consulta a referencia do pedido no painel Focus NFe. Uma solicitacao aceita antes da pausa ainda pode ser autorizada depois dela, sem atualizar o site. Se a nota ja estiver autorizada, registre a existente; se estiver processando, aguarde a resolucao. Emita outra nota apenas depois de confirmar que nao existe NF-e autorizada ou em processamento para a compra. Registre no formulario "Operacao": status "NF emitida no emissor", numero, serie, chave de 44 digitos e data. O pedido sai da fila.
+5. Notificacoes antigas da Focus em `/api/webhooks/focus-nfe` recebem `200` com `ignored: invoice_automation_paused`, para nao gerar reenvio infinito.
+6. O health check (`/api/integrations/health`) mostra `manual:focus_nfe_pausado`, e `npm run invoice:audit` marca `automation_enabled` para confirmacao.
+
+Ao publicar a pausa, conferir no painel do emissor todas as tentativas automaticas ainda `api_pending` ou `api_failed`, inclusive falhas de timeout. A pausa nao cancela solicitacoes ja recebidas pela Focus NFe. Consulta e cancelamento pela API do site tambem ficam indisponiveis, portanto a reconciliacao e feita no painel.
+
+### Religar a emissao automatica
+
+1. Rodar `npm run invoice:audit` com as credenciais de homologacao. A auditoria consulta certificado e gancho mesmo com a automacao pausada; `automation_enabled: null` apenas informa a pausa. Habilitar `INVOICE_AUTOMATION_ENABLED=true` em ambiente isolado de homologacao e conferir uma emissao completa com `FOCUS_NFE_ENV=homologacao`.
+2. Depois da homologacao e da validacao fiscal, configurar token e `FOCUS_NFE_ENV=producao` no ambiente produtivo, definir `INVOICE_AUTOMATION_ENABLED=true` e publicar.
+3. Pedidos que ficaram em `manual_pending` nao sao reenviados sozinhos: emita manualmente ou use "Emitir NF via Focus NFe" no admin pedido a pedido.
 
 ## Decisao atual
 
-- A emissao de NF-e e **automatizada por API** via Focus NFe (`lib/invoice-provider.js`).
+- A emissao de NF-e e manual durante a pausa autorizada. A automacao Focus NFe em `lib/invoice-provider.js` so pode ser religada apos homologacao e decisao explicita.
 - O Mercado Pago segue como pagamento; ele **nao possui API publica de emissao de NF-e**, por isso a automacao usa um emissor fiscal dedicado.
 - O checkout exige CPF/CNPJ do cliente (validado no servidor) porque a NF-e exige documento do destinatario.
 - O admin guarda o espelho operacional em `orders.metadata.fulfillment.invoice` (status, numero, serie, chave, DANFE).
 
-## Fluxo automatico
+## Fluxo automatico quando religado
 
 1. Webhook do Mercado Pago confirma pagamento e enfileira `focus_nfe_invoice` na mesma transacao.
 2. O processador da fila chama `requestInvoiceAfterPayment`, que monta o payload da NF-e (destinatario, itens com NCM/CFOP/CSOSN, frete, desconto rateado e totais) e envia `POST /v2/nfe?ref={referenciaAlfanumerica}` para a Focus NFe. A referencia e derivada de forma estavel do UUID do pedido porque a Focus nao aceita caracteres especiais.
@@ -34,6 +55,7 @@ Em homologacao, use `https://homologacao.focusnfe.com.br/v2/hooks` com o token d
 
 ## Configuracao
 
+- `INVOICE_AUTOMATION_ENABLED=false`: padrao atual. `true` reativa o provider configurado e suas chamadas fiscais.
 - `FOCUS_NFE_TOKEN`: token da empresa no painel Focus NFe (homologacao e producao tem tokens distintos).
 - `FOCUS_NFE_ENV`: `homologacao` (padrao) ou `producao`.
 - `FOCUS_NFE_WEBHOOK_TOKEN`: segredo compartilhado validado no header `Authorization` das notificacoes do gancho.
@@ -60,8 +82,8 @@ O comando confirma provider, ambiente, autenticacao e gancho `nfe`, sem imprimir
 
 ## Contingencia manual
 
-Se a API estiver indisponivel ou a nota falhar, o formulario de NF do admin continua aceitando registro manual (status "NF emitida no emissor", numero, serie, chave de 44 digitos e data). Pedidos sem CPF/CNPJ (anteriores a esta versao) ficam `api_pending` com aviso ate o documento ser completado.
+Enquanto a automacao estiver pausada, este e o fluxo normal. Depois do religamento, se a API estiver indisponivel ou a nota falhar, o formulario de NF do admin continua aceitando registro manual (status "NF emitida no emissor", numero, serie, chave de 44 digitos e data). Com a automacao ativa, pedidos sem CPF/CNPJ (anteriores a esta versao) ficam `api_pending` com aviso ate o documento ser completado.
 
 ## Cancelamento
 
-Por padrao, `INVOICE_CANCEL_WINDOW_DAYS=1`, o limite conservador usual para NF-e. Alguns estados podem admitir regras diferentes: aumente essa janela somente apos validacao com a contabilidade para a UF emissora. Para notas `api_issued` dentro da janela, o admin tem o botao "Cancelar NF-e na SEFAZ" (exige justificativa de 15 a 255 caracteres, enviada via `DELETE /v2/nfe/{ref}`); o pedido e atualizado para `NF cancelada` automaticamente. Fora da janela ou em caso de falha, use o painel Focus NFe e marque `NF cancelada` manualmente no admin.
+Por padrao, `INVOICE_CANCEL_WINDOW_DAYS=1`, o limite conservador usual para NF-e. Alguns estados podem admitir regras diferentes: aumente essa janela somente apos validacao com a contabilidade para a UF emissora. Com a automacao ativa, para notas `api_issued` dentro da janela, o admin tem o botao "Cancelar NF-e na SEFAZ" (exige justificativa de 15 a 255 caracteres, enviada via `DELETE /v2/nfe/{ref}`); o pedido e atualizado para `NF cancelada` automaticamente. Durante a pausa, fora da janela ou em caso de falha, use o painel Focus NFe e marque `NF cancelada` manualmente no admin.

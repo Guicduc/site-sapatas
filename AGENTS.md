@@ -19,7 +19,7 @@ Antes de alterar checkout, pedidos, pagamento, frete, admin, deploy ou documenta
 - O pagamento ativo e Mercado Pago.
 - O checkout proprio deve criar pedido local antes de gerar pagamento.
 - Frete real usa Melhor Envio via `lib/shipping.js`; sem credenciais, preserve fallback manual.
-- Nota fiscal e automatizada por API via Focus NFe (`INVOICE_PROVIDER=focus_nfe`); o Mercado Pago nao tem API publica de NF-e. Registro manual no admin e apenas contingencia.
+- Nota fiscal: a integracao Focus NFe (`INVOICE_PROVIDER=focus_nfe`) esta **pausada temporariamente**. Sem `INVOICE_AUTOMATION_ENABLED=true`, o pedido pago fica `manual_pending` na fila "NF a emitir" do admin e a NF-e e emitida manualmente no emissor; o codigo da automacao permanece para religar. O Mercado Pago nao tem API publica de NF-e. Ver `docs/ops/invoice-manual.md`.
 - Server Actions administrativas devem validar acesso com `assertAdminAccess`.
 
 ## Validacao minima

@@ -49,7 +49,7 @@ const faqSections = [
       {
         question: "O pedido já sai com nota fiscal?",
         answer:
-          "Sim. A nota fiscal eletrônica é emitida automaticamente depois que o pagamento é aprovado, com os dados informados no pedido. Por isso o checkout exige CPF ou CNPJ: dados incorretos geram pendência fiscal antes da expedição."
+          "Sim. A nota fiscal eletrônica é emitida depois que o pagamento é aprovado, com os dados informados no pedido, antes da expedição. Por isso o checkout exige CPF ou CNPJ: dados incorretos geram pendência fiscal antes da expedição."
       }
     ]
   },

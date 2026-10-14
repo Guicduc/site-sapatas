@@ -738,7 +738,7 @@ function CheckoutForm({ cartTotal }) {
         </div>
         <p>
           Usaremos nome, e-mail, WhatsApp e entrega para vincular seus pedidos. O CPF/CNPJ e
-          usado somente para a emissao automatica da nota fiscal. Depois voce acessa a conta com
+          usado somente para a emissao da nota fiscal. Depois voce acessa a conta com
           e-mail, numero do pedido e codigo enviado por e-mail, sem senha.
         </p>
       </div>
