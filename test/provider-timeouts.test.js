@@ -172,16 +172,19 @@ test("CEP com mais de 8 digitos e rejeitado em vez de truncado", async () => {
 test("timeouts do banco tem padroes conservadores e aceitam override", () => {
   assert.deepEqual(getTransactionTimeouts({}), {
     statementTimeoutMs: 15_000,
-    lockTimeoutMs: 5_000,
+    lockTimeoutMs: 15_000,
     idleInTransactionTimeoutMs: 30_000
   });
   assert.deepEqual(getPoolTimeouts({}), { connectionTimeoutMillis: 10_000, idleTimeoutMillis: 30_000 });
   assert.equal(
     buildBeginStatement({ DATABASE_STATEMENT_TIMEOUT_MS: "20000", DATABASE_LOCK_TIMEOUT_MS: "x" }),
-    "begin; set local statement_timeout = 20000; set local lock_timeout = 5000; "
+    "begin; set local statement_timeout = 20000; set local lock_timeout = 15000; "
       + "set local idle_in_transaction_session_timeout = 30000"
   );
   assert.equal(getTransactionTimeouts({ DATABASE_STATEMENT_TIMEOUT_MS: "1; drop table x" }).statementTimeoutMs, 15_000);
+  // A second preference request waits while the first calls MP for up to 10s.
+  assert.ok(getTransactionTimeouts({}).lockTimeoutMs > 10_000);
+  assert.equal(getTransactionTimeouts({ DATABASE_LOCK_TIMEOUT_MS: "2000" }).lockTimeoutMs, 2_000);
 });
 
 test("rollback com falha nao mascara o erro original e descarta a conexao", async () => {
