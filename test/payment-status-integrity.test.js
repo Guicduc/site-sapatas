@@ -12,7 +12,8 @@ import { buildPostPaymentOutboxEvents, OUTBOX_EVENT } from "../lib/outbox-store.
 import {
   buildPaymentAlerts,
   getNextOrderStatus,
-  isPaymentTransitionAllowed
+  isPaymentTransitionAllowed,
+  mergePaymentAlerts
 } from "../lib/payment-transitions.js";
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
@@ -109,7 +110,7 @@ test("alertas de pagamento cobrem duplicidade, reembolso parcial, disputa e char
   assert.ok(buildPaymentAlerts({ order, status: "in_mediation" }).every((alert) => alert.blocking === false));
 });
 
-test("alerta nao bloqueante enfileira e-mail interno sem repetir e-mail ao cliente nem NF-e", () => {
+test("cobranca duplicada enfileira e-mail interno sem repetir e-mail ao cliente nem NF-e", () => {
   const events = buildPostPaymentOutboxEvents({
     orderId: "order-1",
     orderStatus: "paid_ready_for_production",
@@ -144,6 +145,69 @@ test("reembolso ou chargeback cancela o pedido pago e registra metadata.refund",
   assert.equal(replayed.status, ORDER_STATUS.CANCELLED);
   assert.equal(replayed.paymentStatus, PAYMENT_STATUS.REFUNDED);
   assert.equal(replayed.metadata.paymentReview, undefined);
+});
+
+test("reentrega da segunda cobranca continua sem efeitos de pagamento ao cliente", () => {
+  const alerts = buildPaymentAlerts({
+    order: { totalBrl: 42 }, status: "approved", paymentId: "p2", amountBrl: 42,
+    otherSettledPaymentIds: ["p1"]
+  });
+  assert.deepEqual(mergePaymentAlerts(alerts, alerts).fresh, []);
+  // O outbox recebe a classificacao atual, mesmo quando o alerta ja foi salvo.
+  const replay = buildPostPaymentOutboxEvents({
+    orderId: "order-1", orderStatus: "paid_ready_for_production",
+    paymentStatus: "approved", paymentId: "p2", alerts
+  });
+  assert.deepEqual(replay.map((event) => event.type), [OUTBOX_EVENT.PAYMENT_REVIEW_EMAIL]);
+  const saved = mergePaymentAlerts(alerts, buildPaymentAlerts({
+    order: { totalBrl: 42 }, status: "approved", paymentId: "p2", amountBrl: 42,
+    otherSettledPaymentIds: [] // O pagamento original foi estornado.
+  })).alerts;
+  assert.deepEqual(buildPostPaymentOutboxEvents({
+    orderId: "order-1", orderStatus: "paid_ready_for_production",
+    paymentStatus: "approved", paymentId: "p2", alerts: saved
+  }).map((event) => event.type), [OUTBOX_EVENT.PAYMENT_REVIEW_EMAIL]);
+});
+
+test("primeiro snapshot pago com alerta preserva comprovante e NF-e", () => {
+  for (const alert of [
+    { reason: "partial_refund", blocking: false, refundedAmountBrl: 5 },
+    { reason: "payment_dispute", blocking: false }
+  ]) {
+    const events = buildPostPaymentOutboxEvents({
+      orderId: "order-1", orderStatus: "paid_ready_for_production",
+      paymentStatus: "approved", paymentId: "p1", alerts: [alert]
+    });
+    assert.deepEqual(events.map((event) => event.type), [
+      OUTBOX_EVENT.PAYMENT_CUSTOMER_EMAIL, OUTBOX_EVENT.FOCUS_NFE_INVOICE,
+      OUTBOX_EVENT.PAYMENT_REVIEW_EMAIL
+    ]);
+  }
+});
+
+test("disputa observada primeiro valida moeda, valor e pedido cancelado", async () => {
+  for (const [suffix, raw, amountBrl, expectedReason] of [
+    ["currency", { status: "in_mediation", currency_id: "USD" }, 42, "currency_mismatch"],
+    ["amount", { status: "in_mediation", currency_id: "BRL" }, 1, "amount_mismatch"],
+    ["cancelled", { status: "in_mediation", currency_id: "BRL" }, 42, "approved_payment_on_cancelled_order"]
+  ]) {
+    const draft = buildDraft(`initial-dispute-${suffix}`);
+    if (suffix === "cancelled") draft.status = ORDER_STATUS.CANCELLED;
+    await createOrder(draft);
+    const order = await recordMercadoPagoUpdate({
+      orderId: draft.id, paymentId: providerId(draft, "p1"),
+      status: "in_mediation", amountBrl, raw
+    });
+    assert.equal(order.metadata.paymentReview.reason, expectedReason);
+    if (suffix === "cancelled") assert.equal(order.status, ORDER_STATUS.CANCELLED);
+    else assert.notEqual(order.paymentStatus, PAYMENT_STATUS.APPROVED);
+  }
+
+  const draft = await createDraft("initial-valid-dispute");
+  const order = await update(draft, "p1", "in_mediation", { status: "in_mediation", currency_id: "BRL" });
+  assert.equal(order.status, ORDER_STATUS.PAID_READY_FOR_PRODUCTION);
+  assert.equal(order.paymentStatus, PAYMENT_STATUS.APPROVED);
+  assert.equal(order.metadata.paymentReview, undefined);
 });
 
 test("mesmo pagamento aprovado nao volta para pendente, recusado ou desconhecido", async () => {
