@@ -5,6 +5,7 @@ import { processOutboxBatch } from "@/lib/outbox-processor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function GET(request) {
   return processRequest(request);
@@ -15,13 +16,17 @@ export async function POST(request) {
 }
 
 async function processRequest(request) {
+  // Leave five seconds for the response; the processor reserves a whole event
+  // before each claim and leaves remaining events queued for the next request.
+  const deadlineAt = Date.now() + (maxDuration * 1000) - 5_000;
   try {
     await assertOutboxProcessorRequest(request);
     const url = new URL(request.url);
     const body = request.method === "POST" ? await request.json().catch(() => ({})) : {};
     const result = await processOutboxBatch({
       limit: body.limit || url.searchParams.get("limit") || 10,
-      workerId: body.workerId || request.headers.get("x-vercel-id") || "http-processor"
+      workerId: body.workerId || request.headers.get("x-vercel-id") || "http-processor",
+      deadlineAt
     });
     return NextResponse.json(result);
   } catch (error) {

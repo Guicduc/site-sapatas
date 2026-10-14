@@ -8,6 +8,10 @@ import {
 import { getOrCreatePendingMercadoPagoPayment, getOrderById, getOrderForAccountId } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
 
+// Limite explicito da funcao: cobre os timeouts dos provedores (Mercado Pago
+// 10s, Melhor Envio 8s, Focus NFe 15s) e fica abaixo do lease da fila (120s).
+export const maxDuration = 60;
+
 export async function POST(request) {
   try {
     const { orderId } = await request.json();

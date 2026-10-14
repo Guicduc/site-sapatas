@@ -10,6 +10,10 @@ import {
 import { getOrderById, getOrderForAccountId } from "@/lib/order-store";
 import { persistAndDispatchMercadoPagoUpdate } from "@/lib/post-payment-dispatch";
 
+// Limite explicito da funcao: cobre os timeouts dos provedores (Mercado Pago
+// 10s, Melhor Envio 8s, Focus NFe 15s) e fica abaixo do lease da fila (120s).
+export const maxDuration = 60;
+
 // Reconciliação ativa com o Mercado Pago: consulta os pagamentos do pedido por
 // external_reference e grava o resultado, sem depender do webhook. Chamado no
 // retorno do checkout e no botão "Atualizar status" da confirmação de pedido.

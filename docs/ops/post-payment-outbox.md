@@ -43,6 +43,19 @@ com backoff exponencial até `OUTBOX_MAX_ATTEMPTS`; depois ficam `failed` com
 erro sanitizado. Lease expirado pode ser retomado. Um lease expirado na última
 tentativa vira falha terminal.
 
+O processador HTTP tem limite de 60 segundos e para de reservar eventos quando
+nao ha tempo para outro envio completo. Reserva o maior prazo entre duas chamadas
+Focus NFe (POST e consulta apos 422) e uma chamada Resend, mais 15 segundos para
+o banco; deixa tambem 5 segundos para responder. `limit` continua sendo o maximo
+de eventos, e respostas com `budgetExhausted: true` podem conter um lote parcial.
+Os demais eventos continuam sem lease e podem ser processados na proxima chamada.
+
+`eventBudgetMs` informa a reserva calculada. Se os timeouts configurados deixarem
+esse valor acima dos 55 segundos disponiveis, a resposta tera zero eventos e
+`budgetExhausted: true`. Reduza os timeouts ou use um worker com prazo maior antes
+de habilitar a agenda. Mantenha `OUTBOX_LEASE_SECONDS` acima do tempo de um evento
+com margem para o banco; o padrao de 120 segundos cobre os timeouts padrao.
+
 Não há cron em `vercel.json` por padrão. Mantenha o modo inline até habilitar e testar o processador. Antes de habilitar, confirme a
 frequência disponível no plano e o atraso operacional aceitável para e-mail e
 NF-e. Depois do deploy, faça uma chamada manual controlada e só então ative a
