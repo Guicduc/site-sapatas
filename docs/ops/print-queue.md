@@ -34,7 +34,11 @@ Pedidos criados sem pagamento continuam visiveis no filtro `Pagamento`, mas nao 
 
 ## Jobs de geracao de arquivos
 
-O admin oferece **Sincronizar pedidos pagos**. A operacao usa `getGrasshopperPayload` para cada pedido pago, ativo e com modelo registrado no contrato CAD. A chave idempotente combina origem, item, versoes do contrato/modelo e material/perfil; repetir a sincronizacao retorna o mesmo job em vez de duplicar trabalho.
+O admin oferece **Sincronizar pedidos pagos**. A operacao usa `getGrasshopperPayload` para cada pedido elegivel a producao pelo mesmo criterio do handoff externo (`isProductionEligibleOrder`: pagamento aprovado, sem `paymentReview`, fora de `paid_pending_review`/`needs_technical_review`/cancelado/expedido e com producao nao bloqueada nem pronta para envio). Apenas itens com modelo registrado no contrato CAD viram job; itens sem modelo sao ignorados. Cada pedido e processado isoladamente: um pedido invalido entra em `errors` no resultado e nao aborta os demais, e a rota `legacy_print_queue` so e reivindicada quando o pedido tem ao menos uma entrada valida.
+
+A chave idempotente combina origem, item, versoes do contrato/modelo e material/perfil; repetir a sincronizacao retorna o mesmo job em vez de duplicar trabalho. Alem disso, a sincronizacao nao reenfileira um item que ja tenha job `queued`, `processing` ou `succeeded` para o mesmo `source_id` + `source_item_id`, mesmo que o perfil Orca, o material padrao ou a versao do modelo tenham mudado; regenerar arquivo e uma acao explicita.
+
+No modo `active`, o handoff externo nao e liberado para pedidos que ja possuem `print_jobs`, mesmo quando a linha de `production_work_routes` estiver ausente.
 
 O modelo `print_jobs` registra:
 
