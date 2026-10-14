@@ -21,6 +21,7 @@ import {
   toDisplayMeasurement
 } from "@/lib/measurement-units";
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
+import { clampCartQuantity, MAX_CART_ITEM_QUANTITY } from "@/lib/client-cart";
 import { calculateClientPricePreview } from "@/lib/client-pricing-preview";
 import {
   buildConfigurationSku,
@@ -253,21 +254,24 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
                 <button
                   type="button"
                   aria-label="Diminuir quantidade"
-                  onClick={() => setQuantity((current) => Math.max(1, Number(current) - 1))}
+                  onClick={() => setQuantity((current) => clampCartQuantity(Number(current) - 1))}
                 >
                   −
                 </button>
                 <input
                   type="number"
                   min="1"
+                  max={MAX_CART_ITEM_QUANTITY}
+                  step="1"
+                  inputMode="numeric"
                   value={quantity}
-                  onChange={(event) => setQuantity(Math.max(1, Number(event.target.value || 1)))}
+                  onChange={(event) => setQuantity(clampCartQuantity(event.target.value))}
                   aria-label="Quantidade"
                 />
                 <button
                   type="button"
                   aria-label="Aumentar quantidade"
-                  onClick={() => setQuantity((current) => Number(current) + 1)}
+                  onClick={() => setQuantity((current) => clampCartQuantity(Number(current) + 1))}
                 >
                   +
                 </button>
