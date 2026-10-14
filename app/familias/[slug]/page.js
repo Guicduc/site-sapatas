@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FamilyCard } from "@/components/family-card";
 import { StructuredData } from "@/components/structured-data";
 import { buildMailtoUrl, formatCurrency } from "@/lib/format";
+import { buildPageMetadata } from "@/lib/page-metadata";
 import {
   brand,
   colorMap,
@@ -24,13 +25,11 @@ export async function generateMetadata({ params }) {
     return {};
   }
 
-  return {
+  return buildPageMetadata({
     title: family.seoTitle,
     description: family.seoDescription,
-    alternates: {
-      canonical: family.url
-    }
-  };
+    path: family.url
+  });
 }
 
 export default async function FamilyPage({ params }) {
@@ -69,7 +68,7 @@ export default async function FamilyPage({ params }) {
       />
 
       <section className="page-panel narrow-panel">
-        <p className="eyebrow">Família SEO | {family.keyword}</p>
+        <p className="eyebrow">{family.eyebrow || "Família de sapatas"}</p>
         <h1>{family.heroTitle}</h1>
         <p className="lead">{family.heroDescription}</p>
         <div className="chip-row">

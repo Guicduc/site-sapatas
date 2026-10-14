@@ -1,13 +1,12 @@
 import Link from "next/link";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Processo e material",
   description:
     "Conheça a base técnica da Baseforma: famílias parametrizadas, impressão 3D sob demanda, validação funcional e uso inicial de TPU.",
-  alternates: {
-    canonical: "/processo"
-  }
-};
+  path: "/processo"
+});
 
 export default function ProcessoPage() {
   return (
