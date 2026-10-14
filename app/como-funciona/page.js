@@ -1,3 +1,5 @@
+import { buildPageMetadata } from "@/lib/page-metadata";
+
 const steps = [
   {
     number: "1",
@@ -37,14 +39,12 @@ const steps = [
   }
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Como funciona",
   description:
     "Entenda o fluxo da Baseforma: escolha de família, validação de variante, produção sob encomenda e projeto especial.",
-  alternates: {
-    canonical: "/como-funciona"
-  }
-};
+  path: "/como-funciona"
+});
 
 export default function ComoFuncionaPage() {
   return (

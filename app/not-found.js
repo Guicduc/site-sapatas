@@ -6,7 +6,7 @@ export default function NotFound() {
       <p className="eyebrow">Página não encontrada</p>
       <h1>O caminho certo provavelmente começa pelo catálogo.</h1>
       <p className="lead">
-        A URL pode ter mudado durante a migração para a nova estrutura com renderização em Node.
+        O endereço pode ter mudado ou não existe mais. Pelo catálogo você encontra todos os formatos disponíveis e configura as medidas do seu projeto.
       </p>
       <div className="action-row">
         <Link className="button button-primary" href="/catalogo">

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ProductConfigurator } from "@/components/product-configurator";
 import { getCategoryBySlug, productCategories } from "@/lib/configurator-data";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
 export function generateStaticParams() {
   return productCategories.map((category) => ({ categoria: category.slug }));
@@ -15,10 +16,11 @@ export async function generateMetadata({ params }) {
     return {};
   }
 
-  return {
+  return buildPageMetadata({
     title: `Configurar ${category.name}`,
-    description: category.description
-  };
+    description: category.description,
+    path: `/configurar/${category.slug}`
+  });
 }
 
 export default async function ConfigurePage({ params, searchParams }) {

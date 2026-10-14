@@ -2,6 +2,7 @@ import { CartProvider } from "@/components/cart-provider";
 import { CookiePreferences } from "@/components/cookie-preferences";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { defaultOgImage, defaultSiteTitle, siteOpenGraph } from "@/lib/page-metadata";
 import { brand, siteUrl } from "@/lib/site-data";
 import { Barlow_Condensed } from "next/font/google";
 import { DemoBanner } from "@/components/demo-banner";
@@ -18,7 +19,7 @@ const brandDisplay = Barlow_Condensed({
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${brand.name} | Componentes técnicos sob medida para mobiliário`,
+    default: defaultSiteTitle,
     template: `%s | ${brand.name}`
   },
   description: brand.description,
@@ -32,30 +33,18 @@ export const metadata = {
     icon: "/brand/baseforma-mark.png",
     apple: "/brand/baseforma-mark.png"
   },
-  alternates: {
-    canonical: "/"
-  },
+  // Sem canonical nem og:url aqui: o layout raiz e herdado por todas as rotas, entao cada
+  // pagina indexavel declara os seus via buildPageMetadata (lib/page-metadata.js).
   openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    siteName: brand.name,
-    title: `${brand.name} | Componentes técnicos sob medida para mobiliário`,
-    description: brand.description,
-    url: siteUrl,
-    images: [
-      {
-        url: "/brand/baseforma-og.png",
-        width: 1200,
-        height: 630,
-        alt: "Sapatas 3D sob demanda Baseforma"
-      }
-    ]
+    ...siteOpenGraph,
+    title: defaultSiteTitle,
+    description: brand.description
   },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.name} | Componentes técnicos sob medida para mobiliário`,
+    title: defaultSiteTitle,
     description: brand.description,
-    images: ["/brand/baseforma-og.png"]
+    images: [defaultOgImage.url]
   }
 };
 

@@ -3,15 +3,14 @@ import Link from "next/link";
 import { LegalSupplierIdentity } from "@/components/legal-supplier-identity";
 import { buildMailtoUrl } from "@/lib/format";
 import { company } from "@/lib/site-data";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Condições de venda",
   description:
     "Condições gerais de venda da Baseforma: identificação do fornecedor, pedido, pagamento, prazos, nota fiscal, cancelamento e garantia.",
-  alternates: {
-    canonical: "/termos"
-  }
-};
+  path: "/termos"
+});
 
 const lastUpdated = "20 de agosto de 2026";
 

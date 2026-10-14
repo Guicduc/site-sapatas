@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { StructuredData } from "@/components/structured-data";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
 const faqSections = [
   {
@@ -120,14 +121,12 @@ const faqSections = [
   }
 ];
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Perguntas frequentes",
   description:
     "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, pagamento, frete, produção, material e projeto especial.",
-  alternates: {
-    canonical: "/faq"
-  }
-};
+  path: "/faq"
+});
 
 export default function FaqPage() {
   const mainEntity = faqSections.flatMap((section) =>

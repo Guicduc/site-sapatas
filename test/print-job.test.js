@@ -13,7 +13,8 @@ import {
   enqueuePrintJob,
   failPrintJob,
   listPrintJobs,
-  summarizePrintJobs
+  summarizePrintJobs,
+  syncSiteOrderPrintJobs
 } from "../lib/print-job-store.js";
 
 const tempDir = path.join(os.tmpdir(), `baseforma-print-job-${randomUUID()}`);
@@ -265,6 +266,87 @@ test("aceita origem externa sem acoplar o job a um pedido do site", async () => 
   assert.equal(job.origin.source, "design_lab");
   assert.equal(job.material.code, "petg");
   assert.equal(job.priority, "high");
+});
+
+test("nao gera jobs para pedidos em revisao ou com producao bloqueada", () => {
+  const blockedOrders = [
+    { ...buildPaidOrder(), status: "paid_pending_review" },
+    { ...buildPaidOrder(), status: "needs_technical_review" },
+    { ...buildPaidOrder(), status: "cancelled" },
+    {
+      ...buildPaidOrder(),
+      metadata: { ...buildPaidOrder().metadata, paymentReview: { reason: "amount_mismatch" } }
+    },
+    {
+      ...buildPaidOrder(),
+      metadata: { fulfillment: { production: { status: "blocked" } } }
+    },
+    {
+      ...buildPaidOrder(),
+      metadata: { fulfillment: { production: { status: "ready_to_ship" } } }
+    }
+  ];
+  for (const order of blockedOrders) {
+    assert.deepEqual(
+      buildPrintJobInputsFromOrder(order, { contractPayload: getGrasshopperPayload(order) }),
+      []
+    );
+  }
+});
+
+test("ignora itens sem modelo CAD registrado e mantem os demais", () => {
+  const order = buildPaidOrder();
+  order.items.push({
+    ...order.items[0],
+    id: "item-sem-modelo",
+    sku: "BF-SEM-MODELO",
+    categorySlug: "categoria-sem-modelo",
+    formatSlug: "livre"
+  });
+  const payload = getGrasshopperPayload(order);
+  assert.equal(payload.items[1].modelVersion, null);
+
+  const jobs = buildPrintJobInputsFromOrder(order, { contractPayload: payload });
+  assert.deepEqual(jobs.map((job) => job.origin.sourceItemId), ["item-1"]);
+  assert.doesNotThrow(() => normalizePrintJobInput(jobs[0]));
+});
+
+test("sincronizacao isola pedidos invalidos e nao reenfileira item com job existente", async () => {
+  const previousProfile = process.env.ORCA_SLICER_PROFILE_ID;
+  try {
+    const valid = { ...buildPaidOrder(), id: "order-sync-ok", orderNumber: "BF-SYNC-OK" };
+    const withoutModel = {
+      ...buildPaidOrder(),
+      id: "order-sync-sem-modelo",
+      orderNumber: "BF-SYNC-SM",
+      items: [{ ...buildPaidOrder().items[0], id: "item-sm", categorySlug: "categoria-sem-modelo" }]
+    };
+    const invalid = { ...buildPaidOrder(), id: "", orderNumber: "BF-SYNC-INVALIDO" };
+    const inReview = { ...buildPaidOrder(), id: "order-sync-review", status: "paid_pending_review" };
+
+    process.env.ORCA_SLICER_PROFILE_ID = "perfil-a";
+    const first = await syncSiteOrderPrintJobs([invalid, withoutModel, inReview, valid]);
+    assert.equal(first.candidates, 1);
+    assert.equal(first.jobs.length, 1);
+    assert.equal(first.jobs[0].origin.sourceId, "order-sync-ok");
+    assert.equal(first.jobs[0].material.profileId, "perfil-a");
+    assert.deepEqual(first.errors.map((error) => [error.orderNumber, error.code]), [
+      ["BF-SYNC-INVALIDO", "print_job_invalid_origin"]
+    ]);
+
+    process.env.ORCA_SLICER_PROFILE_ID = "perfil-b";
+    const second = await syncSiteOrderPrintJobs([valid]);
+    assert.equal(second.candidates, 0);
+    assert.equal(second.jobs.length, 0);
+    assert.equal(second.skippedExisting, 1);
+
+    const syncedJobs = (await listPrintJobs()).filter((job) => job.origin.source === "site_order"
+      && ["order-sync-ok", "order-sync-sem-modelo", "order-sync-review"].includes(job.origin.sourceId));
+    assert.deepEqual(syncedJobs.map((job) => job.origin.sourceId), ["order-sync-ok"]);
+  } finally {
+    if (previousProfile === undefined) delete process.env.ORCA_SLICER_PROFILE_ID;
+    else process.env.ORCA_SLICER_PROFILE_ID = previousProfile;
+  }
 });
 
 function buildPaidOrder() {

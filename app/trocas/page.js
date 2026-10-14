@@ -3,15 +3,14 @@ import Link from "next/link";
 import { LegalSupplierIdentity } from "@/components/legal-supplier-identity";
 import { buildMailtoUrl } from "@/lib/format";
 import { company } from "@/lib/site-data";
+import { buildPageMetadata } from "@/lib/page-metadata";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Trocas e devoluções",
   description:
     "Política de trocas, devoluções, direito de arrependimento em 7 dias, garantia legal e reembolso dos pedidos Baseforma.",
-  alternates: {
-    canonical: "/trocas"
-  }
-};
+  path: "/trocas"
+});
 
 const lastUpdated = "20 de agosto de 2026";
 

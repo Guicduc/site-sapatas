@@ -4,6 +4,7 @@ import test from "node:test";
 
 import { closePool, query } from "../lib/db.js";
 import {
+  consumeAccountRateLimit,
   createOrder,
   getOrCreatePendingMercadoPagoPayment,
   getOrderById,
@@ -27,6 +28,17 @@ test("Postgres commerce transactions", { skip: !process.env.TEST_DATABASE_URL },
   };
 
   try {
+    await t.test("account rate limit counts attempts inside the window", async () => {
+      const key = `test-rate-limit-${randomUUID()}`;
+      try {
+        assert.equal(await consumeAccountRateLimit(key, 2, 900), true);
+        assert.equal(await consumeAccountRateLimit(key, 2, 900), true);
+        assert.equal(await consumeAccountRateLimit(key, 2, 900), false);
+      } finally {
+        await query("delete from account_rate_limits where key = $1", [key]);
+      }
+    });
+
     await t.test("concurrent preference requests call the provider once", async () => {
       const draft = fixture();
       await createOrder(draft);

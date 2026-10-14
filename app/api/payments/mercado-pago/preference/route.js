@@ -8,6 +8,10 @@ import {
 import { getOrCreatePendingMercadoPagoPayment, getOrderById, getOrderForAccountId } from "@/lib/order-store";
 import { isPayableOrder, PAYMENT_STATUS } from "@/lib/order-status";
 
+// Limite explicito da funcao: cobre os timeouts dos provedores (Mercado Pago
+// 10s, Melhor Envio 8s, Focus NFe 15s) e fica abaixo do lease da fila (120s).
+export const maxDuration = 60;
+
 export async function POST(request) {
   try {
     const { orderId } = await request.json();
@@ -89,11 +93,21 @@ export async function POST(request) {
         ? 409
         : 502;
 
+    // O corpo bruto do Mercado Pago fica apenas no log do servidor.
+    console.error("mercado_pago_preference_failed", {
+      code: error.code || null,
+      message: error.message || null,
+      details: error.details || null
+    });
+
     return NextResponse.json(
       {
-        error: error.code || "mercado_pago_preference_failed",
-        message: error.message || "Não foi possível gerar o pagamento.",
-        details: error.details || null
+        error: ["missing_mercado_pago_token", "order_not_payable", "mercado_pago_timeout"].includes(error.code)
+          ? error.code
+          : "mercado_pago_preference_failed",
+        message: status === 409
+          ? "Este pedido não está disponível para pagamento. Atualize o status do pedido."
+          : "Não foi possível gerar o pagamento agora. Tente novamente em instantes."
       },
       { status }
     );
