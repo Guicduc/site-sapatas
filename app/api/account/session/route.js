@@ -93,8 +93,12 @@ export async function POST(request) {
   try {
     await sendAccountAccessCodeEmail(email, code);
   } catch (error) {
+    console.error("[account-session] access code email failed", {
+      name: error?.name || "Error",
+      message: String(error?.message || "").slice(0, 200)
+    });
     return NextResponse.json(
-      { error: "email_unavailable", message: error.message || "Não foi possível enviar o código." },
+      { error: "email_unavailable", message: "Não foi possível enviar o código. Tente novamente em instantes." },
       { status: 503 }
     );
   }
