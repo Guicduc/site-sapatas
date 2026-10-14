@@ -16,6 +16,28 @@ Eventos atuais:
 - `payment_review_email`: alerta interno para pagamento tardio ou divergente.
 - `focus_nfe_invoice`: solicitação fiscal após pagamento aprovado.
 
+## Integridade do status de pagamento
+
+- Um pagamento aprovado só sai de `approved` por disputa (`in_mediation`),
+  reembolso ou chargeback (`refunded`). Reembolso é terminal. Snapshots mais
+  antigos (`date_last_updated`) e regressões para pendente/recusado/desconhecido
+  são ignorados e registrados como `payment.transition_ignored`.
+- Pedido pago nunca volta a um status cobrável. Reembolso/chargeback do único
+  pagamento que quitava o pedido o leva a `cancelled` (preservando
+  `in_production`/`shipped`) e grava `metadata.refund`.
+- Revisões bloqueantes ficam em `metadata.paymentReview` e travam NF-e,
+  produção e e-mail ao cliente: `amount_mismatch`, `currency_mismatch` e
+  `approved_payment_on_cancelled_order`.
+- Alertas não bloqueantes ficam em `metadata.paymentAlerts` e enfileiram
+  `payment_review_email`: `duplicate_payment`, `partial_refund`,
+  `payment_dispute`, `payment_refunded` e `payment_charged_back`.
+  Uma cobrança duplicada não repete comprovante nem NF-e, inclusive em
+  reentregas. Reembolso parcial e disputa preservam os efeitos da primeira
+  confirmação paga observada; suas chaves idempotentes evitam repetições.
+  Uma disputa recebida antes da aprovação também valida valor, moeda e
+  cancelamento e, quando elegível, solicita NF-e e libera produção.
+  O cancelamento fiscal após reembolso continua manual.
+
 `idempotency_key` é única. O Resend também recebe sua chave estável e a Focus
 NFe usa a referência estável derivada do pedido. O processamento é pelo menos
 uma vez, portanto essas proteções do provedor são parte do contrato.
