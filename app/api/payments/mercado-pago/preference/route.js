@@ -98,8 +98,12 @@ export async function POST(request) {
 
     return NextResponse.json(
       {
-        error: error.code || "mercado_pago_preference_failed",
-        message: error.message || "Não foi possível gerar o pagamento."
+        error: ["missing_mercado_pago_token", "order_not_payable", "mercado_pago_timeout"].includes(error.code)
+          ? error.code
+          : "mercado_pago_preference_failed",
+        message: status === 409
+          ? "Este pedido não está disponível para pagamento. Atualize o status do pedido."
+          : "Não foi possível gerar o pagamento agora. Tente novamente em instantes."
       },
       { status }
     );
