@@ -71,6 +71,16 @@ create index if not exists orders_status_idx on orders(status);
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists payments_order_id_idx on payments(order_id);
 create index if not exists payments_provider_payment_idx on payments(provider_payment_id);
+create index if not exists payments_provider_preference_idx
+  on payments(provider_preference_id)
+  where provider_preference_id is not null;
+create index if not exists order_items_order_id_idx on order_items(order_id, created_at);
+create index if not exists technical_reviews_order_id_idx on technical_reviews(order_id, created_at desc);
+create index if not exists customers_lower_email_idx on customers((lower(email)));
+create index if not exists customers_document_idx
+  on customers(document)
+  where document is not null;
+create index if not exists orders_customer_id_idx on orders(customer_id);
 create unique index if not exists payments_one_active_mp_preference_idx
   on payments(order_id)
   where provider = 'mercado_pago'
