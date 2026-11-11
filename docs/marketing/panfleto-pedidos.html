@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panfleto de agradecimento</title>
+<!--
+  Panfleto que acompanha os pedidos: agradecimento + cupom VOLTE5 (5% na proxima compra).
+  Regra do cupom em lib/promotion-policy.js (so para quem ja tem pedido aprovado, 1 uso por CPF/CNPJ).
+  Impressao: A4, escala 100%, margens "Nenhuma", graficos de fundo ligados. 4 panfletos A6 por folha.
+  O PDF pronto fica em panfleto-pedidos-a4.pdf (gerado a partir deste arquivo).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f7f4;
+    --surface: #ffffff;
+    --surface-soft: #edf1ef;
+    --ink: #181c1d;
+    --ink-soft: #5a6264;
+    --line: #d5ddda;
+    --primary: #007a70;
+    --primary-dark: #004d48;
+    --display: "Barlow Condensed", Arial, Helvetica, sans-serif;
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    background: #d9dfdc;
+    color: var(--ink);
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-note {
+    max-width: 210mm;
+    margin: 16px auto 0;
+    padding: 0 16px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .sheet {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, 105mm);
+    grid-template-rows: repeat(2, 148.5mm);
+    width: 210mm;
+    height: 297mm;
+    margin: 16px auto 32px;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(24, 28, 29, 0.18);
+    overflow: hidden;
+  }
+
+  /* Guias de corte: uma linha vertical e uma horizontal no centro da folha. */
+  .sheet::before,
+  .sheet::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .sheet::before {
+    top: 0; bottom: 0; left: 50%;
+    border-left: 0.2mm dashed #b9c4c0;
+  }
+  .sheet::after {
+    left: 0; right: 0; top: 50%;
+    border-top: 0.2mm dashed #b9c4c0;
+  }
+
+  .flyer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 9mm 9mm 8mm;
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(#eef2f0 0.2mm, transparent 0.2mm),
+      linear-gradient(90deg, #eef2f0 0.2mm, transparent 0.2mm);
+    background-size: 6mm 6mm;
+    background-position: 3mm 3mm;
+    overflow: hidden;
+  }
+
+  /* Cabecalho: mesmo par simbolo + logotipo usado no topo do site. */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 1.6mm;
+  }
+  .brand__icon { width: 10.5mm; height: auto; display: block; }
+  .brand__logo { width: 33mm; height: auto; display: block; }
+
+  .eyebrow {
+    margin: 5.5mm 0 1.6mm;
+    color: var(--primary);
+    font-family: var(--display);
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 23pt;
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+
+  .lead {
+    margin: 2.6mm 0 0;
+    color: var(--ink-soft);
+    font-size: 8.4pt;
+    line-height: 1.42;
+  }
+
+  /* Cupom */
+  .coupon {
+    display: grid;
+    grid-template-columns: 34mm 1fr;
+    margin-top: 4.5mm;
+    border: 0.35mm solid var(--primary);
+    border-radius: 2mm;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .coupon__value {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3.2mm 3.6mm;
+    background: var(--primary);
+    color: #ffffff;
+  }
+  .coupon__value strong {
+    font-family: var(--display);
+    font-size: 40pt;
+    font-weight: 700;
+    line-height: 0.86;
+  }
+  .coupon__value span {
+    margin-top: 1.4mm;
+    font-family: var(--display);
+    font-size: 9.5pt;
+    font-weight: 600;
+    line-height: 1.05;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(233, 247, 244, 0.92);
+  }
+  .coupon__code {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 3.2mm 4mm;
+    border-left: 0.35mm dashed var(--primary);
+    margin-left: -0.35mm;
+  }
+  .coupon__label {
+    color: var(--ink-soft);
+    font-family: var(--display);
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  .coupon__code strong {
+    margin-top: 1mm;
+    font-family: var(--display);
+    font-size: 27pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .coupon__code small {
+    margin-top: 1.2mm;
+    color: var(--ink-soft);
+    font-size: 6.6pt;
+    line-height: 1.3;
+  }
+
+  /* Passo a passo */
+  .steps {
+    display: grid;
+    gap: 1.9mm;
+    margin: 4.5mm 0 3.5mm;
+    padding: 0;
+    list-style: none;
+  }
+  .steps li {
+    display: grid;
+    grid-template-columns: 6mm 1fr;
+    align-items: baseline;
+    font-size: 8pt;
+    line-height: 1.3;
+  }
+  .steps b {
+    color: var(--primary);
+    font-family: var(--display);
+    font-size: 10pt;
+    font-weight: 700;
+  }
+  .steps em {
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  /* Rodape */
+  .foot {
+    display: grid;
+    grid-template-columns: 17mm 1fr;
+    gap: 3.4mm;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 3.4mm;
+    border-top: 0.25mm solid var(--line);
+  }
+  .foot svg { display: block; width: 17mm; height: 17mm; }
+  .foot__site {
+    display: block;
+    font-family: var(--display);
+    font-size: 12pt;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .foot__site span { color: var(--primary); }
+  .foot p {
+    margin: 1.2mm 0 0;
+    color: var(--ink-soft);
+    font-size: 6.4pt;
+    line-height: 1.35;
+  }
+
+  @media print {
+    body { background: none; }
+    .print-note { display: none; }
+    .sheet { margin: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+  <p class="print-note">
+    Imprimir em A4, escala 100% (tamanho real), margens "Nenhuma" e gráficos de fundo ativados.
+    Cortar nas linhas tracejadas do centro: rende 4 panfletos A6 (10,5 × 14,85 cm) por folha.
+  </p>
+
+  <main class="sheet">
+    </main>
+
+  <template id="flyer-template">
+    <article class="flyer">
+      <div class="brand">
+        <img class="brand__icon" src="../../public/brand/logo-traco-base-icone-novo.svg" alt="">
+        <img class="brand__logo" src="../../public/brand/baseforma-logo-horizontal.svg" alt="Baseforma">
+      </div>
+
+      <p class="eyebrow">Obrigado pela compra</p>
+      <h1>Feito sob medida para o seu projeto.</h1>
+      <p class="lead">
+        Cada peça deste pedido foi produzida para as medidas que você escolheu,
+        conferida e embalada pela nossa equipe. Obrigado pela confiança.
+      </p>
+
+      <section class="coupon" aria-label="Cupom de desconto">
+        <div class="coupon__value">
+          <strong>5%</strong>
+          <span>off na próxima compra</span>
+        </div>
+        <div class="coupon__code">
+          <span class="coupon__label">Seu cupom</span>
+          <strong>VOLTE5</strong>
+          <small>Digite no carrinho ao finalizar o próximo pedido.</small>
+        </div>
+      </section>
+
+      <ol class="steps">
+        <li><b>01</b><span>Configure as peças em <em>baseforma.com.br</em>.</span></li>
+        <li><b>02</b><span>No carrinho, aplique o cupom <em>VOLTE5</em>.</span></li>
+        <li><b>03</b><span>Use o mesmo CPF/CNPJ deste pedido.</span></li>
+      </ol>
+
+      <footer class="foot">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code para o catálogo Baseforma"><path stroke="#181c1d" d="M0 0.5h7m2 0h1m1 0h3m2 0h1m1 0h2m1 0h1m1 0h1m2 0h7m-33 1h1m5 0h1m2 0h1m2 0h6m2 0h3m1 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h1m2 0h4m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h5m1 0h1m1 0h2m4 0h1m3 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h7m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h2m1 0h3m1 0h3m3 0h1m4 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m1 0h2m2 0h2m2 0h6m-24 1h1m1 0h5m4 0h5m1 0h1m1 0h1m2 0h3m1 0h5m-31 1h1m3 0h1m6 0h1m5 0h7m2 0h2m1 0h2m1 0h1m-31 1h5m1 0h1m1 0h3m2 0h1m4 0h1m3 0h2m2 0h1m1 0h2m-32 1h1m1 0h2m4 0h1m2 0h2m1 0h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h4m-31 1h1m3 0h2m3 0h3m2 0h1m1 0h1m1 0h1m2 0h4m2 0h2m-29 1h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h3m1 0h4m1 0h1m1 0h2m2 0h1m1 0h2m-31 1h1m1 0h3m2 0h1m2 0h1m1 0h1m2 0h2m1 0h1m4 0h2m1 0h1m1 0h2m-32 1h1m3 0h1m2 0h1m2 0h3m1 0h1m1 0h1m4 0h6m1 0h3m-31 1h3m3 0h1m1 0h3m5 0h2m4 0h1m1 0h2m1 0h2m3 0h1m-33 1h4m4 0h2m2 0h1m1 0h1m1 0h1m1 0h4m1 0h5m1 0h2m1 0h1m-33 1h8m1 0h2m2 0h1m1 0h1m9 0h1m1 0h2m1 0h2m-28 1h2m1 0h1m1 0h1m1 0h2m6 0h1m1 0h3m3 0h4m-30 1h7m3 0h3m1 0h1m1 0h1m4 0h1m2 0h1m2 0h2m1 0h1m-32 1h4m4 0h3m3 0h2m1 0h1m1 0h3m1 0h1m2 0h2m1 0h1m2 0h1m-33 1h1m3 0h1m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m3 0h2m2 0h1m2 0h2m1 0h1m-32 1h1m1 0h1m2 0h1m3 0h2m3 0h2m5 0h3m1 0h2m1 0h4m-32 1h1m4 0h2m2 0h2m1 0h1m1 0h2m1 0h1m2 0h1m1 0h7m3 0h1m-25 1h3m1 0h1m1 0h1m1 0h1m1 0h4m1 0h2m3 0h1m1 0h3m-33 1h7m2 0h1m1 0h2m1 0h2m4 0h5m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h5m1 0h1m1 0h1m1 0h7m3 0h4m-32 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m1 0h2m3 0h6m-30 1h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h3m1 0h7m1 0h1m2 0h5m-33 1h1m1 0h3m1 0h1m1 0h1m4 0h1m1 0h2m3 0h1m1 0h6m1 0h1m-30 1h1m5 0h1m3 0h5m1 0h1m3 0h2m1 0h4m1 0h3m-31 1h7m1 0h5m1 0h1m2 0h3m2 0h4m1 0h1m3 0h1"/></svg>
+        <div>
+          <span class="foot__site">baseforma<span>.com.br</span></span>
+          <p>
+            Recompre pelas mesmas especificações em Minha conta.
+            Dúvidas: atendimento@baseforma.com.br
+          </p>
+          <p>Cupom válido para 1 uso por CPF/CNPJ com pedido anterior aprovado. Não cumulativo com outros cupons.</p>
+        </div>
+      </footer>
+    </article>
+  </template>
+
+  <script>
+    // Repete o mesmo panfleto nos 4 quadros A6 da folha.
+    const sheet = document.querySelector(".sheet");
+    const flyer = document.getElementById("flyer-template").content;
+    for (let i = 0; i < 4; i += 1) sheet.appendChild(flyer.cloneNode(true));
+  </script>
+</body>
+</html>
