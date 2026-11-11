@@ -22,6 +22,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Carrinho e checkout em `/carrinho`, com validacao server-side antes de criar pedido.
 - Aritmetica publica de desconto e frete estimado em `lib/commerce-adjustments.js`; definicoes, valores e elegibilidade de cupons ficam somente no servidor em `lib/promotion-policy.js`.
 - `PRIMEIRO15` exige ausencia de compra aprovada para o CPF/CNPJ normalizado. Cupons privados de frete e a promocao de primeira compra reservam uma unica identidade por pedido, atomicamente; pagamento aprovado confirma o uso e cancelamento por substituicao libera apenas uma reserva ainda nao paga. Rejeicoes sao genericas e nao revelam historico do cliente.
+- `VOLTE5` (cupom do panfleto enviado com os pedidos, `docs/marketing/panfleto-pedidos.html`) da 5% sem minimo, exige compra aprovada anterior para o mesmo CPF/CNPJ e usa a mesma reserva unica por identidade.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
 - E-mails transacionais via Resend para codigo de conta, pedido criado, pagamento resolvido e pedido enviado. O ultimo parte do estado operacional persistido `shipment.status: "shipped"`, inclui rastreio quando informado e registra sucesso/falha para evitar duplicidade.

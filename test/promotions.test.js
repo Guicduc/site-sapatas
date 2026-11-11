@@ -68,6 +68,36 @@ test("a restricted promotion can be reserved by only one concurrent order", asyn
   assert.equal(repeated.message, "Este cupom não pode ser aplicado a este pedido.");
 });
 
+test("the flyer coupon only applies once to customers with an approved order", async () => {
+  const customer = { ...testCustomer(), id: "customer-volte5", email: "volte5@example.com", document: "11144477735" };
+  const evaluate = () => evaluatePromotion({
+    couponCode: "volte5",
+    subtotalBrl: 300,
+    shipping: { status: "estimated" },
+    customer
+  });
+
+  const beforeFirstOrder = await evaluate();
+  assert.equal(beforeFirstOrder.applied, false);
+
+  const firstOrder = await createOrder(testDraft("volte5-first", customer, null));
+  await recordMercadoPagoUpdate({
+    orderId: firstOrder.id,
+    paymentId: "payment-volte5-first",
+    status: "approved",
+    amountBrl: firstOrder.totalBrl,
+    raw: {}
+  });
+
+  const nextPurchase = await evaluate();
+  assert.equal(nextPurchase.applied, true);
+  assert.equal(nextPurchase.amountBrl, 15);
+
+  await createOrder(testDraft("volte5-second", customer, nextPurchase.claim));
+  const reused = await evaluate();
+  assert.equal(reused.applied, false);
+});
+
 test("order validation ignores browser totals and recalculates the final charge", async () => {
   const draft = await buildOrderDraft({
     ...checkoutPayload(),
