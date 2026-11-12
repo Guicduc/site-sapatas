@@ -14,6 +14,14 @@ decisao durante rollback.
 
 Manter uma lista simples de pedidos pagos que aguardam producao. A preparacao de arquivos pode ser assistida por um worker externo, mas continua sem bloquear a fila do pedido. Ate existir contrato externo, migracao dos jobs ativos e corte idempotente, esta fila deve permanecer disponivel.
 
+Todos os filtros do admin usam a mesma ficha de pedido. A secao "Producao" tem um unico formulario e o botao "Salvar producao"; ele nao altera NF ou expedicao. Prioridade e data programada ficam recolhidas em "Prioridade e programacao". Os antigos campos de maquina, operador e notas de producao nao sao mais editados pela interface, mas seus dados existentes permanecem no pedido.
+
+Quando existem, esses registros antigos aparecem como texto de consulta em "Prioridade e programacao". Uma mudanca manual de status nao pode substituir o controle de um pedido ja roteado para o sistema externo; o admin informa que o andamento deve ser conferido nesse sistema.
+
+Os dados para Grasshopper e o JSON ficam em "Dados para fabricacao e JSON". O painel de jobs e o comando "Sincronizar pedidos pagos" ficam recolhidos em "Geracao de arquivos", no filtro "Producao". Pagamentos ou revisoes que impedem producao aparecem em "Atencao" e nao ocupam posicao na fila.
+
+A lista mostra o andamento de pagamento, producao, NF e envio, com a proxima etapa aberta na ficha. "Expedidos" substitui o antigo rotulo "Concluidos", mantendo `?fila=concluidos`: confirma apenas que o pedido saiu da operacao, nao que foi entregue. "Entregue" exige `shipment.status=delivered` ja registrado. Um pedido expedido com NF pendente ou falha no e-mail de envio tambem aparece em "Atencao". A busca filtra numero, cliente, contato e SKU dentro da etapa selecionada.
+
 ## Duas filas, responsabilidades diferentes
 
 - `print_jobs`: orquestra a geracao de STL/3MF/preview a partir de um snapshot do contrato CAD. `lib/cad-contract.js` monta esse snapshot e participa da ingestao; o site persiste e acompanha o job, enquanto Rhino, Grasshopper e Orca nao rodam no processo web.
@@ -90,6 +98,8 @@ Use apenas estes estados no trabalho diario:
 
 - `Aguardando producao`: pedido pago aguardando o trabalho manual da operacao.
 - `Produzido`: producao concluida, pedido pronto para seguir para expedicao.
+
+O seletor tambem mantem "Em producao" e "Bloqueado" para registrar andamento ou uma falha que precise de intervencao. Os estados internos e a compatibilidade com marcos do sistema externo continuam inalterados. Salvar um estado simplificado sem muda-lo preserva o estado interno correspondente, como `quality_check`.
 
 O bloco `orders.metadata.fulfillment` e normalizado com `schemaVersion: 2`. Esse schema operacional e separado do `schemaVersion` dos jobs em `print_jobs`.
 
