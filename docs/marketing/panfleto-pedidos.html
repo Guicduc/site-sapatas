@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panfleto de agradecimento</title>
+<!--
+  Panfleto que acompanha os pedidos: agradecimento + cupom VOLTE5 (5% na proxima compra).
+  Regra do cupom em lib/promotion-policy.js (so para quem ja tem pedido aprovado, 1 uso por CPF/CNPJ).
+  Visual segue a home atual (app/globals.css): .shop-hero, .brand-mood e .eyebrow.
+  Impressao: A4, escala 100%, margens "Nenhuma", graficos de fundo ligados. 4 panfletos A6 por folha.
+  O PDF pronto fica em panfleto-pedidos-a4.pdf (gerado a partir deste arquivo).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f7f4;
+    --surface: #ffffff;
+    --ink: #181c1d;
+    --ink-soft: #5a6264;
+    --line: #d5ddda;
+    --primary: #007a70;
+    --primary-bright: #0a9488;
+    --primary-dark: #004d48;
+    --card-tint: oklch(0.985 0.006 170);
+    --radius: 2.1mm; /* 8px do site na escala de impressao */
+    --label: "Barlow Condensed", Arial, Helvetica, sans-serif;
+  }
+
+  @page { size: A4 portrait; margin: 0; }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; }
+
+  body {
+    background: #dfe4e2;
+    color: var(--ink);
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-note {
+    max-width: 210mm;
+    margin: 16px auto 0;
+    padding: 0 16px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .sheet {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, 105mm);
+    grid-template-rows: repeat(2, 148.5mm);
+    width: 210mm;
+    height: 297mm;
+    margin: 16px auto 32px;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(24, 28, 29, 0.18);
+    overflow: hidden;
+  }
+
+  /* Guias de corte no centro da folha. */
+  .sheet::before,
+  .sheet::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .sheet::before { top: 0; bottom: 0; left: 50%; border-left: 0.2mm dashed #c3ccc9; }
+  .sheet::after { left: 0; right: 0; top: 50%; border-top: 0.2mm dashed #c3ccc9; }
+
+  .flyer {
+    display: flex;
+    flex-direction: column;
+    padding: 7.5mm 8.5mm 7mm;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  /* Nenhum bloco encolhe: se faltar espaco, o ajuste e feito aqui no CSS, nao na foto. */
+  .flyer > * { flex-shrink: 0; }
+
+  /* Cabecalho: simbolo + logotipo, como no topo do site. */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 1.2mm;
+  }
+  .brand__icon { width: 9mm; height: auto; display: block; }
+  .brand__logo { width: 30mm; height: auto; display: block; }
+
+  /* Foto no mesmo tratamento do .shop-hero__media */
+  .photo {
+    height: 28mm;
+    margin-top: 3.6mm;
+    border: 0.25mm solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: oklch(0.93 0.01 170);
+  }
+  .photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 70% 88%;
+    filter: saturate(0.92) contrast(1.04);
+  }
+
+  .eyebrow {
+    margin: 4.2mm 0 1.5mm;
+    color: var(--primary-dark);
+    font-size: 6.6pt;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 17.5pt;
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+
+  .lead {
+    margin: 2mm 0 0;
+    color: var(--primary-dark);
+    font-size: 7.9pt;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  /* Cupom no tratamento do cartao .brand-mood .is-cta */
+  .coupon {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 3mm;
+    margin-top: 3.8mm;
+    padding: 3.6mm 3.6mm 3.6mm 4.2mm;
+    border-radius: var(--radius);
+    background: linear-gradient(150deg, var(--primary-bright), var(--primary) 82%);
+    color: #ffffff;
+  }
+  .coupon__pct {
+    font-size: 31pt;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 0.82;
+  }
+  .label {
+    display: block;
+    font-family: var(--label);
+    font-size: 7pt;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .coupon .label { color: rgba(233, 247, 244, 0.78); }
+  .coupon__text {
+    margin: 1.2mm 0 0;
+    color: #ffffff;
+    font-size: 8pt;
+    font-weight: 700;
+    line-height: 1.22;
+  }
+  .coupon__code {
+    display: grid;
+    justify-items: center;
+    gap: 0.9mm;
+    padding: 2.2mm 3mm 2.4mm;
+    border-radius: 1.4mm;
+    background: #ffffff;
+    color: var(--primary-dark);
+  }
+  .coupon__code .label { color: var(--ink-soft); font-size: 6pt; }
+  .coupon__code strong {
+    font-size: 14pt;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+  }
+
+  /* Passos no tratamento dos cartoes .brand-mood */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.8mm;
+    margin: 2.2mm 0 3.2mm;
+    padding: 0;
+    list-style: none;
+  }
+  .steps li {
+    display: grid;
+    align-content: start;
+    gap: 1.1mm;
+    padding: 2.4mm 2.4mm 2.6mm;
+    border: 0.25mm solid var(--line);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--card-tint), var(--bg));
+  }
+  .steps .label { color: var(--primary); font-size: 6.4pt; }
+  .steps p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 6.6pt;
+    line-height: 1.3;
+  }
+  .steps strong { color: var(--ink); }
+
+  /* Rodape */
+  .foot {
+    display: grid;
+    grid-template-columns: 14.5mm 1fr;
+    gap: 3mm;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 2.8mm;
+    border-top: 0.25mm solid var(--line);
+  }
+  .foot svg { display: block; width: 14.5mm; height: 14.5mm; }
+  .foot__site {
+    display: block;
+    font-size: 9pt;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .foot__site span { color: var(--primary); }
+  .foot p {
+    margin: 1mm 0 0;
+    color: var(--ink-soft);
+    font-size: 6pt;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  @media print {
+    body { background: none; }
+    .print-note { display: none; }
+    .sheet { margin: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+  <p class="print-note">
+    Imprimir em A4, escala 100% (tamanho real), margens "Nenhuma" e gráficos de fundo ativados.
+    Cortar nas linhas tracejadas do centro: rende 4 panfletos A6 (10,5 × 14,85 cm) por folha.
+  </p>
+
+  <main class="sheet"></main>
+
+  <template id="flyer-template">
+    <article class="flyer">
+      <div class="brand">
+        <img class="brand__icon" src="../../public/brand/logo-traco-base-icone-novo.svg" alt="">
+        <img class="brand__logo" src="../../public/brand/baseforma-logo-horizontal.svg" alt="Baseforma">
+      </div>
+
+      <div class="photo">
+        <img src="../../public/brand/traco-base-hero-2.png" alt="Sapatas Baseforma aplicadas em tubos e peças soltas">
+      </div>
+
+      <p class="eyebrow">Obrigado pela compra</p>
+      <h1>Feito sob medida para o seu projeto</h1>
+      <p class="lead">
+        Cada peça foi produzida sob demanda,
+        nas medidas exatas que você escolheu.
+      </p>
+
+      <section class="coupon" aria-label="Cupom de desconto">
+        <strong class="coupon__pct">5%</strong>
+        <div>
+          <span class="label">de desconto</span>
+          <p class="coupon__text">na sua próxima compra na Baseforma</p>
+        </div>
+        <div class="coupon__code">
+          <span class="label">Cupom</span>
+          <strong>VOLTE5</strong>
+        </div>
+      </section>
+
+      <ol class="steps">
+        <li>
+          <span class="label">01 / Configure</span>
+          <p>Monte as peças em <strong>baseforma.com.br</strong></p>
+        </li>
+        <li>
+          <span class="label">02 / Aplique</span>
+          <p>Digite <strong>VOLTE5</strong> no carrinho</p>
+        </li>
+        <li>
+          <span class="label">03 / Confirme</span>
+          <p>Use o <strong>CPF/CNPJ</strong> deste pedido</p>
+        </li>
+      </ol>
+
+      <footer class="foot">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="QR code para o catálogo Baseforma"><path stroke="#181c1d" d="M0 0.5h7m2 0h1m1 0h3m2 0h1m1 0h2m1 0h1m1 0h1m2 0h7m-33 1h1m5 0h1m2 0h1m2 0h6m2 0h3m1 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h1m2 0h4m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h5m1 0h1m1 0h2m4 0h1m3 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h7m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h2m1 0h3m1 0h3m3 0h1m4 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m1 0h2m2 0h2m2 0h6m-24 1h1m1 0h5m4 0h5m1 0h1m1 0h1m2 0h3m1 0h5m-31 1h1m3 0h1m6 0h1m5 0h7m2 0h2m1 0h2m1 0h1m-31 1h5m1 0h1m1 0h3m2 0h1m4 0h1m3 0h2m2 0h1m1 0h2m-32 1h1m1 0h2m4 0h1m2 0h2m1 0h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h4m-31 1h1m3 0h2m3 0h3m2 0h1m1 0h1m1 0h1m2 0h4m2 0h2m-29 1h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h3m1 0h4m1 0h1m1 0h2m2 0h1m1 0h2m-31 1h1m1 0h3m2 0h1m2 0h1m1 0h1m2 0h2m1 0h1m4 0h2m1 0h1m1 0h2m-32 1h1m3 0h1m2 0h1m2 0h3m1 0h1m1 0h1m4 0h6m1 0h3m-31 1h3m3 0h1m1 0h3m5 0h2m4 0h1m1 0h2m1 0h2m3 0h1m-33 1h4m4 0h2m2 0h1m1 0h1m1 0h1m1 0h4m1 0h5m1 0h2m1 0h1m-33 1h8m1 0h2m2 0h1m1 0h1m9 0h1m1 0h2m1 0h2m-28 1h2m1 0h1m1 0h1m1 0h2m6 0h1m1 0h3m3 0h4m-30 1h7m3 0h3m1 0h1m1 0h1m4 0h1m2 0h1m2 0h2m1 0h1m-32 1h4m4 0h3m3 0h2m1 0h1m1 0h3m1 0h1m2 0h2m1 0h1m2 0h1m-33 1h1m3 0h1m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m3 0h2m2 0h1m2 0h2m1 0h1m-32 1h1m1 0h1m2 0h1m3 0h2m3 0h2m5 0h3m1 0h2m1 0h4m-32 1h1m4 0h2m2 0h2m1 0h1m1 0h2m1 0h1m2 0h1m1 0h7m3 0h1m-25 1h3m1 0h1m1 0h1m1 0h1m1 0h4m1 0h2m3 0h1m1 0h3m-33 1h7m2 0h1m1 0h2m1 0h2m4 0h5m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h5m1 0h1m1 0h1m1 0h7m3 0h4m-32 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m1 0h2m3 0h6m-30 1h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h3m1 0h7m1 0h1m2 0h5m-33 1h1m1 0h3m1 0h1m1 0h1m4 0h1m1 0h2m3 0h1m1 0h6m1 0h1m-30 1h1m5 0h1m3 0h5m1 0h1m3 0h2m1 0h4m1 0h3m-31 1h7m1 0h5m1 0h1m2 0h3m2 0h4m1 0h1m3 0h1"/></svg>
+        <div>
+          <span class="foot__site">baseforma<span>.com.br</span></span>
+          <p>Suas especificações ficam salvas em Minha conta.<br>Dúvidas: atendimento@baseforma.com.br</p>
+          <p>Válido 1 vez por CPF/CNPJ que já tenha pedido aprovado. Não cumulativo.</p>
+        </div>
+      </footer>
+    </article>
+  </template>
+
+  <script>
+    // Repete o mesmo panfleto nos 4 quadros A6 da folha.
+    const sheet = document.querySelector(".sheet");
+    const flyer = document.getElementById("flyer-template").content;
+    for (let i = 0; i < 4; i += 1) sheet.appendChild(flyer.cloneNode(true));
+  </script>
+</body>
+</html>

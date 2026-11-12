@@ -49,7 +49,7 @@ Apos o pagamento aprovado, o fluxo operacional normal e `Aguardando producao` ->
 
 Nunca confie no total enviado pelo navegador. Itens, desconto, frete e total precisam ser recalculados no servidor.
 
-Definicoes de cupons vivem somente em `lib/promotion-policy.js`. `PRIMEIRO15` e o
+Definicoes de cupons vivem somente em `lib/promotion-policy.js`. `PRIMEIRO15`, `VOLTE5` e o
 cupom privado de frete usam CPF/CNPJ pseudonimizado por HMAC e uma reserva atomica
 em `promotion_redemptions`; aplique a migration antes do deploy. Configure
 `PROMOTION_IDENTITY_SECRET` (com fallback operacional para `ACCOUNT_SESSION_SECRET`).
