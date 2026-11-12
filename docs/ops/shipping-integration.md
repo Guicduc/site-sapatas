@@ -34,6 +34,12 @@ Essa integracao e somente de cotacao. O pedido salvo deve continuar sendo tratad
 
 Na secao "Expedicao", selecione `Expedido` e clique em "Salvar expedicao" depois da postagem real. Esse formulario salva somente a expedicao e tenta enviar o e-mail ao cliente; salvar producao ou NF nao dispara essa mensagem. A data de saida e preenchida automaticamente, e transportadora e rastreio continuam editaveis. Falta de `RESEND_API_KEY`, remetente ou e-mail do cliente nao desfaz a expedicao: a notificacao fica `blocked`, o motivo operacional aparece no admin sem expor o destinatario nos logs e um novo salvamento da expedicao repete a tentativa. Falhas de rede/provedor ficam `failed` com apenas um codigo tecnico persistido.
 
+## Confirmacao manual de entrega
+
+Na aba "Expedidos", abra o pedido e use "Confirmar entrega" na secao "Expedicao" somente depois de verificar o recebimento pelo cliente. A acao exige pedido pago e ja expedido, sem cancelamento, reembolso ou revisao pendente. O servidor registra `shipment.status: "delivered"`, a data de confirmacao em `deliveredAt` e um evento `admin_delivery_confirmed` no historico, preservando rastreio, NF e notificacao. Formularios desatualizados sao rejeitados.
+
+Sem pendencias, o admin mostra "Pedido concluido · entregue". Pendencias fiscais ou de notificacao continuam visiveis mesmo depois da entrega. A confirmacao nao envia e-mail; se houver um aviso de expedicao pendente, "Salvar expedicao" continua permitindo a tentativa de envio. A entrega nao e confirmada automaticamente pelo Melhor Envio.
+
 ## Bloqueio para evento automatico do Melhor Envio
 
 A API atualmente integrada e apenas `/me/shipment/calculate`; ela retorna cotacao, nao uma etiqueta comprada nem confirmacao de postagem. Por isso, esta entrega nao inventa um webhook ou status do Melhor Envio: o evento confiavel continua sendo a confirmacao manual `shipped` feita pela operacao depois da postagem real.

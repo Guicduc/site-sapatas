@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { buildAdminOrderSectionPatch, canEditAdminOrderSection, getAdminSectionStatus, getAdminInvoiceOptions } from "../lib/admin-order-workflow.js";
+import { buildAdminOrderSectionPatch, canConfirmAdminOrderDelivery, canEditAdminOrderSection, getAdminSectionStatus, getAdminInvoiceOptions } from "../lib/admin-order-workflow.js";
 import { buildFulfillmentMetadata, getOrderStatusForFulfillment, normalizeFulfillment } from "../lib/fulfillment.js";
 import { createOrder, getOrderById, updateOrderFulfillmentState } from "../lib/order-store.js";
 
@@ -130,6 +130,56 @@ test("datas de emissao e expedicao sao preenchidas ao confirmar a etapa", () => 
   }), now);
   assert.equal(shipment.shipment.shippedAt, now);
   assert.equal(shipment.shipment.trackingCode, "BR123");
+});
+
+test("confirmacao de entrega persiste data e historico sem alterar rastreio, NF ou notificacao", async () => {
+  const order = buildOrder();
+  order.id = "admin-delivery-order";
+  order.metadata.fulfillment.shipment = {
+    ...order.metadata.fulfillment.shipment, status: "shipped", trackingCode: "BR123",
+    shippedAt: "2026-11-02T12:00:00.000Z", notification: { status: "sent", sentAt: "2026-11-02T12:01:00.000Z" }
+  };
+  await createOrder(order);
+  const before = await getOrderById(order.id);
+  assert.equal(canConfirmAdminOrderDelivery(before), true);
+  const values = { ...formValues(before, "shipment"), operation: "confirm_delivery", trackingCode: "nao sobrescrever" };
+  await updateOrderFulfillmentState(order.id, (latest) => buildAdminOrderSectionPatch(latest, "shipment", values));
+  const after = await getOrderById(order.id);
+  const previous = normalizeFulfillment(before);
+  const next = normalizeFulfillment(after);
+  assert.equal(next.shipment.status, "delivered");
+  assert.ok(!Number.isNaN(Date.parse(next.shipment.deliveredAt)));
+  assert.equal(next.shipment.shippedAt, previous.shipment.shippedAt);
+  assert.equal(next.shipment.trackingCode, "BR123");
+  assert.deepEqual(next.shipment.notification, previous.shipment.notification);
+  assert.deepEqual(next.invoice, previous.invoice);
+  assert.deepEqual(next.production, previous.production);
+  assert.equal(after.metadata.fulfillment.history.at(-1).type, "admin_delivery_confirmed");
+  assert.equal(canConfirmAdminOrderDelivery(after), false);
+  await assert.rejects(updateOrderFulfillmentState(order.id, (latest) => buildAdminOrderSectionPatch(latest, "shipment", values)), { code: "admin_operation_stale" });
+});
+
+test("entrega exige despacho anterior e liberacao operacional", () => {
+  const ready = buildOrder();
+  ready.metadata.fulfillment.production.status = "ready_to_ship";
+  for (const order of [
+    ready,
+    { ...ready, status: "cancelled" },
+    { ...ready, status: "shipped", paymentStatus: "refunded" },
+    { ...ready, status: "shipped", paymentStatus: "pending" },
+    { ...ready, status: "shipped", metadata: { fulfillment: { shipment: { status: "cancelled" } } } },
+    { ...ready, status: "shipped", metadata: { ...ready.metadata, paymentReview: { reason: "amount_mismatch" } } }
+  ]) {
+    assert.equal(canConfirmAdminOrderDelivery(order), false);
+    assert.throws(() => buildAdminOrderSectionPatch(order, "shipment", {
+      ...formValues(order, "shipment"), operation: "confirm_delivery"
+    }), { code: "admin_operation_unavailable" });
+  }
+  const legacy = { ...ready, status: "shipped" };
+  assert.equal(canConfirmAdminOrderDelivery(legacy), true);
+  assert.equal(buildAdminOrderSectionPatch(legacy, "shipment", {
+    ...formValues(legacy, "shipment"), operation: "confirm_delivery"
+  }).shipment.status, "delivered");
 });
 
 test("salvamentos de secoes distintas convivem e uma ficha antiga nao desfaz a mesma etapa", async () => {

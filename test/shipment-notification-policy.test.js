@@ -48,6 +48,16 @@ test("nao envia novamente quando o pedido ja registra notificacao concluida", ()
   assert.equal(getShipmentNotificationIdempotencyKey(order), "order-shipped-order-123");
 });
 
+test("confirmar entrega nao impede retry explicito de um aviso de envio pendente", () => {
+  const notification = { status: SHIPMENT_NOTIFICATION_STATUS.FAILED };
+  assert.deepEqual(getShipmentNotificationDecision(buildOrder({ status: "delivered", notification })), {
+    shouldSend: true, reason: "retry_pending_notification"
+  });
+  assert.deepEqual(getShipmentNotificationDecision(buildOrder({
+    status: "delivered", notification: { status: SHIPMENT_NOTIFICATION_STATUS.SENT, sentAt: "2026-11-12T12:00:00.000Z" }
+  })), { shouldSend: false, reason: "already_sent" });
+});
+
 test("falha de configuracao fica bloqueada e pode ser tentada novamente", () => {
   const failedAt = "2026-07-13T12:00:00.000Z";
   const notification = buildShipmentNotificationRecord(

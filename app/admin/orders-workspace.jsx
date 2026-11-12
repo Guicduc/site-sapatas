@@ -12,6 +12,7 @@ import {
   ADMIN_PRODUCTION_OPTIONS,
   ADMIN_SHIPMENT_OPTIONS,
   buildAdminOrderSectionPatch,
+  canConfirmAdminOrderDelivery,
   canEditAdminOrderSection,
   getAdminSectionStatus,
   getAdminInvoiceOptions,
@@ -157,7 +158,7 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
 
         {activeFilter === "concluidos" && (
           <p className="aw-filter-hint">
-            Pedidos já despachados. A entrega não é confirmada automaticamente; confira o rastreio e as pendências de cada pedido.
+            Pedidos já despachados. Após conferir a entrega, abra o pedido e use “Confirmar entrega” em Expedição. Confira também as pendências de cada pedido.
           </p>
         )}
 
@@ -697,6 +698,18 @@ function OperationForms({ order, fulfillment, access, invoiceConfig, activeFilte
             </details>
             <FormActions>Salvar expedição</FormActions>
           </SectionForm>
+          {canConfirmAdminOrderDelivery(order) && (
+            <SectionForm order={order} fulfillment={fulfillment} access={access} section="shipment" activeFilter={activeFilter}>
+              <input type="hidden" name="operation" value="confirm_delivery" />
+              <p className="aw-note">Confirme somente após verificar que o cliente recebeu o pedido. A ação registra a entrega; pendências de NF ou notificação continuam sinalizadas.</p>
+              <FormActions>Confirmar entrega</FormActions>
+            </SectionForm>
+          )}
+          {fulfillment.shipment.status === SHIPMENT_STATUS.DELIVERED && (
+            <p className="aw-note aw-note--box" role="status">
+              Entrega confirmada{fulfillment.shipment.deliveredAt ? ` em ${formatDateTime(fulfillment.shipment.deliveredAt)}` : ""}. Confira acima eventuais pendências.
+            </p>
+          )}
         </OperationSection>
       )}
     </div>
@@ -880,8 +893,10 @@ async function updateOperation(formData) {
   try {
     const updatedOrder = await updateOrderFulfillmentState(orderId, (order) => buildAdminOrderSectionPatch(order, section, values));
     if (!updatedOrder) failure = "admin_operation_unavailable";
-    // Only saving shipping can send or retry the shipping notification.
-    if (updatedOrder && section === "shipment") await deliverShipmentNotification(updatedOrder);
+    // Confirming delivery does not send or retry the shipment e-mail.
+    if (updatedOrder && section === "shipment" && values.operation !== "confirm_delivery") {
+      await deliverShipmentNotification(updatedOrder);
+    }
   } catch (error) {
     if (!String(error.code || "").startsWith("admin_operation_")) throw error;
     failure = error.code;
@@ -1110,14 +1125,14 @@ function getNextOrderAction({ order, fulfillment, queuePosition }) {
       return { tone: "warning", title: "Reenviar e-mail de expedição", detail: "O cliente não recebeu o aviso de envio. Corrija a causa indicada em Expedição e salve novamente." };
     }
     if (fulfillment.shipment.status === SHIPMENT_STATUS.DELIVERED) {
-      return { tone: "success", title: "Pedido entregue", detail: "Entrega registrada no pedido. Nenhuma ação pendente." };
+      return { tone: "success", title: "Pedido concluído · entregue", detail: "Entrega registrada no pedido. Nenhuma ação pendente." };
     }
     return {
       tone: "info",
       title: "Expedido · aguardando entrega",
       detail: fulfillment.shipment.trackingCode
-        ? `Sem pendências internas. A entrega não é confirmada automaticamente; acompanhe pelo rastreio ${fulfillment.shipment.trackingCode}.`
-        : "Sem pendências internas. A entrega não é confirmada automaticamente e o pedido não tem rastreio registrado."
+        ? `Acompanhe pelo rastreio ${fulfillment.shipment.trackingCode}. Após verificar o recebimento, use “Confirmar entrega” em Expedição.`
+        : "Após verificar o recebimento pelo cliente, use “Confirmar entrega” em Expedição. O pedido não tem rastreio registrado."
     };
   }
 
