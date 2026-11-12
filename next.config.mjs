@@ -19,6 +19,8 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Hosts extras para desenvolvimento via Tailscale, sem liberar outras origens.
+  allowedDevOrigins: (process.env.NEXT_DEV_ALLOWED_ORIGINS || "").split(",").map((host) => host.trim()).filter(Boolean),
   // NEXT_DIST_DIR permite rodar um segundo `next dev` local (ex.: preview) sem conflitar com o lock do .next padrao.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,

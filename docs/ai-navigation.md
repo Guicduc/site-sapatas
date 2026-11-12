@@ -109,6 +109,9 @@ O total de familias/produtos ativos deve ser derivado dos manifests ativos em `c
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
 - `components/cookie-preferences.jsx`: aviso e revisao do consentimento persistido em `baseforma-cookie-consent`.
 - A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
+- `app/admin/orders-workspace.jsx`: ficha unica em todos os filtros; formularios independentes para producao, NF e expedicao. O filtro `atencao` reune revisoes, bloqueios e alertas de pagamento. Jobs de arquivos, dados CAD e ajustes de prioridade ficam recolhidos.
+- `app/admin/admin.css`, `components/admin-top-bar.jsx`, `components/admin-stage-tabs.jsx` e `components/admin-submit-button.jsx`: interface visual isolada da loja, navegacao responsiva e feedback de envio. O resumo de andamento mostra pendencias; "Expedidos" nao presume entrega confirmada.
+- `lib/admin-order-workflow.js`: opcoes manuais de status, elegibilidade por etapa e patches de formulario. O store executa o montador sob lock e verifica o timestamp da secao antes de gravar; estados de integracoes e campos omitidos sao preservados.
 
 ## Pedidos e persistencia
 

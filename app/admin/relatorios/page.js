@@ -1,12 +1,14 @@
 import Link from "next/link";
 
 import { AdminAccessRequired } from "@/components/admin-access-required";
-import { AdminLogoutForm } from "@/components/admin-logout-form";
+import { AdminTopBar } from "@/components/admin-top-bar";
 import { adminHref, getAdminAccess } from "@/lib/admin-session";
 import { formatCurrency } from "@/lib/format";
 import { buildOrderAnalytics } from "@/lib/order-analytics";
 import { getStoreMode, listOrders } from "@/lib/order-store";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
+
+import "../admin.css";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,26 +30,15 @@ export default async function AdminReportsPage() {
   const maxDailyRevenue = Math.max(...analytics.daily.map((day) => day.totalBrl), 1);
 
   return (
-    <section className="admin-shell admin-reports">
-      <div className="configurator-heading">
-        <div>
-          <p className="eyebrow">Admin | {getStoreMode()} | {analytics.period.label}</p>
-          <h1>Relatorios comerciais.</h1>
-          <p className="lead">
-            Pedidos, receita, pagamentos, descontos e frete a partir dos ultimos pedidos registrados.
+    <div className="admin-ws">
+      <AdminTopBar current="relatorios" />
+    <section className="admin-shell admin-reports aw-reports">
+      <div className="aw-head">
+        <div className="aw-head__title">
+          <h1>Relatórios comerciais</h1>
+          <p>
+            <span>{String(analytics.period.label || "").replace(/^Ultimos/, "Últimos")}</span> · {getStoreMode()} · pedidos, receita, pagamentos, descontos e frete dos últimos pedidos registrados.
           </p>
-        </div>
-        <div className="admin-heading-actions">
-          <Link className="button button-secondary" href={adminHref("/admin/pedidos")}>
-            Ver pedidos
-          </Link>
-          <Link className="button button-secondary" href={adminHref("/admin/operacao")}>
-            Ver operacao
-          </Link>
-          <Link className="button button-secondary" href="/">
-            Voltar ao site
-          </Link>
-          <AdminLogoutForm />
         </div>
       </div>
 
@@ -61,7 +52,7 @@ export default async function AdminReportsPage() {
           <section className="report-metric-grid" aria-label="Resumo comercial">
             <MetricCard label="Receita aprovada" value={formatCurrency(analytics.summary.approvedRevenueBrl)} detail={`${analytics.summary.approvedOrdersCount} pedidos pagos`} />
             <MetricCard label="Total cobrado" value={formatCurrency(analytics.summary.totalBrl)} detail={`${analytics.summary.ordersCount} pedidos capturados`} />
-            <MetricCard label="Ticket medio" value={formatCurrency(analytics.summary.averageTicketBrl)} detail={`${analytics.summary.itemsCount} unidades vendidas`} />
+            <MetricCard label="Ticket médio" value={formatCurrency(analytics.summary.averageTicketBrl)} detail={`${analytics.summary.itemsCount} unidades vendidas`} />
             <MetricCard label="Ajustes comerciais" value={formatCurrency(analytics.summary.shippingBrl - analytics.summary.discountBrl)} detail={`${formatCurrency(analytics.summary.shippingBrl)} frete, ${formatCurrency(analytics.summary.discountBrl)} desconto`} />
           </section>
 
@@ -70,7 +61,7 @@ export default async function AdminReportsPage() {
               <div className="report-panel__heading">
                 <div>
                   <p className="eyebrow">Pagamentos</p>
-                  <h2>Status de cobranca</h2>
+                  <h2>Status de cobrança</h2>
                 </div>
                 <span className="chip">{analytics.summary.pendingPaymentCount} pendentes</span>
               </div>
@@ -84,7 +75,7 @@ export default async function AdminReportsPage() {
             <article className="surface-card report-panel">
               <div className="report-panel__heading">
                 <div>
-                  <p className="eyebrow">Operacao</p>
+                  <p className="eyebrow">Operação</p>
                   <h2>Status de pedidos</h2>
                 </div>
                 <span className="chip">{analytics.summary.failedPaymentCount} falhas</span>
@@ -101,8 +92,8 @@ export default async function AdminReportsPage() {
             <article className="surface-card report-panel">
               <div className="report-panel__heading">
                 <div>
-                  <p className="eyebrow">Ultimos 30 dias</p>
-                  <h2>Movimento diario</h2>
+                  <p className="eyebrow">Últimos 30 dias</p>
+                  <h2>Movimento diário</h2>
                 </div>
                 <strong>{formatCurrency(analytics.last30Days.totalBrl)}</strong>
               </div>
@@ -187,6 +178,7 @@ export default async function AdminReportsPage() {
         </>
       )}
     </section>
+    </div>
   );
 }
 

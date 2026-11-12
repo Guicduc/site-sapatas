@@ -32,7 +32,7 @@ Faz sentido integrar Melhor Envio desde ja para homologar preco e prazo, mantend
 
 Essa integracao e somente de cotacao. O pedido salvo deve continuar sendo tratado pela operacao em `/admin/pedidos`: conferir embalagem, emitir NF manual quando aplicavel, postar manualmente e preencher transportadora/rastreio se houver.
 
-Ao salvar a expedicao como `Expedido`, o site tenta enviar o e-mail ao cliente. Falta de `RESEND_API_KEY`, remetente ou e-mail do cliente nao desfaz a expedicao: a notificacao fica `blocked`, o motivo operacional aparece no admin sem expor o destinatario nos logs e um novo salvamento repete a tentativa. Falhas de rede/provedor ficam `failed` com apenas um codigo tecnico persistido.
+Na secao "Expedicao", selecione `Expedido` e clique em "Salvar expedicao" depois da postagem real. Esse formulario salva somente a expedicao e tenta enviar o e-mail ao cliente; salvar producao ou NF nao dispara essa mensagem. A data de saida e preenchida automaticamente, e transportadora e rastreio continuam editaveis. Falta de `RESEND_API_KEY`, remetente ou e-mail do cliente nao desfaz a expedicao: a notificacao fica `blocked`, o motivo operacional aparece no admin sem expor o destinatario nos logs e um novo salvamento da expedicao repete a tentativa. Falhas de rede/provedor ficam `failed` com apenas um codigo tecnico persistido.
 
 ## Bloqueio para evento automatico do Melhor Envio
 
