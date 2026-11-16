@@ -679,6 +679,7 @@ function CheckoutForm({ cartTotal }) {
         <p className="eyebrow">Total</p>
         <h2>{formatCurrency(cartTotal)}</h2>
         <p>Pedidos dentro da matriz seguem para pagamento. Fora dela, entram em revisão técnica.</p>
+        <p>No Mercado Pago, escolha cartão, Pix ou boleto entre as opções disponíveis. Para boleto, a produção aguarda a confirmação do pagamento.</p>
       </div>
       <section className="checkout-section checkout-section--customer" aria-labelledby="checkout-customer-title">
         <div className="checkout-section__heading">

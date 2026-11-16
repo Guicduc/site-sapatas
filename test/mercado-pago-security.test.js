@@ -27,10 +27,12 @@ test("preferência usa chave de idempotência estável por pedido", async () => 
     metadata: {}
   };
   const headers = [];
+  const bodies = [];
   process.env.MERCADO_PAGO_ACCESS_TOKEN = "test-token";
   process.env.NEXT_PUBLIC_SITE_URL = "https://www.baseforma.com.br";
   globalThis.fetch = async (_url, options) => {
     headers.push(options.headers);
+    bodies.push(JSON.parse(options.body));
     return new Response(JSON.stringify({ id: "preference-1", init_point: "https://example.com/checkout" }), {
       status: 201,
       headers: { "content-type": "application/json" }
@@ -43,6 +45,9 @@ test("preferência usa chave de idempotência estável por pedido", async () => 
     const expected = getMercadoPagoPreferenceIdempotencyKey(order);
     assert.equal(headers[0]["X-Idempotency-Key"], expected);
     assert.equal(headers[1]["X-Idempotency-Key"], expected);
+    assert.equal(bodies[0].binary_mode, undefined, "boleto must allow pending payments");
+    assert.deepEqual(bodies[0].payment_methods?.excluded_payment_types || [], []);
+    assert.deepEqual(bodies[0].payment_methods?.excluded_payment_methods || [], []);
   } finally {
     globalThis.fetch = originalFetch;
     if (originalToken === undefined) delete process.env.MERCADO_PAGO_ACCESS_TOKEN;

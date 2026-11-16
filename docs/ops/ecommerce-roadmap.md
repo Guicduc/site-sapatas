@@ -25,6 +25,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - `VOLTE5` (cupom do panfleto enviado com os pedidos, `docs/marketing/panfleto-pedidos.html`) da 5% sem minimo, exige compra aprovada anterior para o mesmo CPF/CNPJ e usa a mesma reserva unica por identidade.
 - Cotacao real de frete em `/api/shipping/quote` e `lib/shipping.js`, usando Melhor Envio quando `SHIPPING_PROVIDER=melhor_envio`, mas registrando `fulfillmentMode: "manual_posting"` ate a fase de etiqueta/rastreio.
 - Pagamento Mercado Pago em `lib/mercado-pago.js`, `POST /api/payments/mercado-pago/preference` e `POST /api/webhooks/mercado-pago`.
+- Boleto emitido no Checkout Pro pode ser reaberto na confirmacao e na conta apos webhook/conciliacao, com vencimento e orientacao de aguardar aprovacao. Disponibilidade na conta vendedora e liquidacao real ainda exigem homologacao; fluxo em `docs/ops/boleto-mercado-pago.md`.
 - E-mails transacionais via Resend para codigo de conta, pedido criado, pagamento resolvido e pedido enviado. O ultimo parte do estado operacional persistido `shipment.status: "shipped"`, inclui rastreio quando informado e registra sucesso/falha para evitar duplicidade.
 - Recuperacao de carrinho sem disparo automatico, com leads em `cart_recovery_leads` ou `.local-data/cart-recovery.dev.json`.
 - Retencao configuravel de leads de carrinho por `CART_RECOVERY_RETENTION_DAYS`.

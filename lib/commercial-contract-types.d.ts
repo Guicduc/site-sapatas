@@ -113,5 +113,8 @@ export interface MercadoPagoPaymentPayload {
   currency_id?: string;
   status_detail?: string;
   date_last_updated?: string;
+  payment_type_id?: string;
+  date_of_expiration?: string;
+  transaction_details?: { external_resource_url?: string };
   metadata?: { order_id?: string };
 }
