@@ -32,7 +32,21 @@ Faz sentido integrar Melhor Envio desde ja para homologar preco e prazo, mantend
 
 Essa integracao e somente de cotacao. O pedido salvo deve continuar sendo tratado pela operacao em `/admin/pedidos`: conferir embalagem, emitir NF manual quando aplicavel, postar manualmente e preencher transportadora/rastreio se houver.
 
-Na secao "Expedicao", selecione `Expedido` e clique em "Salvar expedicao" depois da postagem real. Esse formulario salva somente a expedicao e tenta enviar o e-mail ao cliente; salvar producao ou NF nao dispara essa mensagem. A data de saida e preenchida automaticamente, e transportadora e rastreio continuam editaveis. Falta de `RESEND_API_KEY`, remetente ou e-mail do cliente nao desfaz a expedicao: a notificacao fica `blocked`, o motivo operacional aparece no admin sem expor o destinatario nos logs e um novo salvamento da expedicao repete a tentativa. Falhas de rede/provedor ficam `failed` com apenas um codigo tecnico persistido.
+Na secao "Expedicao", selecione `Expedido` e clique em "Salvar expedicao" depois da postagem real. Esse formulario salva somente a expedicao e tenta enviar o e-mail ao cliente; salvar producao ou NF nao dispara essa mensagem. A data de saida e preenchida automaticamente, e transportadora e rastreio continuam editaveis. Falta de `RESEND_API_KEY`, remetente ou e-mail do cliente nao desfaz a expedicao: a notificacao fica `blocked`, o motivo operacional aparece no admin sem expor o destinatario nos logs e um novo salvamento da expedicao repete a tentativa. Falhas transitorias de rede/provedor ficam `failed`; recusas de dados/configuracao e conflitos de idempotencia ficam `blocked`, com apenas um codigo tecnico persistido.
+
+### Recusa do e-mail pelo Resend
+
+Um pedido salvo como expedido pode ter o aviso recusado pelo provedor. Isso nao desfaz a postagem. O admin distingue falha transitoria, que permite nova tentativa, de bloqueio que exige correcao primeiro. O resultado `sent` confirma aceite pelo Resend; nao comprova entrega na caixa do cliente.
+
+- `resend_domain_not_verified`: conferir no Resend a verificacao do dominio usado em `TRANSACTIONAL_EMAIL_FROM`, com fallback para `ACCOUNT_EMAIL_FROM`. O dominio raiz e um subdominio como `send.baseforma.com.br` precisam corresponder ao dominio autorizado; ter uma caixa no Google Workspace nao autoriza esse remetente no Resend.
+- `resend_testing_restricted`: o provedor permite apenas destinatarios de teste. Verificar um dominio no Resend e usar um remetente desse dominio para envio a clientes.
+- `resend_forbidden` (HTTP 403): conferir dominio, restricoes de teste e permissoes da chave no painel do Resend. Uma resposta sem mensagem reconhecida nao permite afirmar qual dessas configuracoes esta errada.
+- `resend_unauthorized`: conferir a credencial `RESEND_API_KEY`.
+- `resend_validation_failed`: conferir remetente e endereco do cliente.
+- `send_rejected`: recusa generica, inclusive em registros antigos. Conferir a configuracao e o registro do provedor antes de repetir.
+- `idempotency_conflict`: o Resend ja recebeu conteudo diferente com a mesma chave. Conferir o registro antes de reenviar; a primeira tentativa pode ter sido aceita. Nao trocar automaticamente a chave para contornar a protecao contra duplicidade.
+
+Depois de corrigir a configuracao, publicar o ambiente atualizado se necessario e salvar a expedicao novamente. O reenvio de aviso pendente tambem funciona depois da confirmacao manual de entrega; notificacoes ja aceitas continuam protegidas por `sentAt` e pela chave de idempotencia. A resposta original do provedor pode conter enderecos de e-mail: somente motivos conhecidos sao convertidos em codigos, sem persistir ou registrar o texto livre.
 
 ## Confirmacao manual de entrega
 
