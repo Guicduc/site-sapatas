@@ -45,7 +45,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Estado externo em 29/06/2026:
   - Dominio `baseforma.com.br` comprado no Registro.br e zona DNS em modo avancado.
   - DNS salvo com `A` do dominio raiz para Vercel, `CNAME www` para Vercel e registros de envio Resend para DKIM/SPF/MX no subdominio `send`.
-  - Dominio no Resend criado em Sao Paulo (`sa-east-1`); confirmar verificacao antes da abertura real.
+  - Dominio `baseforma.com.br` verificado no Resend em Sao Paulo (`sa-east-1`), confirmado em 16/11/2026. Remetentes de Production/Preview corrigidos de `@send.baseforma.com.br` para `@baseforma.com.br`; envio real do site confirmado como `Delivered`. O prefixo DNS `send` e do SPF/Return-Path, nao do endereco remetente. Ver `docs/ops/payment-email-handoff.md`.
   - Neon Postgres criado no Vercel (`neon-cordovan-fence`, regiao Sao Paulo) e conectado ao projeto com `DATABASE_URL`; schema de `docs/ops/database.sql` aplicado.
   - Env vars de e-mail, sessoes/admin, URL publica, frete manual, origem `05713420` e capacidade operacional foram adicionadas no Vercel para Production/Preview.
   - Auditoria em 21/07/2026: certificado A1 valido no painel, NF-e habilitada, Vercel Production configurado para homologacao e gancho `nfe` registrado para `/api/webhooks/focus-nfe`. Restam publicar o codigo corrigido e homologar uma emissao completa antes de trocar para o token produtivo.

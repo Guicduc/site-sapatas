@@ -60,6 +60,7 @@ test("HTTP 403 de producao vira bloqueio com motivo seguro, nao falha transitori
 test("restricoes conhecidas do Resend preservam o motivo sem armazenar a mensagem", async (t) => {
   const cases = [
     [403, "The example.com domain is not verified. Please verify it.", "resend_domain_not_verified"],
+    [403, "Domain not verified: Verify send.example.com or update your from domain.", "resend_domain_not_verified"],
     [403, "You can only send testing emails to your own email address (owner@example.com).", "resend_testing_restricted"],
     [401, "API key is invalid", "resend_unauthorized"],
     [422, "Invalid to field customer@example.com", "resend_validation_failed"]

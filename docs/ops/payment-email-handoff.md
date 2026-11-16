@@ -72,6 +72,8 @@ Auditoria de 16/11/2026 no painel do Resend:
 - Configuracao correta: `TRANSACTIONAL_EMAIL_FROM=Baseforma <pedidos@baseforma.com.br>` e `ACCOUNT_EMAIL_FROM=Baseforma <conta@baseforma.com.br>`. `TRANSACTIONAL_EMAIL_REPLY_TO=atendimento@baseforma.com.br` continua sendo a caixa de resposta.
 - Aplicar os remetentes em Production e Preview e refazer o deploy para que as funcoes recebam os novos valores. Depois, validar o envio pelo fluxo real e conferir o aceite/entrega no Resend. Nao e necessario adicionar dominio, alterar DNS ou criar nova chave para corrigir essa recusa.
 
+Correcao operacional aplicada em 16/11/2026: ambos os remetentes foram atualizados em Production e Preview. O deploy de producao `dpl_JC5KYz17wpyLTJkn2JsJprPHUB7q` ficou `READY`, mantendo o commit de `main` `1741fccee97860db1ec84b953440e2f5a55d3bdd`. Um envio real pelo fluxo de codigo de acesso do site foi aceito e registrado como `Delivered` no Resend, mensagem `01a1e62b-ee7b-7efc-9fec-50443a5afc91`. Esse teste valida a configuracao e o adaptador de envio compartilhado; nao reenvia o aviso do pedido do cliente.
+
 Nao usar Google Workspace como canal primario dos envios automaticos do app sem uma decisao explicita. Isso evita limite de SMTP, bloqueios por automacao e acoplamento entre inbox humano e transacional.
 
 ## Proximo chat
