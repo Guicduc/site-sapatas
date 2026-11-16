@@ -36,6 +36,8 @@ Na secao "Expedicao", selecione `Expedido` e clique em "Salvar expedicao" depois
 
 ### Recusa do e-mail pelo Resend
 
+Em 16/11/2026, o painel do Resend confirmou a causa da recusa de expedicao: o site usava `pedidos@send.baseforma.com.br`, mas o unico dominio verificado era `baseforma.com.br`. Usar `pedidos@baseforma.com.br` para os avisos e `conta@baseforma.com.br` para o fallback de remetente. O prefixo DNS `send` e do SPF/Return-Path; nao e um dominio remetente verificado. Ver `docs/ops/payment-email-handoff.md`.
+
 Um pedido salvo como expedido pode ter o aviso recusado pelo provedor. Isso nao desfaz a postagem. O admin distingue falha transitoria, que permite nova tentativa, de bloqueio que exige correcao primeiro. O resultado `sent` confirma aceite pelo Resend; nao comprova entrega na caixa do cliente.
 
 - `resend_domain_not_verified`: conferir no Resend a verificacao do dominio usado em `TRANSACTIONAL_EMAIL_FROM`, com fallback para `ACCOUNT_EMAIL_FROM`. O dominio raiz e um subdominio como `send.baseforma.com.br` precisam corresponder ao dominio autorizado; ter uma caixa no Google Workspace nao autoriza esse remetente no Resend.
