@@ -1,5 +1,10 @@
 import { CookiePreferencesButton } from "@/components/cookie-preferences-button";
 import { brand } from "@/lib/site-data";
+import {
+  ANALYTICS_COOKIE_DURATION_LABEL,
+  getAnalyticsCookieNames,
+  getConfiguredMeasurementId
+} from "@/lib/analytics-config";
 import { buildPageMetadata } from "@/lib/page-metadata";
 
 export const metadata = buildPageMetadata({
@@ -54,7 +59,36 @@ const storageItems = [
   }
 ];
 
+function getOptionalItems(measurementId) {
+  if (!measurementId) return [];
+  const [clientCookie, sessionCookie] = getAnalyticsCookieNames(measurementId);
+
+  return [
+    {
+      name: clientCookie,
+      type: "Cookie do Google Analytics 4 (Google)",
+      purpose: "Distingue visitantes de forma pseudônima para medir visitas e compras agregadas.",
+      duration: ANALYTICS_COOKIE_DURATION_LABEL
+    },
+    {
+      name: sessionCookie,
+      type: "Cookie do Google Analytics 4 (Google)",
+      purpose: "Mantém o estado da sessão de medição do Google Analytics 4.",
+      duration: ANALYTICS_COOKIE_DURATION_LABEL
+    },
+    {
+      name: "baseforma-analytics-purchases",
+      type: "Armazenamento local",
+      purpose: "Guarda os números de pedido já medidos para não contar a mesma compra duas vezes.",
+      duration: "Até revogar a escolha ou limpar o navegador"
+    }
+  ];
+}
+
 export default function PrivacyPage() {
+  const measurementId = getConfiguredMeasurementId();
+  const optionalItems = getOptionalItems(measurementId);
+
   return (
     <div className="privacy-page">
       <section className="page-panel privacy-hero">
@@ -67,24 +101,54 @@ export default function PrivacyPage() {
         <CookiePreferencesButton />
       </section>
 
-      <section className="page-panel privacy-section" aria-labelledby="current-use-title">
-        <div>
-          <p className="eyebrow">Estado atual</p>
-          <h2 id="current-use-title">Sem publicidade ou medição de audiência</h2>
-        </div>
-        <div className="privacy-copy">
-          <p>
-            Não encontramos scripts de anúncios, pixels, analytics, vídeos incorporados ou
-            ferramentas de mapa de calor na aplicação atual. O JSON-LD usado para dados
-            estruturados é estático e não armazena informações no navegador.
-          </p>
-          <p>
-            Por isso, recusar opcionais não remove nenhuma função do site, e aceitar também não
-            inicia uma coleta adicional hoje. Uma futura ferramenta opcional exigirá inventário
-            atualizado e uma nova escolha antes de carregar.
-          </p>
-        </div>
-      </section>
+      {measurementId ? (
+        <section className="page-panel privacy-section" aria-labelledby="current-use-title">
+          <div>
+            <p className="eyebrow">Estado atual</p>
+            <h2 id="current-use-title">Medição de audiência opcional, sem publicidade</h2>
+          </div>
+          <div className="privacy-copy">
+            <p>
+              Com a sua permissão, usamos o Google Analytics 4, do Google, para entender de
+              forma agregada quais páginas são visitadas e como o carrinho e as compras
+              evoluem. O script só é carregado depois de você aceitar os opcionais; quem recusa
+              não envia nenhuma medição.
+            </p>
+            <p>
+              Não usamos anúncios, pixels de publicidade, Google Signals nem compartilhamento
+              de dados para anúncios. Nome, e-mail, CPF/CNPJ, telefone e endereço não são
+              enviados ao Google, e parâmetros de endereço das páginas que possam identificar
+              pedidos ou acessos são removidos antes do envio. A área administrativa e o modo
+              demonstração não são medidos.
+            </p>
+            <p>
+              Ao revogar a escolha no rodapé, a medição é interrompida nesta navegação e os
+              cookies do Google Analytics são apagados. O Google trata esses dados conforme a
+              própria política de privacidade, inclusive com possível transferência
+              internacional.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section className="page-panel privacy-section" aria-labelledby="current-use-title">
+          <div>
+            <p className="eyebrow">Estado atual</p>
+            <h2 id="current-use-title">Sem publicidade ou medição de audiência</h2>
+          </div>
+          <div className="privacy-copy">
+            <p>
+              Não encontramos scripts de anúncios, pixels, analytics, vídeos incorporados ou
+              ferramentas de mapa de calor na aplicação atual. O JSON-LD usado para dados
+              estruturados é estático e não armazena informações no navegador.
+            </p>
+            <p>
+              Por isso, recusar opcionais não remove nenhuma função do site, e aceitar também não
+              inicia uma coleta adicional hoje. Uma futura ferramenta opcional exigirá inventário
+              atualizado e uma nova escolha antes de carregar.
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="page-panel privacy-section" aria-labelledby="inventory-title">
         <div>
@@ -115,6 +179,40 @@ export default function PrivacyPage() {
           </table>
         </div>
       </section>
+
+      {optionalItems.length > 0 && (
+        <section className="page-panel privacy-section" aria-labelledby="optional-inventory-title">
+          <div>
+            <p className="eyebrow">Inventário verificável</p>
+            <h2 id="optional-inventory-title">Tecnologias opcionais</h2>
+          </div>
+          <div className="privacy-table-wrap">
+            <table className="privacy-table">
+              <caption className="sr-only">
+                Cookies e armazenamentos opcionais, criados somente após o aceite
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Nome</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Finalidade</th>
+                  <th scope="col">Duração</th>
+                </tr>
+              </thead>
+              <tbody>
+                {optionalItems.map((item) => (
+                  <tr key={item.name}>
+                    <th scope="row"><code>{item.name}</code></th>
+                    <td>{item.type}</td>
+                    <td>{item.purpose}</td>
+                    <td>{item.duration}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="page-panel privacy-section" aria-labelledby="choices-title">
         <div>

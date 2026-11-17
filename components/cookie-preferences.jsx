@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { isAnalyticsConfigured } from "@/lib/analytics-config";
 import {
   COOKIE_CONSENT_CHANGED_EVENT,
   COOKIE_PREFERENCES_OPEN_EVENT,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/cookie-consent";
 
 export function CookiePreferences() {
+  const analyticsConfigured = isAnalyticsConfigured();
   const [consent, setConsent] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
@@ -98,10 +100,18 @@ export function CookiePreferences() {
           )}
         </div>
 
-        <p id="cookie-preferences-description">
-          Usamos tecnologias necessárias para manter o carrinho, proteger sessões e mostrar o
-          pedido. Hoje não há cookies de anúncios ou medição ativos.
-        </p>
+        {analyticsConfigured ? (
+          <p id="cookie-preferences-description">
+            Usamos tecnologias necessárias para manter o carrinho, proteger sessões e mostrar o
+            pedido. Com sua permissão, também usamos o Google Analytics para medir visitas e
+            compras de forma agregada. Não usamos cookies de anúncios.
+          </p>
+        ) : (
+          <p id="cookie-preferences-description">
+            Usamos tecnologias necessárias para manter o carrinho, proteger sessões e mostrar o
+            pedido. Hoje não há cookies de anúncios ou medição ativos.
+          </p>
+        )}
 
         {consent && (
           <p className="cookie-preferences__status" role="status">
@@ -109,11 +119,20 @@ export function CookiePreferences() {
           </p>
         )}
 
-        <p className="cookie-preferences__detail">
-          Aceitar apenas registra sua escolha atual; nenhuma medição é iniciada hoje. Uma nova
-          ferramenta exigirá outro aviso antes de carregar. {" "}
-          <Link href="/privacidade">Veja o inventário e os prazos</Link>.
-        </p>
+        {analyticsConfigured ? (
+          <p className="cookie-preferences__detail">
+            Aceitar carrega o Google Analytics 4 (cookies <code>_ga</code>), sem Google Signals
+            e sem envio de nome, e-mail, documento ou endereço. Recusar ou revogar depois
+            interrompe a medição e apaga esses cookies. {" "}
+            <Link href="/privacidade">Veja o inventário e os prazos</Link>.
+          </p>
+        ) : (
+          <p className="cookie-preferences__detail">
+            Aceitar apenas registra sua escolha atual; nenhuma medição é iniciada hoje. Uma nova
+            ferramenta exigirá outro aviso antes de carregar. {" "}
+            <Link href="/privacidade">Veja o inventário e os prazos</Link>.
+          </p>
+        )}
 
         <div className="cookie-preferences__actions">
           <button
