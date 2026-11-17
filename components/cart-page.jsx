@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { useCart } from "@/components/cart-provider";
@@ -187,7 +188,14 @@ function CartProductSuggestions({ categories }) {
         {categories.map((category) => (
           <article className="category-card configurator-related-card" key={category.slug}>
             {category.image && (
-              <img className="category-card__image" src={category.image.src} alt={category.image.alt} />
+              <Image
+                className="category-card__image"
+                src={category.image.src}
+                alt={category.image.alt}
+                width={84}
+                height={84}
+                loading="lazy"
+              />
             )}
             <div className="category-card__body">
               <p className="eyebrow">{category.eyebrow}</p>

@@ -24,6 +24,22 @@ const nextConfig = {
   // NEXT_DIST_DIR permite rodar um segundo `next dev` local (ex.: preview) sem conflitar com o lock do .next padrao.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
+  // Fotos de produto sao PNGs de 1-2 MB gerados externamente; o next/image entrega AVIF/WebP
+  // redimensionado sob demanda. Larguras e qualidade enxutas limitam as transformacoes cobradas
+  // pela Vercel, e o cache local da Vercel usa o hash do conteudo: trocar o PNG invalida a versao.
+  images: {
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 828, 1080, 1280, 1600, 1920],
+    imageSizes: [96, 192, 256, 384],
+    // Unica qualidade permitida (todo <Image> sem `quality` cai nela). Em q75 o AVIF do Next
+    // (quality * 50/80 no sharp) apaga o grao da pintura dos tubos; q90 preserva a textura.
+    qualities: [90],
+    minimumCacheTTL: 2678400, // 31 dias
+    localPatterns: [
+      { pathname: "/products/**", search: "" },
+      { pathname: "/brand/**", search: "" }
+    ]
+  },
   async headers() {
     return [
       {

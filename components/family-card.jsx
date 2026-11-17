@@ -12,6 +12,7 @@ export function FamilyCard({ family }) {
           images={family.images || [family.image]}
           label={`Fotos de ${family.name}`}
           aspectRatio="1.55 / 1"
+          sizes="(max-width: 980px) 100vw, (max-width: 1540px) 45vw, 660px"
         />
       ) : null}
       <div className="family-card__header">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from "react";
@@ -309,7 +310,14 @@ function RelatedProducts({ categories }) {
         {categories.map((item) => (
           <article className="category-card configurator-related-card" key={item.slug}>
             {item.image && (
-              <img className="category-card__image" src={item.image.src} alt={item.image.alt} />
+              <Image
+                className="category-card__image"
+                src={item.image.src}
+                alt={item.image.alt}
+                width={84}
+                height={84}
+                loading="lazy"
+              />
             )}
             <div className="category-card__body">
               <p className="eyebrow">{item.eyebrow}</p>
@@ -451,6 +459,9 @@ function ParametricPreview({
   );
 }
 
+// Painel de preview: ~64% do conteudo (max 1500px) no desktop, largura total ate 980px.
+const PRODUCT_VISUAL_SIZES = "(max-width: 980px) 100vw, (max-width: 1540px) 64vw, 960px";
+
 function ProductVisualPreview({ images, activeImage, activeIndex, onChange }) {
   const isCarousel = images.length > 1;
 
@@ -461,7 +472,16 @@ function ProductVisualPreview({ images, activeImage, activeIndex, onChange }) {
   return (
     <figure className="product-visual">
       <div className="product-visual__stage">
-        <img className="product-visual__image" src={activeImage.src} alt={activeImage.alt} />
+        {/* Imagem principal quando o modo "Imagens" esta ativo: entra no clique, entao vai com prioridade alta. */}
+        <Image
+          className="product-visual__image"
+          src={activeImage.src}
+          alt={activeImage.alt}
+          fill
+          sizes={PRODUCT_VISUAL_SIZES}
+          loading="eager"
+          fetchPriority="high"
+        />
         {isCarousel && (
           <div className="product-visual__controls">
             <button
