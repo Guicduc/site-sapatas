@@ -2,8 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FamilyGuide } from "@/components/family-guide";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { FamilyCard } from "@/components/family-card";
+import { ProductImageCarousel } from "@/components/product-image-carousel";
 import { StructuredData } from "@/components/structured-data";
+import { buildCatalogTrail } from "@/lib/breadcrumbs";
 import { buildMailtoUrl, formatCurrency } from "@/lib/format";
 import { buildPageMetadata } from "@/lib/page-metadata";
 import {
@@ -68,17 +71,31 @@ export default async function FamilyPage({ params }) {
         }}
       />
 
-      <section className="page-panel narrow-panel">
-        <p className="eyebrow">{family.eyebrow || "Família de sapatas"}</p>
-        <h1>{family.heroTitle}</h1>
-        <p className="lead">{family.heroDescription}</p>
-        <div className="chip-row">
-          {family.parameterSummary.map((item) => (
-            <span key={item} className="chip">
-              {item}
-            </span>
-          ))}
+      <Breadcrumbs items={buildCatalogTrail(family.name, family.url)} />
+
+      <section className={`page-panel narrow-panel${family.images?.length ? " family-hero" : ""}`}>
+        <div className="family-hero__copy">
+          <p className="eyebrow">{family.eyebrow || "Família de sapatas"}</p>
+          <h1>{family.heroTitle}</h1>
+          <p className="lead">{family.heroDescription}</p>
+          <div className="chip-row">
+            {family.parameterSummary.map((item) => (
+              <span key={item} className="chip">
+                {item}
+              </span>
+            ))}
+          </div>
         </div>
+        {family.images?.length ? (
+          <ProductImageCarousel
+            className="family-hero__gallery"
+            images={family.images}
+            label={`Fotos de ${family.name}`}
+            aspectRatio="1.35 / 1"
+            sizes="(max-width: 980px) 100vw, (max-width: 1540px) 45vw, 660px"
+            priority
+          />
+        ) : null}
       </section>
 
       <section className="family-layout">

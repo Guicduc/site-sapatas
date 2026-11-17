@@ -2,7 +2,11 @@ import { OrderConfirmation } from "@/components/order-confirmation";
 
 export const metadata = {
   title: "Pedido confirmado",
-  description: "Status do pedido de sapatas configuradas."
+  description: "Status do pedido de sapatas configuradas.",
+  robots: {
+    index: false,
+    follow: true
+  }
 };
 
 export default async function OrderConfirmedPage({ searchParams }) {

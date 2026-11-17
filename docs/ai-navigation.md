@@ -23,11 +23,13 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/pedido-confirmado`: mostra o resultado do pedido/pagamento.
 - `/demonstracao/[token]`: ativa por cookie o ambiente de testes isolado, sem persistencia operacional.
 - `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. O primeiro acesso usa codigo enviado ao e-mail vinculado ao pedido; depois o cliente pode criar uma senha opcional, sem perder o acesso por codigo.
-- `/familias/[slug]`: paginas SEO de familias de produto.
+- `/familias/[slug]`: paginas SEO de familias de produto. Exibem a galeria da propria familia no topo e no maximo 3 familias relacionadas (mesma categoria primeiro, via `getRelatedFamilies`).
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
 - `/guias` e `/guias/[slug]`: guias de medida e escolha (JSON-LD `Article`), gerados de `lib/guides.js`.
 - `/privacidade`: inventario publico de cookies, armazenamento local e scripts, com acesso ao centro de preferencias.
-- `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
+- `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`. O sitemap inclui `images` absolutas nas entradas de familia e configurador e nao declara `lastModified` (sem fonte confiavel). O robots bloqueia apenas `/admin`, `/api` e `/demonstracao`; `/carrinho`, `/conta`, `/pedido-confirmado` e `/admin` (via `app/admin/layout.js`) declaram `robots: { index: false, follow: true }` no metadata.
+
+Links internos para SEO: os cards do catalogo, o configurador (formato atual) e o rodape (secao "Produtos", derivada de `families`) apontam para `/familias/[slug]`; o rodape tambem liga `/como-funciona` e `/processo`. `test/seo-internal-links.test.js` garante que todo formato ativo tem pagina de familia e que o sitemap cobre todas.
 
 ## Rotas administrativas
 
@@ -112,7 +114,8 @@ O total de familias/produtos ativos deve ser derivado dos manifests ativos em `c
 
 ## Componentes centrais
 
-- `components/product-catalog.jsx`: lista categorias e formatos.
+- `components/product-catalog.jsx`: lista categorias e formatos, com links para a pagina de familia de cada formato.
+- `components/breadcrumbs.jsx`: trilha visivel (Inicio > Catalogo > pagina) que tambem emite JSON-LD `BreadcrumbList`; itens e URLs absolutas montados por `lib/breadcrumbs.js`. Usado em `/familias/[slug]` e `/configurar/[categoria]`.
 - `components/product-configurator.jsx`: controla selecao de formato, medidas, cor, quantidade, preco e envio ao carrinho.
 - `components/parametric-drawing.jsx`: desenho 2D interativo do produto configurado.
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.

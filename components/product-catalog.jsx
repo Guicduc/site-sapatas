@@ -187,10 +187,8 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
                   <p>{category.description}</p>
                   <div className="meta-list">
                     <span>{category.primaryFixation}</span>
-                    {category.formats.length > 1 && (
-                      <span>{category.formats.map((format) => format.name).join(" / ")}</span>
-                    )}
                   </div>
+                  <CategoryFamilyLinks category={category} />
                 </div>
                 <Link className="button button-primary" href={`/configurar/${category.slug}`}>
                   Configurar
@@ -202,6 +200,32 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
         </div>
       </section>
     </section>
+  );
+}
+
+// Links rastreaveis para as paginas de familia de cada formato da categoria.
+function CategoryFamilyLinks({ category }) {
+  const formats = category.formats.filter((format) => format.familySlug);
+
+  if (formats.length === 0) {
+    return null;
+  }
+
+  return (
+    <nav className="category-card__families" aria-label={`Detalhes de ${category.name}`}>
+      {formats.length > 1 ? (
+        <>
+          <span>Detalhes e medidas:</span>
+          {formats.map((format) => (
+            <Link key={format.slug} href={`/familias/${format.familySlug}`}>
+              {format.name}
+            </Link>
+          ))}
+        </>
+      ) : (
+        <Link href={`/familias/${formats[0].familySlug}`}>Ver detalhes e medidas</Link>
+      )}
+    </nav>
   );
 }
 
