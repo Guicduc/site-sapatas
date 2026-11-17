@@ -13,6 +13,7 @@ import {
   PAYMENT_STATUS
 } from "@/lib/order-status";
 import { brand } from "@/lib/site-data";
+import { PendingBoleto } from "@/components/pending-boleto";
 
 const FILTERS = [
   ["all", "Todos"],
@@ -566,7 +567,11 @@ function OrderRow({ order, onPay }) {
           </div>
 
           <aside className="account-order__sidebar" aria-label={`Resumo do pedido ${order.orderNumber}`}>
-            {payable && <div className="account-order__payment-action"><p className="eyebrow">Ação necessária</p><h3>Pagamento pendente</h3><p>Conclua o pagamento para liberar as próximas etapas do pedido.</p><button className="button button-primary" type="button" onClick={() => onPay(order.id)}>Pagar agora</button></div>}
+            {payable && (order.boleto ? (
+              <PendingBoleto boleto={order.boleto} onContinuePayment={() => onPay(order.id)} />
+            ) : (
+              <div className="account-order__payment-action"><p className="eyebrow">Ação necessária</p><h3>Pagamento pendente</h3><p>Escolha cartão, Pix ou boleto entre as opções disponíveis no Mercado Pago. A produção aguarda a confirmação do pagamento.</p><button className="button button-primary" type="button" onClick={() => onPay(order.id)}>Pagar agora</button></div>
+            ))}
 
             <section className="account-order__block" aria-labelledby={`payment-${order.id}`}>
               <div className="account-order__block-heading"><h3 id={`payment-${order.id}`}>Pagamento</h3><span className={`account-status account-status--${statusTone(order)}`}>{getPaymentStatusLabel(order.paymentStatus)}</span></div>

@@ -7,6 +7,7 @@ import { useCart } from "@/components/cart-provider";
 import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 import { readDemoOrders } from "@/components/demo-account";
+import { PendingBoleto } from "@/components/pending-boleto";
 
 export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
   const { clearCart, loaded: cartLoaded } = useCart();
@@ -125,7 +126,7 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
             Simulação concluída: este pedido não foi cobrado, gravado ou enviado à produção.
           </p>
         )}
-        {initialPaymentResult === "pending" && (
+        {initialPaymentResult === "pending" && ["pending", "unknown"].includes(order.paymentStatus) && !order.boleto && (
           <p className="payment-notice payment-notice--pending" role="status">
             Seu pagamento ainda está sendo processado. Assim que for confirmado (por exemplo, após a
             compensação do Pix ou boleto), o status abaixo será atualizado. Não é necessário refazer o
@@ -162,6 +163,7 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
             <span>{formatCurrency(order.totalBrl)}</span>
           </article>
         </div>
+        <PendingBoleto boleto={order.boleto} />
         {["pending", "unknown"].includes(order.paymentStatus) && (
           <div className="action-row">
             <button

@@ -36,3 +36,22 @@ test("Mercado Pago payment parser requires the provider payment id", () => {
     (error) => error.code === "mercado_pago_payment_invalid"
   );
 });
+
+test("Mercado Pago parser preserves boleto fields without exposing payer details", () => {
+  const parsed = parseMercadoPagoPaymentPayload({
+    id: 123,
+    payment_type_id: "ticket",
+    date_of_expiration: "2026-11-20T23:59:59-03:00",
+    transaction_details: { external_resource_url: "https://www.mercadopago.com.br/payments/123/ticket", ignored: true },
+    payer: { identification: { number: "private-document" } }
+  });
+  assert.deepEqual(parsed, {
+    id: 123,
+    payment_type_id: "ticket",
+    date_of_expiration: "2026-11-20T23:59:59-03:00",
+    transaction_details: { external_resource_url: "https://www.mercadopago.com.br/payments/123/ticket" }
+  });
+  assert.deepEqual(parseMercadoPagoPaymentPayload({
+    id: 123, payment_type_id: [], date_of_expiration: 1, transaction_details: { external_resource_url: {} }
+  }), { id: 123 });
+});
