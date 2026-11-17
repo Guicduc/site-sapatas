@@ -91,6 +91,8 @@ export default async function FamilyPage({ params }) {
             images={family.images}
             label={`Fotos de ${family.name}`}
             aspectRatio="1.35 / 1"
+            sizes="(max-width: 980px) 100vw, (max-width: 1540px) 45vw, 660px"
+            priority
           />
         ) : null}
       </section>
