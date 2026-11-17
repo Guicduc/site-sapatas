@@ -37,7 +37,7 @@ export default async function ConfigurePage({ params, searchParams }) {
 
   return (
     <>
-      <Breadcrumbs items={buildCatalogTrail(category.name, `/configurar/${category.slug}`)} />
+      <Breadcrumbs items={buildCatalogTrail(category.publicName || category.name, `/configurar/${category.slug}`)} />
       <ProductConfigurator category={category} initialFormatSlug={resolvedSearchParams?.formato} />
     </>
   );
