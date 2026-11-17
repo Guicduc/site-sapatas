@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ProductConfigurator } from "@/components/product-configurator";
 import { getCategoryBySlug, productCategories } from "@/lib/configurator-data";
-import { buildPageMetadata } from "@/lib/page-metadata";
+import { buildPageMetadata, getConfiguratorOgImage } from "@/lib/page-metadata";
 
 export function generateStaticParams() {
   return productCategories.map((category) => ({ categoria: category.slug }));
@@ -19,7 +19,8 @@ export async function generateMetadata({ params }) {
   return buildPageMetadata({
     title: `Configurar ${category.name}`,
     description: category.description,
-    path: `/configurar/${category.slug}`
+    path: `/configurar/${category.slug}`,
+    image: getConfiguratorOgImage(category.slug)
   });
 }
 
