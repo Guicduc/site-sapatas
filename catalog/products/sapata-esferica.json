@@ -32,14 +32,14 @@
   "drawingType": "tube-round-spherical",
   "ui": {
     "fixation": "press-fit interno",
-    "summaryName": "Sapata esférica",
+    "summaryName": "Sapata esférica (ponteira bola)",
     "applications": ["cadeiras tubulares", "mesas", "estruturas metálicas", "reposição"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-esferica-family.png", "alt": "Família de sapatas esféricas para tubos redondos em diferentes medidas e cores" },
-    { "role": "product", "variantId": "padrao", "src": "/products/final/sapata-esferica-product.png", "alt": "Sapata esférica preta para tubo redondo em vista de produto final" },
+    { "role": "family", "src": "/products/final/sapata-esferica-family.png", "alt": "Sapatas esféricas (ponteiras bola) para tubo redondo em diferentes medidas e cores" },
+    { "role": "product", "variantId": "padrao", "src": "/products/final/sapata-esferica-product.png", "alt": "Sapata esférica (ponteira bola) preta para tubo redondo, vista do produto" },
     { "role": "manual", "src": "/products/final/sapata-esferica-manual.png", "alt": "Sequência de instalação da sapata esférica por encaixe em tubo redondo" },
-    { "role": "usage", "src": "/products/final/sapata-esferica-uso.png", "alt": "Sapata esférica aplicada na extremidade de uma estrutura tubular" }
+    { "role": "usage", "src": "/products/final/sapata-esferica-uso.png", "alt": "Ponteira bola encaixada na ponta de uma estrutura de tubo redondo" }
   ],
   "notes": ["Informe o diâmetro externo e a parede real do tubo; a esfera acompanha o diâmetro externo."],
   "parameters": [

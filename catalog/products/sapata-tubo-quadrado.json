@@ -34,14 +34,14 @@
   "drawingType": "tube-rect",
   "ui": {
     "fixation": "press-fit interno",
-    "summaryName": "Sapata interna tubo quadrado",
+    "summaryName": "Ponteira interna para metalon e tubo quadrado",
     "applications": ["serralheria", "bancos", "aparadores", "linhas autorais"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-tubo-quadrado-family.png", "alt": "Família de sapatas para tubo quadrado em diferentes medidas e cores" },
-    { "role": "product", "src": "/products/final/sapata-tubo-quadrado-product.png", "alt": "Sapata para tubo quadrado em vista de produto final" },
-    { "role": "manual", "src": "/products/final/manual-sapata-tubo-quadrado.png", "alt": "Sequência de instalação da sapata para tubo quadrado" },
-    { "role": "usage", "src": "/products/final/uso-sapata-tubo-quadrado.png", "alt": "Sapata para tubo quadrado aplicada em pé tubular" }
+    { "role": "family", "src": "/products/final/sapata-tubo-quadrado-family.png", "alt": "Ponteiras internas para metalon quadrado em diferentes medidas e cores" },
+    { "role": "product", "src": "/products/final/sapata-tubo-quadrado-product.png", "alt": "Ponteira interna para metalon e tubo quadrado, vista do produto" },
+    { "role": "manual", "src": "/products/final/manual-sapata-tubo-quadrado.png", "alt": "Sequência de instalação da ponteira interna no metalon" },
+    { "role": "usage", "src": "/products/final/uso-sapata-tubo-quadrado.png", "alt": "Ponteira interna encaixada no pé de metalon de um móvel" }
   ],
   "notes": ["Informe as medidas externas reais do tubo; a parede determina o vão interno disponível."],
   "parameters": [

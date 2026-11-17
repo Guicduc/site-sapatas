@@ -17,7 +17,7 @@ export async function generateMetadata({ params }) {
   }
 
   return buildPageMetadata({
-    title: `Configurar ${category.name}`,
+    title: category.seoTitle || `${category.publicName || category.name} sob medida`,
     description: category.description,
     path: `/configurar/${category.slug}`
   });

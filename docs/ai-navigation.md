@@ -25,6 +25,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `/conta`: area autenticada do cliente com historico, detalhes, pagamento, cadastro, entrega e suporte. O primeiro acesso usa codigo enviado ao e-mail vinculado ao pedido; depois o cliente pode criar uma senha opcional, sem perder o acesso por codigo.
 - `/familias/[slug]`: paginas SEO de familias de produto.
 - `/como-funciona`, `/processo`, `/projeto-especial`, `/faq`: paginas institucionais.
+- `/guias` e `/guias/[slug]`: guias de medida e escolha (JSON-LD `Article`), gerados de `lib/guides.js`.
 - `/privacidade`: inventario publico de cookies, armazenamento local e scripts, com acesso ao centro de preferencias.
 - `/robots.txt` e `/sitemap.xml`: gerados por `app/robots.js` e `app/sitemap.js`.
 
@@ -96,6 +97,16 @@ Use `lib/site-data.js` para conteudo editorial e SEO:
 - `families`: paginas de familias em `/familias/[slug]`.
 
 O FAQ publicado vive em `app/faq/page.js` (conteudo local a pagina), nao em `lib/site-data.js`.
+
+### SEO e conteudo editorial
+
+- `docs/seo/keyword-research.md`: pesquisa de palavras-chave, mapeamento termo -> pagina, nomenclatura e termos a evitar. Consulte antes de mudar titles, H1 ou nomes publicos.
+- Nome operacional x nome publico: `name` em `catalog/categories.json` e nos manifests vai para carrinho, pedido, e-mail, NF-e e Mercado Pago e nao muda por SEO. Rotulos publicos ficam em `publicName`, `seoTitle`, `description`, `heading` e `lead` da categoria, e em `ui.summaryName` do manifest (resumo do configurador).
+- `lib/seo-copy.js`: title e description de home, catalogo, paginas institucionais e indice de guias.
+- `lib/family-content.js`: guia unico de cada familia (aplicacoes, como medir, tabelas de medidas, parede do tubo), renderizado por `components/family-guide.jsx`, e o texto publico das familias geradas do manifesto (`manifestFamilyCopy`). As familias editoriais continuam com o texto em `lib/site-data.js`.
+- `lib/guides.js`: dados dos guias e `buildGuideArticleJsonLd`. Um guia novo entra sozinho em `/guias`, no `app/sitemap.js` e no teste.
+- `components/content-blocks.jsx`: paragrafos com links internos, listas e tabelas editoriais sem rolagem horizontal no celular.
+- `test/seo-content.test.js`: title ate 60 caracteres com a marca, description ate 155, nomes operacionais preservados, guias no sitemap e links internos validos.
 
 O total de familias/produtos ativos deve ser derivado dos manifests ativos em `catalog/products/`, e nao hard-coded neste mapa. As paginas editoriais em `lib/site-data.js` continuam sendo responsabilidade manual e precisam ser revisadas quando um manifest novo ou alterado muda a cobertura publica.
 

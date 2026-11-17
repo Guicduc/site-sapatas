@@ -26,16 +26,16 @@
   "drawingType": "base-rect",
   "ui": {
     "fixation": "apoio plano",
-    "summaryName": "Lisa quadrada",
+    "summaryName": "Sapata lisa quadrada",
     "applications": ["chapa metálica", "banquinhos", "bases quadradas"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-lisa-quadrada-family.png", "alt": "Família de sapatas lisas quadradas em diferentes medidas e cores" },
-    { "role": "variations", "src": "/products/final/sapata-lisa-quadrada-variados.png", "alt": "Variações de sapata lisa quadrada com e sem haste" },
-    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-lisa-quadrada-sem-haste.png", "alt": "Sapata lisa quadrada sem haste em vista de produto final" },
-    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-lisa-quadrada-com-haste.png", "alt": "Sapata lisa quadrada com haste em vista de produto final" },
+    { "role": "family", "src": "/products/final/sapata-lisa-quadrada-family.png", "alt": "Sapatas lisas quadradas para pé de móvel em diferentes medidas e cores" },
+    { "role": "variations", "src": "/products/final/sapata-lisa-quadrada-variados.png", "alt": "Sapatas lisas quadradas com e sem pino de encaixe" },
+    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-lisa-quadrada-sem-haste.png", "alt": "Sapata lisa quadrada sem pino, vista do produto" },
+    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-lisa-quadrada-com-haste.png", "alt": "Sapata lisa quadrada com pino de encaixe, vista do produto" },
     { "role": "manual", "condition": { "pescoco": true }, "src": "/products/final/manual-sapata-lisa-quadrada-com-haste.png", "alt": "Sequência de instalação da sapata lisa quadrada com haste" },
-    { "role": "usage", "condition": { "pescoco": true }, "src": "/products/final/uso-sapata-lisa-quadrada-com-haste.png", "alt": "Sapata lisa quadrada com haste aplicada em mobiliário" }
+    { "role": "usage", "condition": { "pescoco": true }, "src": "/products/final/uso-sapata-lisa-quadrada-com-haste.png", "alt": "Sapata lisa quadrada com pino de encaixe aplicada no pé de um móvel" }
   ],
   "notes": ["Modelo paramétrico disponível para configuração."],
   "parameters": [

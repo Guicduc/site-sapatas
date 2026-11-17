@@ -25,16 +25,16 @@
   "drawingType": "base-round",
   "ui": {
     "fixation": "apoio plano",
-    "summaryName": "Lisa redonda",
+    "summaryName": "Sapata lisa redonda",
     "applications": ["poltronas", "sofás", "bases circulares"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-lisa-redonda-family.png", "alt": "Família de sapatas lisas redondas em diferentes medidas e cores" },
-    { "role": "variations", "src": "/products/final/sapata-lisa-redonda-variados.png", "alt": "Variações de sapata lisa redonda com e sem haste" },
-    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-lisa-redonda-sem-haste.png", "alt": "Sapata lisa redonda sem haste em vista de produto final" },
-    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-lisa-redonda-com-haste.png", "alt": "Sapata lisa redonda com haste em vista de produto final" },
+    { "role": "family", "src": "/products/final/sapata-lisa-redonda-family.png", "alt": "Sapatas lisas redondas para pé de móvel em diferentes medidas e cores" },
+    { "role": "variations", "src": "/products/final/sapata-lisa-redonda-variados.png", "alt": "Sapatas lisas redondas com e sem pino de encaixe" },
+    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-lisa-redonda-sem-haste.png", "alt": "Sapata lisa redonda sem pino, vista do produto" },
+    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-lisa-redonda-com-haste.png", "alt": "Sapata lisa redonda com pino de encaixe, vista do produto" },
     { "role": "manual", "condition": { "pescoco": true }, "src": "/products/final/manual-sapata-lisa-redonda-com-haste.png", "alt": "Sequência de instalação da sapata lisa redonda com haste" },
-    { "role": "usage", "condition": { "pescoco": true }, "src": "/products/final/uso-sapata-lisa-redonda-com-haste.png", "alt": "Sapata lisa redonda com haste aplicada em mobiliário" }
+    { "role": "usage", "condition": { "pescoco": true }, "src": "/products/final/uso-sapata-lisa-redonda-com-haste.png", "alt": "Sapata lisa redonda com pino de encaixe aplicada no pé de um móvel" }
   ],
   "notes": ["Modelo paramétrico disponível para configuração."],
   "parameters": [

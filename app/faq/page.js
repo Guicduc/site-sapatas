@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { StructuredData } from "@/components/structured-data";
 import { buildPageMetadata } from "@/lib/page-metadata";
+import { pageSeo } from "@/lib/seo-copy";
 
 const faqSections = [
   {
@@ -10,19 +11,31 @@ const faqSections = [
     title: "Medidas e compatibilidade",
     items: [
       {
-        question: "Como escolho a família certa?",
+        question: "Ponteira e sapata são a mesma coisa?",
         answer:
-          "Comece pelo ponto de instalação: dentro de um tubo redondo, quadrado ou oblongo, ou sob uma base lisa. Depois escolha o formato e informe as medidas reais da peça."
+          "No comércio os nomes se misturam. Aqui, ponteira é a peça que encaixa dentro do tubo (redondo, metalon, oblongo ou a ponteira bola) e sapata é o apoio que fica sob um pé plano, colado, com pino ou com parafuso. A sapata U abraça por fora o tubo da base trenó."
+      },
+      {
+        question: "Como escolho o produto certo?",
+        answer:
+          "Comece pelo ponto de instalação: dentro de um tubo de ponta aberta (redondo, quadrado ou oblongo), sob um pé plano ou por fora do tubo que apoia no piso. Depois escolha o formato e informe as medidas reais da peça."
       },
       {
         question: "Como devo medir antes de configurar?",
         answer:
-          "Meça a peça real, não apenas a medida nominal do móvel. Use as dimensões internas do tubo ou a área de apoio que receberá a sapata."
+          "Meça a peça real com paquímetro, não a medida nominal do móvel. Em tubos, informe a medida externa e a espessura da parede: o configurador calcula o vão interno. Em pés planos, meça a face que toca o piso.",
+        link: { href: "/guias/como-medir-tubo-para-ponteira", label: "Guia: como medir o tubo" }
+      },
+      {
+        question: "Qual a diferença entre ponteira interna e externa?",
+        answer:
+          "A ponteira interna entra no tubo e a externa veste o tubo por fora. A Baseforma fabrica ponteiras internas, feitas para a medida externa e a parede do seu tubo.",
+        link: { href: "/guias/ponteira-interna-ou-externa", label: "Guia: ponteira interna ou externa" }
       },
       {
         question: "Qual é o limite de medida?",
         answer:
-          "As famílias atuais trabalham com medidas customizáveis até 150 x 150 mm. Pedidos fora desse envelope devem entrar como projeto especial."
+          "Até 150 mm na maioria dos produtos. A sapata esférica atende tubos de 20 a 75 mm e a sapata U, tubos de 5 a 60 mm. Pedidos fora dessas faixas entram como projeto especial."
       },
       {
         question: "Preciso enviar desenho técnico?",
@@ -40,6 +53,11 @@ const faqSections = [
         question: "Existe quantidade mínima?",
         answer:
           "Não. A linha atual não aplica quantidade mínima; você pode configurar desde 1 unidade. Quantidades maiores podem alterar preço unitário e prazo."
+      },
+      {
+        question: "Vocês vendem em quantidade para fábricas e serralherias?",
+        answer:
+          "Sim. A quantidade é escolhida no próprio configurador, e pedidos com mais de 24 peças do mesmo item somam 2 dias úteis ao prazo de produção. Para linha própria, lotes recorrentes ou medidas fora da faixa, use o projeto especial."
       },
       {
         question: "Quais formas de pagamento estão disponíveis?",
@@ -81,6 +99,21 @@ const faqSections = [
     title: "Material e acabamento",
     items: [
       {
+        question: "TPU é plástico ou borracha?",
+        answer:
+          "TPU é um elastômero termoplástico: tem elasticidade parecida com a da borracha, mas é processado como plástico. Isso permite imprimir cada ponteira e sapata em 3D na medida exata do pedido."
+      },
+      {
+        question: "A ponteira risca o piso?",
+        answer:
+          "A ponteira inteira e bem encaixada mantém o metal longe do piso. O que costuma riscar é metal exposto, quando a ponteira cai ou gasta, e areia presa sob o pé.",
+        link: { href: "/guias/cadeira-riscando-o-piso", label: "Guia: cadeira riscando o piso" }
+      },
+      {
+        question: "Quais cores estão disponíveis?",
+        answer: "Preto, branco, cinza e marrom. O preto é a cor padrão."
+      },
+      {
         question: "O material serve para área interna e externa?",
         answer:
           "A linha atual pode atender áreas internas e externas, mas a escolha depende da carga, do piso e da exposição. Para uso crítico, envie o contexto como projeto especial."
@@ -121,12 +154,7 @@ const faqSections = [
   }
 ];
 
-export const metadata = buildPageMetadata({
-  title: "Perguntas frequentes",
-  description:
-    "Perguntas frequentes sobre sapatas customizáveis: medidas, compra, pagamento, frete, produção, material e projeto especial.",
-  path: "/faq"
-});
+export const metadata = buildPageMetadata(pageSeo.faq);
 
 export default function FaqPage() {
   const mainEntity = faqSections.flatMap((section) =>
@@ -153,10 +181,11 @@ export default function FaqPage() {
       <section className="faq-hero" aria-labelledby="faq-title">
         <div className="faq-hero__copy">
           <p className="eyebrow">Perguntas frequentes</p>
-          <h1 id="faq-title">O que você precisa saber antes de pedir.</h1>
+          <h1 id="faq-title">Perguntas frequentes sobre ponteiras e sapatas</h1>
           <p className="lead">
-            Encontre respostas sobre medidas, pagamento, prazo, frete e material. Se a peça sair
-            da faixa do catálogo, mostramos quando abrir um projeto especial.
+            Como medir o tubo, a diferença entre ponteira interna e externa, pagamento, prazo,
+            frete e material. Se a peça sair da faixa do catálogo, mostramos quando abrir um
+            projeto especial.
           </p>
         </div>
 

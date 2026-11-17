@@ -1,60 +1,59 @@
+import Link from "next/link";
+
 import { buildPageMetadata } from "@/lib/page-metadata";
+import { pageSeo } from "@/lib/seo-copy";
 
 const steps = [
   {
     number: "1",
-    title: "Escolha da família",
+    title: "Escolha o modelo",
     description:
-      "O cliente entra por busca orgânica, navegação no catálogo ou indicação. A família organiza o tipo de uso e a regra de compatibilidade."
+      "Pelo tipo de encaixe: ponteira interna para tubo redondo, metalon ou tubo oblongo; ponteira bola; sapata lisa ou com parafuso para pé plano; ou sapata U para o tubo da base trenó."
   },
   {
     number: "2",
-    title: "Seleção da variante padrão",
+    title: "Meça o móvel",
     description:
-      "Quando a combinação já existe, a página mostra preço público, cor, lead time e a faixa dimensional validada."
+      "Meça a peça real, de preferência com paquímetro: a medida externa e a parede do tubo, ou a face do pé que toca o piso. A medida nominal do tubo não basta."
   },
   {
     number: "3",
-    title: "Confirmação técnica",
+    title: "Configure e veja o preço",
     description:
-      "Para clientes B2B, a recompra pode acontecer pelo SKU. Para especificação nova, a página já indica o que precisa ser conferido."
+      "Informe as medidas, a cor (preto, branco, cinza ou marrom) e a quantidade. O configurador confere se a peça pode ser fabricada e mostra preço e prazo de produção na hora, sem pedido mínimo."
   },
   {
     number: "4",
-    title: "Produção sob encomenda",
+    title: "Pague com segurança",
     description:
-      "A variante aprovada entra na fila de impressão, inspeção e expedição sem depender de estoque alto de produto acabado."
+      "No carrinho você calcula o frete pelo CEP, informa CPF ou CNPJ para a nota fiscal, cria o pedido e paga pelo Mercado Pago."
   },
   {
     number: "5",
-    title: "Projeto especial",
+    title: "Produção sob encomenda",
     description:
-      "Se a demanda sair da matriz, o cliente não precisa abandonar o funil. Ele abre um briefing estruturado com a família de referência."
+      "A produção começa depois da aprovação do pagamento. Cada peça é impressa em 3D, em TPU, na medida do pedido, e segue com nota fiscal eletrônica."
   },
   {
     number: "6",
-    title: "Nova família ou novo preset",
+    title: "Recompra pelo mesmo código",
     description:
-      "O time decide se o caso gera apenas uma variante privada, um novo preset catalogável ou uma nova tipologia premium."
+      "Cada configuração gera um código (SKU) com as medidas. Na sua conta, os pedidos anteriores ficam guardados com medidas, cor e quantidade para você repetir a compra."
   }
 ];
 
-export const metadata = buildPageMetadata({
-  title: "Como funciona",
-  description:
-    "Entenda o fluxo da Baseforma: escolha de família, validação de variante, produção sob encomenda e projeto especial.",
-  path: "/como-funciona"
-});
+export const metadata = buildPageMetadata(pageSeo.comoFunciona);
 
 export default function ComoFuncionaPage() {
   return (
     <>
       <section className="page-panel narrow-panel">
-        <p className="eyebrow">Fluxo comercial</p>
-        <h1>Da família certa ao arquivo certo, sem improviso no meio do caminho.</h1>
+        <p className="eyebrow">Como comprar</p>
+        <h1>Como funciona: da medida do tubo à entrega</h1>
         <p className="lead">
-          O negócio foi desenhado para unir uma biblioteca paramétrica com uma interface
-          comercial simples. Isso vale para a linha padrão e para o desenvolvimento especial.
+          Você escolhe o modelo, informa as medidas reais do móvel, confere preço e prazo na hora
+          e paga pelo Mercado Pago. A ponteira ou sapata é produzida depois da aprovação do
+          pagamento e enviada com nota fiscal.
         </p>
       </section>
 
@@ -70,25 +69,32 @@ export default function ComoFuncionaPage() {
 
       <section className="two-column-panel">
         <article className="surface-card panel-copy">
-          <strong>O que a linha padrão precisa responder sozinha</strong>
+          <strong>Antes de configurar, tenha em mãos</strong>
           <ul className="feature-list">
-            <li>aplicação principal</li>
-            <li>tipo de fixação</li>
-            <li>faixa de compatibilidade</li>
-            <li>preço e lead time</li>
-            <li>CTA para recompra ou suporte</li>
+            <li>a medida externa do tubo ou da face de apoio do pé</li>
+            <li>a espessura da parede, no caso de tubos</li>
+            <li>a quantidade de peças e a cor</li>
+            <li>o CEP de entrega e o CPF ou CNPJ para a nota fiscal</li>
           </ul>
+          <p>
+            Dúvida na medição? Veja o{" "}
+            <Link href="/guias/como-medir-tubo-para-ponteira">guia de como medir o tubo</Link> e
+            a <Link href="/guias/tabela-medidas-tubo-metalon">tabela de medidas</Link>.
+          </p>
         </article>
 
         <article className="surface-card panel-copy">
-          <strong>O que o projeto especial precisa capturar</strong>
+          <strong>Quando abrir um projeto especial</strong>
           <ul className="feature-list">
-            <li>medidas exatas e contexto de uso</li>
-            <li>quantidade prevista</li>
-            <li>restrições estéticas</li>
-            <li>material e acabamento desejados</li>
-            <li>referência de família, se existir</li>
+            <li>medida fora da faixa do configurador</li>
+            <li>formato que não está no catálogo</li>
+            <li>aplicação com carga, exposição ou tolerância crítica</li>
+            <li>lote para fábrica, serralheria ou marcenaria com necessidade própria</li>
           </ul>
+          <p>
+            Descreva o caso no <Link href="/projeto-especial">projeto especial</Link> e a
+            Baseforma responde por e-mail.
+          </p>
         </article>
       </section>
     </>

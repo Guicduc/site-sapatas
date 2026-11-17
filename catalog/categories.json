@@ -1,39 +1,51 @@
 {
-  "$comment": "Categorias do catálogo. Os slugs definem as rotas /configurar/{slug} e são preservados do catálogo legado.",
+  "$comment": "Categorias do catálogo. Os slugs definem as rotas /configurar/{slug} e são preservados do catálogo legado. `name` é o nome operacional gravado no pedido, na NF-e e no Mercado Pago; não altere por SEO. Rótulos públicos ficam em publicName, seoTitle (sem a marca, até 49 caracteres), description (meta description e texto do card, até 155), heading (H1) e lead.",
   "categories": [
     {
       "slug": "ponteira-interna-tubo",
       "name": "Sapata interna tubos",
+      "publicName": "Ponteira interna para tubo",
+      "seoTitle": "Ponteira interna para tubo e metalon sob medida",
+      "heading": "Ponteira interna para tubo, sob medida",
+      "lead": "Escolha o formato do tubo (redondo, quadrado ou metalon, oblongo), informe a medida externa e a espessura da parede e veja preço e prazo na hora. Sem pedido mínimo.",
       "eyebrow": "Encaixe por medida real",
-      "description": "Sapatas sob medida para tubos redondos, quadrados e oblongos, com encaixe por medida real.",
+      "description": "Ponteira interna (sapata) para tubo redondo, metalon e tubo oblongo. Informe a medida externa e a parede do tubo e receba o encaixe certo em TPU.",
       "baseType": "tubo",
-      "primaryFixation": "press-fit interno",
+      "primaryFixation": "encaixe interno por pressão",
       "cardVisualProductId": "sapata-tubo-quadrado",
       "image": {
         "src": "/brand/categoria-ponteira-interna-tubo.png",
-        "alt": "Sapatas Baseforma para tubos redondos, quadrados e oblongos"
+        "alt": "Ponteiras internas Baseforma para tubos redondos, quadrados e oblongos"
       },
       "applications": ["cadeiras", "mesas", "serralheria", "mobiliário autoral"]
     },
     {
       "slug": "sapata-base-lisa",
       "name": "Sapata lisa",
-      "eyebrow": "Apoio plano customizável",
-      "description": "Sapatas lisas customizáveis em formatos redondo e quadrado, com ou sem pescoço.",
+      "publicName": "Sapata lisa para pé de móvel",
+      "seoTitle": "Sapata para pé de móvel redonda ou quadrada",
+      "heading": "Sapata lisa para pé de móvel, sob medida",
+      "lead": "Escolha redonda ou quadrada e informe a medida da área de apoio. Se o pé tiver um furo, adicione o pino de encaixe (haste). Preço e prazo aparecem na hora.",
+      "eyebrow": "Apoio plano sob medida",
+      "description": "Sapata lisa para pé de mesa, sofá, poltrona e banqueta, com ou sem pino de encaixe. De 3 a 150 mm, em TPU preto, branco, cinza ou marrom.",
       "baseType": "base lisa",
       "primaryFixation": "apoio plano",
       "cardVisualProductId": "sapata-lisa-quadrada",
       "image": {
         "src": "/brand/categoria-sapata-base-lisa.png",
-        "alt": "Sapatas Baseforma para bases lisas redondas e quadradas"
+        "alt": "Sapatas lisas Baseforma redondas e quadradas para pés de móveis"
       },
       "applications": ["poltronas", "banquinhos", "bases metálicas", "móveis autorais"]
     },
     {
       "slug": "sapata-com-parafuso",
       "name": "Sapata com parafuso",
-      "eyebrow": "Fixação mecânica central",
-      "description": "Sapatas sob medida com furo central técnico para fixação por parafuso, em formatos redondo e quadrado.",
+      "publicName": "Sapata com parafuso (furo escareado)",
+      "seoTitle": "Sapata com parafuso para pé de madeira e metal",
+      "heading": "Sapata com furo para parafuso, sob medida",
+      "lead": "Escolha redonda ou quadrada, informe a medida do pé e o diâmetro do parafuso, de 2 a 10 mm. A cabeça fica alojada no escareamento, longe do piso. Parafuso não incluso.",
+      "eyebrow": "Fixação por parafuso central",
+      "description": "Sapata redonda ou quadrada com furo central escareado para parafuso, para pés de cadeira, mesa e poltrona de madeira ou metal. De 12 a 150 mm.",
       "baseType": "base com parafuso",
       "primaryFixation": "parafuso central",
       "cardVisualProductId": "sapata-com-parafuso-quadrada",
@@ -46,28 +58,36 @@
     {
       "slug": "sapata-esferica",
       "name": "Sapata esférica",
+      "publicName": "Sapata esférica (ponteira bola)",
+      "seoTitle": "Ponteira bola (sapata esférica) sob medida",
+      "heading": "Sapata esférica (ponteira bola) para tubo redondo",
+      "lead": "Informe o diâmetro externo e a parede do tubo. A esfera acompanha o diâmetro externo e o encaixe entra no vão interno. Preço e prazo aparecem na hora.",
       "eyebrow": "Apoio esférico sob medida",
-      "description": "Sapatas esféricas para tubos redondos, com encaixe interno por pressão e medidas configuráveis.",
+      "description": "Sapata esférica, a ponteira bola, para tubo redondo de 20 a 75 mm. Encaixe interno por pressão ajustado à parede do tubo. TPU em 4 cores.",
       "baseType": "tubo redondo",
-      "primaryFixation": "press-fit interno",
+      "primaryFixation": "encaixe interno por pressão",
       "cardVisualProductId": "sapata-esferica",
       "image": {
         "src": "/products/final/sapata-esferica-family.png",
-        "alt": "Sapatas esféricas Baseforma para tubos redondos"
+        "alt": "Sapatas esféricas (ponteiras bola) Baseforma para tubos redondos"
       },
       "applications": ["cadeiras tubulares", "mesas", "estruturas metálicas", "reposição"]
     },
     {
       "slug": "sapata-u",
       "name": "Sapata U",
+      "publicName": "Sapata U para base trenó",
+      "seoTitle": "Sapata U para cadeira base trenó e tubo redondo",
+      "heading": "Sapata U para base trenó e tubo redondo",
+      "lead": "Para o tubo redondo que apoia no piso, e não para chapa de MDF. Informe o diâmetro externo do tubo, o comprimento e a espessura da sapata.",
       "eyebrow": "Encaixe por pressão em tubo redondo",
-      "description": "Sapatas em U para apoiar estruturas de tubo redondo, com ou sem haste.",
+      "description": "Sapata em U (meia-cana) que encaixa por pressão no tubo horizontal da cadeira base trenó. Tubo redondo de 5 a 60 mm, com ou sem haste.",
       "baseType": "tubo redondo",
       "primaryFixation": "encaixe por pressão",
       "cardVisualProductId": "sapata-u",
       "image": {
         "src": "/products/final/sapata-u-family-v2.png",
-        "alt": "Sapata Baseforma em U para tubos redondos"
+        "alt": "Sapata U Baseforma para o tubo redondo de cadeiras base trenó"
       },
       "applications": ["estruturas metálicas", "mobiliário", "tubos redondos"]
     }

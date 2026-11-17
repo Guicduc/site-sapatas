@@ -180,7 +180,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     <section className="configurator-shell">
       <div className="configurator-heading">
         <div>
-          <h1>{category.name}</h1>
+          <h1>{category.heading || category.publicName || category.name}</h1>
           <p className="lead">{headingDescription}</p>
         </div>
         <Link className="button button-secondary" href="/">
@@ -313,7 +313,7 @@ function RelatedProducts({ categories }) {
             )}
             <div className="category-card__body">
               <p className="eyebrow">{item.eyebrow}</p>
-              <h3>{item.name}</h3>
+              <h3>{item.publicName || item.name}</h3>
               <p>{item.description}</p>
               <div className="meta-list">
                 <span>{item.primaryFixation}</span>
@@ -332,8 +332,8 @@ function RelatedProducts({ categories }) {
   );
 }
 
-function getConfiguratorDescription() {
-  return "Configure as medidas conforme a necessidade do seu projeto.";
+function getConfiguratorDescription(category) {
+  return category?.lead || "Configure as medidas conforme a necessidade do seu projeto.";
 }
 
 function getSummaryProductName(format) {

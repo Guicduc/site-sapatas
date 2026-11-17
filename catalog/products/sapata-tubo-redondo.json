@@ -33,14 +33,14 @@
   "drawingType": "tube-round",
   "ui": {
     "fixation": "press-fit interno",
-    "summaryName": "Sapata interna tubo redondo",
+    "summaryName": "Ponteira interna para tubo redondo",
     "applications": ["cadeiras", "mesas tubulares", "reposição"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-tubo-redondo-family.png", "alt": "Família de sapatas para tubo redondo em diferentes medidas e cores" },
-    { "role": "product", "src": "/products/final/sapata-tubo-redondo-product.png", "alt": "Sapata para tubo redondo em vista de produto final" },
-    { "role": "manual", "src": "/products/final/manual-sapata-tubo-redondo.png", "alt": "Sequência de instalação da sapata para tubo redondo" },
-    { "role": "usage", "src": "/products/final/uso-sapata-tubo-redondo.png", "alt": "Sapata para tubo redondo aplicada em pé tubular" }
+    { "role": "family", "src": "/products/final/sapata-tubo-redondo-family.png", "alt": "Ponteiras internas para tubo redondo em diferentes diâmetros e cores" },
+    { "role": "product", "src": "/products/final/sapata-tubo-redondo-product.png", "alt": "Ponteira interna para tubo redondo, vista do produto" },
+    { "role": "manual", "src": "/products/final/manual-sapata-tubo-redondo.png", "alt": "Sequência de instalação da ponteira interna no tubo redondo" },
+    { "role": "usage", "src": "/products/final/uso-sapata-tubo-redondo.png", "alt": "Ponteira interna encaixada no pé de tubo redondo de um móvel" }
   ],
   "notes": ["Informe o diâmetro externo real do tubo; a parede determina o vão interno disponível."],
   "parameters": [

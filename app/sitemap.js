@@ -1,5 +1,6 @@
-import { productCategories } from "@/lib/configurator-data";
-import { families, siteUrl } from "@/lib/site-data";
+import { productCategories } from "../lib/configurator-data.js";
+import { guidePath, guides } from "../lib/guides.js";
+import { families, siteUrl } from "../lib/site-data.js";
 
 export default function sitemap() {
   const staticPages = [
@@ -30,5 +31,11 @@ export default function sitemap() {
     priority: 0.7
   }));
 
-  return [...staticPages, ...familyPages, ...configuratorPages];
+  const guidePages = ["/guias", ...guides.map((guide) => guidePath(guide.slug))].map((path) => ({
+    url: `${siteUrl}${path}`,
+    changeFrequency: "monthly",
+    priority: 0.6
+  }));
+
+  return [...staticPages, ...familyPages, ...configuratorPages, ...guidePages];
 }
