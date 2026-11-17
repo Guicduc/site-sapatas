@@ -79,3 +79,5 @@ Cada produto ativo deve registrar imagens nos papeis abaixo:
 - `usage`: aplicacao em contexto.
 
 Cada imagem deve declarar caminho, texto alternativo e revisao humana. O pipeline pode auxiliar a geracao, mas nao publica uma imagem automaticamente.
+
+Entrega: os PNGs originais ficam em `public/products` e `public/brand` e sao servidos via `next/image` (AVIF/WebP redimensionado sob demanda; configuracao em `images` do `next.config.mjs`). Novo PNG nao exige etapa extra; trocar o arquivo com o mesmo nome invalida o cache da Vercel no proximo deploy. Componentes devem usar `next/image` com `sizes` coerente com o layout, e apenas a imagem LCP da pagina recebe `preload`/`fetchPriority="high"`.
