@@ -107,6 +107,7 @@ O total de familias/produtos ativos deve ser derivado dos manifests ativos em `c
 - `components/cart-provider.jsx`: estado do carrinho em `localStorage` com chave `baseforma-cart`.
 - `components/cart-page.jsx`: checkout local, cupom, frete estimado e criacao de pedido.
 - `components/order-confirmation.jsx`: status do pedido e pagamento.
+- `components/pending-boleto.jsx`: link e vencimento do boleto Mercado Pago pendente, usado na confirmacao e na conta.
 - `components/cookie-preferences.jsx`: aviso e revisao do consentimento persistido em `baseforma-cookie-consent`.
 - A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
 - `app/admin/orders-workspace.jsx`: ficha unica em todos os filtros; formularios independentes para producao, NF e expedicao. O filtro `atencao` reune revisoes, bloqueios e alertas de pagamento. Jobs de arquivos, dados CAD e ajustes de prioridade ficam recolhidos.
@@ -165,7 +166,7 @@ commit.
 
 ## Pagamento
 
-O Mercado Pago fica isolado em `lib/mercado-pago.js`.
+O Mercado Pago fica isolado em `lib/mercado-pago.js`. `lib/mercado-pago-boleto.js` projeta para o cliente somente URL (HTTPS, hostname exato do Mercado Pago) e vencimento do boleto pendente mais recente; o payload bruto continua no servidor. Fluxo em `docs/ops/boleto-mercado-pago.md`.
 
 - A preferencia usa `NEXT_PUBLIC_SITE_URL` ou `VERCEL_URL` para callbacks.
 - `MERCADO_PAGO_ENV=sandbox` usa `sandbox_init_point` quando disponivel; `production` usa `init_point`.

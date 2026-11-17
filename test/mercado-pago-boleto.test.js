@@ -54,6 +54,7 @@ test("paid, cancelled, superseded, mismatched and non-boleto payments have no pa
   ]) assert.equal(getPendingMercadoPagoBoleto(pendingOrder(raw)), null);
   assert.equal(getPendingMercadoPagoBoleto({ ...pendingOrder(), totalBrl: 100 }), null);
   assert.equal(getPendingMercadoPagoBoleto({ ...pendingOrder(), demo: true }), null);
+  assert.equal(getPendingMercadoPagoBoleto({ ...pendingOrder(), metadata: { demo: true } }), null);
   const order = pendingOrder();
   order.payments.unshift({ provider: "mercado_pago", status: "rejected", amountBrl: 42 });
   assert.equal(getPendingMercadoPagoBoleto(order), null);
