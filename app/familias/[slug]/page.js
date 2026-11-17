@@ -4,14 +4,16 @@ import { notFound } from "next/navigation";
 import { FamilyCard } from "@/components/family-card";
 import { StructuredData } from "@/components/structured-data";
 import { buildMailtoUrl, formatCurrency } from "@/lib/format";
-import { buildPageMetadata } from "@/lib/page-metadata";
+import { buildPageMetadata, getFamilyOgImage } from "@/lib/page-metadata";
 import {
   brand,
   colorMap,
   families,
   getFamilyBySlug,
-  getRelatedFamilies
+  getRelatedFamilies,
+  siteUrl
 } from "@/lib/site-data";
+import { buildFamilyProductJsonLd } from "@/lib/structured-data";
 
 export function generateStaticParams() {
   return families.map((family) => ({ slug: family.slug }));
@@ -28,7 +30,8 @@ export async function generateMetadata({ params }) {
   return buildPageMetadata({
     title: family.seoTitle,
     description: family.seoDescription,
-    path: family.url
+    path: family.url,
+    image: getFamilyOgImage(family.slug)
   });
 }
 
@@ -46,26 +49,7 @@ export default async function FamilyPage({ params }) {
 
   return (
     <>
-      <StructuredData
-        data={{
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: family.name,
-          brand: {
-            "@type": "Brand",
-            name: brand.name
-          },
-          category: "Sapata para mobiliário",
-          description: family.seoDescription,
-          offers: {
-            "@type": "AggregateOffer",
-            priceCurrency: "BRL",
-            lowPrice: family.priceFromBrl,
-            highPrice: Math.max(...family.variants.map((variant) => variant.priceBrl)),
-            offerCount: family.variants.length
-          }
-        }}
-      />
+      <StructuredData data={buildFamilyProductJsonLd(family, { siteUrl, brand })} />
 
       <section className="page-panel narrow-panel">
         <p className="eyebrow">{family.eyebrow || "Família de sapatas"}</p>
