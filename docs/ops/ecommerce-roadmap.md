@@ -52,6 +52,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
   - Auditoria em 21/07/2026: certificado A1 valido no painel, NF-e habilitada, Vercel Production configurado para homologacao e gancho `nfe` registrado para `/api/webhooks/focus-nfe`. Restam publicar o codigo corrigido e homologar uma emissao completa antes de trocar para o token produtivo.
   - Mercado Pago teve credenciais produtivas e webhook configurados no Vercel; antes da abertura real, ainda e obrigatorio validar pedido teste ponta a ponta, recebimento de webhook e estados no admin/conta.
   - Melhor Envio permanece em fallback manual; ativar apenas apos token e homologacao de cotacao.
+  - 16/11/2026: a conta Mercado Pago do token produtivo (collector `3506410580`) migrou a titularidade de CPF para o CNPJ `42.616.830/0001-98` (GEMIGNANI DESIGN LTDA) na mesma conta, sem trocar credenciais. Pedido teste confirmou cobranca nessa conta; o checkout ainda exibia o nome da pessoa fisica enquanto o MP validava o nome fantasia. Se um dia o recebimento for para outra conta (Conta Negocio separada), e preciso trocar `MERCADO_PAGO_ACCESS_TOKEN` e `MERCADO_PAGO_WEBHOOK_SECRET` e cuidar das preferencias pendentes, que continuam apontando para a conta antiga.
 - Definir `DATABASE_URL` e confirmar que o banco executa o schema documentado em `docs/ops/database.sql`.
 - Definir `NEXT_PUBLIC_SITE_URL` com a URL publica final.
 - Definir `MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_ENV`, `MERCADO_PAGO_STATEMENT_DESCRIPTOR` e configurar o webhook no painel do Mercado Pago.
