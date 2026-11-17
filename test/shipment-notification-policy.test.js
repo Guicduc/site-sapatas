@@ -5,6 +5,7 @@ import {
   buildShipmentNotificationRecord,
   getShipmentEmailContext,
   getShipmentNotificationDecision,
+  getShipmentNotificationErrorMessage,
   getShipmentNotificationIdempotencyKey,
   SHIPMENT_NOTIFICATION_STATUS
 } from "../lib/shipment-notification-policy.js";
@@ -95,4 +96,30 @@ test("registra sucesso e inclui rastreio quando disponivel no contexto do email"
   assert.equal(context.carrier, "Jadlog");
   assert.equal(context.trackingCode, "TRK123");
   assert.equal(context.shippedAt, sentAt);
+});
+
+test("recusa deterministica bloqueia o aviso e orienta a correcao antes do retry", () => {
+  for (const code of ["send_rejected", "resend_forbidden", "resend_domain_not_verified", "idempotency_conflict"]) {
+    const result = code.startsWith("resend_")
+      ? { sent: false, skipped: "send_rejected", reason: code }
+      : { sent: false, skipped: code };
+    const notification = buildShipmentNotificationRecord({}, result);
+    assert.equal(notification.status, SHIPMENT_NOTIFICATION_STATUS.BLOCKED);
+    assert.equal(notification.lastErrorCode, code);
+    assert.match(getShipmentNotificationErrorMessage(notification), /bloqueado/);
+    assert.equal(getShipmentNotificationDecision(buildOrder({ notification })).shouldSend, true);
+  }
+  // Existing records must also stop recommending an unchanged retry.
+  assert.match(getShipmentNotificationErrorMessage({ status: "failed", lastErrorCode: "send_rejected" }), /sem corrigir a causa/);
+  assert.match(getShipmentNotificationErrorMessage({ lastErrorCode: "resend_forbidden" }), /HTTP 403/);
+});
+
+test("falha de rede continua repetivel e detalhes livres nao sao persistidos", () => {
+  const notification = buildShipmentNotificationRecord({}, {
+    sent: false, skipped: "network_failed", reason: "cliente@example.com"
+  });
+  assert.equal(notification.status, SHIPMENT_NOTIFICATION_STATUS.FAILED);
+  assert.equal(notification.lastErrorCode, "network_failed");
+  assert.match(getShipmentNotificationErrorMessage(notification), /repetir a tentativa/);
+  assert.equal(JSON.stringify(notification).includes("cliente@example.com"), false);
 });

@@ -41,6 +41,7 @@ import {
   requestInvoiceAfterPayment
 } from "@/lib/invoice-provider";
 import { deliverShipmentNotification } from "@/lib/shipment-notification";
+import { getShipmentNotificationErrorMessage } from "@/lib/shipment-notification-policy";
 import {
   getOrderById,
   listOrders,
@@ -1535,23 +1536,8 @@ function formatShipmentNotificationStatus(notification = {}) {
     return `Cliente avisado por e-mail em ${formatDateTime(notification.sentAt)}.`;
   }
 
-  if (notification.lastErrorCode === "missing_customer_email") {
-    return "E-mail de envio bloqueado: o pedido não tem e-mail do cliente. A expedição foi salva; corrija o cadastro e salve novamente para tentar o envio.";
-  }
-
-  if (notification.lastErrorCode === "missing_resend_api_key") {
-    return "E-mail de envio bloqueado: RESEND_API_KEY não está configurada. A expedição foi salva; configure o provedor e salve novamente para tentar o envio.";
-  }
-
-  if (notification.lastErrorCode === "missing_email_from") {
-    return "E-mail de envio bloqueado: TRANSACTIONAL_EMAIL_FROM ou ACCOUNT_EMAIL_FROM não está configurado. A expedição foi salva; configure o remetente e salve novamente.";
-  }
-
-  if (notification.status === "failed") {
-    return "Falha ao enviar o e-mail de expedição. O pedido continua expedido; salve novamente para repetir a tentativa.";
-  }
-
-  return "Ao salvar a expedição como Expedido, o cliente recebe um e-mail. Transportadora e rastreio entram na mensagem quando informados.";
+  return getShipmentNotificationErrorMessage(notification)
+    || "Ao salvar a expedição como Expedido, o cliente recebe um e-mail. Transportadora e rastreio entram na mensagem quando informados.";
 }
 
 function formatDateTime(value) {

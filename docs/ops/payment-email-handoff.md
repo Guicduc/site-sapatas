@@ -1,6 +1,6 @@
 # Handoff de pagamento e e-mail
 
-Atualizado em 29/06/2026.
+Atualizado em 16/11/2026. O historico abaixo descreve a ativacao inicial em 29/06/2026; a configuracao atual de remetente esta na secao E-mail.
 
 ## Estado ja publicado
 
@@ -17,8 +17,8 @@ Atualizado em 29/06/2026.
 - DNS do Registro.br foi salvo para Vercel e Resend:
   - `A baseforma.com.br -> 216.198.79.1`.
   - `CNAME www.baseforma.com.br -> f81d286f1555399c.vercel-dns-017.com.`
-  - DKIM/SPF/MX do Resend para envio pelo subdominio `send`.
-- Dominio `send.baseforma.com.br` no Resend ficou em verificacao `Pending`, aguardando propagacao DNS.
+  - Registros DNS de autenticacao do Resend. O prefixo `send` usado pelo SPF/Return-Path nao determina o dominio do endereco remetente.
+- A ativacao inicial planejava remetentes em `send.baseforma.com.br`. A verificacao atual no Resend e de `baseforma.com.br`, conforme auditoria de 16/11/2026 abaixo.
 
 ## Mercado Pago
 
@@ -62,7 +62,17 @@ Separacao recomendada:
   - `conta@baseforma.com.br`
   - `projetos@baseforma.com.br`
 
-Google Workspace e um provedor gerenciado de e-mail com dominio customizado. Para recebimento humano, o MX do dominio raiz deve apontar para o Google Workspace conforme o Admin Console. O Resend deve permanecer no subdominio `send.baseforma.com.br` para envio transacional, sem disputar o MX do dominio raiz.
+Google Workspace e um provedor gerenciado de e-mail com dominio customizado. Para recebimento humano, o MX do dominio raiz deve apontar para o Google Workspace conforme o Admin Console. O Resend usa a autenticacao DKIM do dominio e o prefixo DNS `send` para SPF/Return-Path, sem substituir o MX de recebimento do dominio raiz. Esse prefixo nao significa que o endereco remetente deva terminar em `@send.baseforma.com.br`.
+
+Auditoria de 16/11/2026 no painel do Resend:
+
+- Dominio cadastrado: somente `baseforma.com.br`, com status `Verified`, pronto para envio na regiao Sao Paulo.
+- A chave usada pelo site tem `Sending access` para `All domains`; nao foi necessario alterar a chave ou suas permissoes.
+- O aviso de expedicao foi recusado com HTTP 403 porque usava `Baseforma <pedidos@send.baseforma.com.br>`. O log do Resend informa `Domain not verified: Verify send.baseforma.com.br or update your from domain.`
+- Configuracao correta: `TRANSACTIONAL_EMAIL_FROM=Baseforma <pedidos@baseforma.com.br>` e `ACCOUNT_EMAIL_FROM=Baseforma <conta@baseforma.com.br>`. `TRANSACTIONAL_EMAIL_REPLY_TO=atendimento@baseforma.com.br` continua sendo a caixa de resposta.
+- Aplicar os remetentes em Production e Preview e refazer o deploy para que as funcoes recebam os novos valores. Depois, validar o envio pelo fluxo real e conferir o aceite/entrega no Resend. Nao e necessario adicionar dominio, alterar DNS ou criar nova chave para corrigir essa recusa.
+
+Correcao operacional aplicada em 16/11/2026: ambos os remetentes foram atualizados em Production e Preview. O deploy de producao `dpl_JC5KYz17wpyLTJkn2JsJprPHUB7q` ficou `READY`, mantendo o commit de `main` `1741fccee97860db1ec84b953440e2f5a55d3bdd`. Um envio real pelo fluxo de codigo de acesso do site foi aceito e registrado como `Delivered` no Resend, mensagem `01a1e62b-ee7b-7efc-9fec-50443a5afc91`. Esse teste valida a configuracao e o adaptador de envio compartilhado; nao reenvia o aviso do pedido do cliente.
 
 Nao usar Google Workspace como canal primario dos envios automaticos do app sem uma decisao explicita. Isso evita limite de SMTP, bloqueios por automacao e acoplamento entre inbox humano e transacional.
 

@@ -60,7 +60,7 @@ As pastas `site/` e `pricing-lab/` foram removidas do versionamento nesta reorga
 - `POST /api/admin/print-jobs/[id]/complete` e `/fail`: registram artefatos ou falhas/retries do worker sem executar CAD no processo web.
 - A arquitetura de transicao esta em `docs/ops/production-system-transition.md` e o contrato implementado em `docs/ops/production-system-integration.md`. Ele permanece desativado ate homologacao e corte deliberado; `print_jobs` continua como ponte.
 - `lib/transactional-email.js`: concentra envio via Resend para codigo de conta, pedido criado, pagamento aprovado/nao aprovado e pedido enviado. Nao instancie SDK em escopo global.
-- `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida; falhas nao revertem o status operacional.
+- `lib/shipment-notification.js` e `lib/shipment-notification-policy.js`: disparam e registram de forma idempotente o e-mail depois que a expedicao `shipped` foi persistida (o reenvio de aviso pendente continua possivel apos `delivered`, mas confirmar entrega nao dispara e-mail); falhas nao revertem o status operacional. Recusas deterministicas do Resend viram `blocked` com codigo seguro (`resend_*`, `send_rejected`, `idempotency_conflict`) e mensagem orientando a correcao; falhas transitorias ficam `failed`.
 
 ## Dados de catalogo
 
