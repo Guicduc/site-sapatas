@@ -100,6 +100,15 @@ Use `lib/site-data.js` para conteudo editorial e SEO:
 
 O FAQ publicado vive em `app/faq/page.js` (conteudo local a pagina), nao em `lib/site-data.js`.
 
+O preco "A partir de" das familias (`priceFromBrl`) e o teto (`priceToBrl`) nao sao digitados: `calculatePublishedPriceRange` em `lib/site-data.js` os calcula com o motor de preco do configurador dentro das medidas validas de todas as variantes publicas. Pagina de familia, `components/family-card.jsx` e JSON-LD usam esses mesmos campos.
+
+## SEO: dados estruturados e imagens sociais
+
+- `lib/structured-data.js`: builders puros de JSON-LD. `buildOrganizationJsonLd` (OnlineStore com endereco, contato, CNPJ e politica de devolucao de `/trocas`) e `buildWebSiteJsonLd` sao emitidos em `app/page.js`; `buildFamilyProductJsonLd` (Product + AggregateOffer) em `/familias/[slug]`. `components/structured-data.jsx` faz a serializacao segura. O FAQPage fica em `app/faq/page.js`.
+- O configurador `/configurar/[categoria]` nao emite Product: a pagina de familia e a landing canonica de cada formato, e a categoria agrupa varios formatos.
+- Frete e cotado por CEP, por isso nao ha `shippingDetails`. Ao mudar a politica de `/trocas`, atualize `buildMerchantReturnPolicy`.
+- `lib/page-metadata.js`: `buildPageMetadata` aceita `image`; familias usam `getFamilyOgImage` e configuradores `getConfiguratorOgImage`. As imagens (1200 x 630, JPEG leve) ficam em `public/og/` e sao geradas por `node scripts/build-og-images.mjs`, que tambem reescreve `lib/og-image-manifest.js`. Rode o script ao trocar a imagem principal de uma familia/categoria ou ao criar uma; `test/structured-data.test.js` falha se faltar imagem.
+
 ### SEO e conteudo editorial
 
 - `docs/seo/keyword-research.md`: pesquisa de palavras-chave, mapeamento termo -> pagina, nomenclatura e termos a evitar. Consulte antes de mudar titles, H1 ou nomes publicos.

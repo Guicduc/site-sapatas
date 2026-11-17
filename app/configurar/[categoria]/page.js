@@ -4,7 +4,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductConfigurator } from "@/components/product-configurator";
 import { buildCatalogTrail } from "@/lib/breadcrumbs";
 import { getCategoryBySlug, productCategories } from "@/lib/configurator-data";
-import { buildPageMetadata } from "@/lib/page-metadata";
+import { buildPageMetadata, getConfiguratorOgImage } from "@/lib/page-metadata";
 
 export function generateStaticParams() {
   return productCategories.map((category) => ({ categoria: category.slug }));
@@ -21,7 +21,8 @@ export async function generateMetadata({ params }) {
   return buildPageMetadata({
     title: category.seoTitle || `${category.publicName || category.name} sob medida`,
     description: category.description,
-    path: `/configurar/${category.slug}`
+    path: `/configurar/${category.slug}`,
+    image: getConfiguratorOgImage(category.slug)
   });
 }
 
