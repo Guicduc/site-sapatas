@@ -182,6 +182,12 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
         <div>
           <h1>{category.name}</h1>
           <p className="lead">{headingDescription}</p>
+          {format.familySlug && (
+            <Link className="configurator-family-link" href={`/familias/${format.familySlug}`}>
+              Ver detalhes, medidas e perguntas frequentes
+              <span className="visually-hidden"> de {getSummaryProductName(format)}</span>
+            </Link>
+          )}
         </div>
         <Link className="button button-secondary" href="/">
           Voltar ao catálogo
