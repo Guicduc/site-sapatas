@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 import { readDemoOrders } from "@/components/demo-account";
 import { PendingBoleto } from "@/components/pending-boleto";
+import { trackPurchase } from "@/lib/analytics";
 
 export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
   const { clearCart, loaded: cartLoaded } = useCart();
@@ -77,6 +78,12 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
       cancelled = true;
     };
   }, [orderId, initialPaymentResult]);
+
+  // Medicao: purchase apenas com pagamento aprovado (boleto pendente e demo ficam
+  // de fora); a deduplicacao por pedido fica em lib/analytics.js.
+  useEffect(() => {
+    if (order) trackPurchase(order);
+  }, [order]);
 
   async function handleRefreshStatus() {
     if (!orderId || refreshing) {

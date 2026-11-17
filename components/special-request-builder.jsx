@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { trackGenerateLead } from "@/lib/analytics";
+
 const projectsEmail = "projetos@baseforma.com.br";
 
 export function SpecialRequestBuilder() {
@@ -37,6 +39,7 @@ export function SpecialRequestBuilder() {
 
     if (!canSubmit) return;
 
+    trackGenerateLead("projeto_especial");
     window.location.href = mailtoHref;
   }
 

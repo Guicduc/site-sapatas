@@ -23,6 +23,7 @@ import {
 import { getConfiguratorVisuals } from "@/lib/product-visuals";
 import { clampCartQuantity, MAX_CART_ITEM_QUANTITY } from "@/lib/client-cart";
 import { calculateClientPricePreview } from "@/lib/client-pricing-preview";
+import { trackAddToCart, trackViewItem } from "@/lib/analytics";
 import {
   buildConfigurationSku,
   calculateLeadTime,
@@ -62,6 +63,18 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     setAdded(false);
     setInvalidMeasurementKeys({});
   }, [category, formatSlug]);
+
+  useEffect(() => {
+    const viewedFormat = getFormat(category, formatSlug) || category.formats[0];
+    const preview = calculateClientPricePreview(viewedFormat, getInitialValues(viewedFormat), 1);
+    trackViewItem({
+      category,
+      format: viewedFormat,
+      unitPriceBrl: preview.pricingAvailable === false ? null : preview.unitPriceBrl
+    });
+    // category.slug (e nao o objeto): o refresh do RSC apos router.replace recria o objeto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category.slug, formatSlug]);
 
   const issues = useMemo(() => validateConfiguration(format, values), [format, values]);
   const priceBreakdown = useMemo(
@@ -171,6 +184,15 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
       priceBreakdown,
       leadTimeDays: leadTime,
       status: "valid"
+    });
+    trackAddToCart({
+      categorySlug: category.slug,
+      categoryName: category.name,
+      formatSlug: format.slug,
+      formatName: format.name,
+      sku,
+      quantity,
+      unitPriceBrl: unitPrice
     });
     setAdded(true);
     router.push("/carrinho");

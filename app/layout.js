@@ -1,3 +1,4 @@
+import { AnalyticsLoader } from "@/components/analytics-loader";
 import { CartProvider } from "@/components/cart-provider";
 import { CookiePreferences } from "@/components/cookie-preferences";
 import { SiteFooter } from "@/components/site-footer";
@@ -61,6 +62,7 @@ export default async function RootLayout({ children }) {
             <SiteFooter />
           </div>
           <CookiePreferences />
+          <AnalyticsLoader />
         </CartProvider>
       </body>
     </html>

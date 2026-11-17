@@ -5,6 +5,12 @@ import Link from "next/link";
 
 import { useCart } from "@/components/cart-provider";
 import {
+  trackAddPaymentInfo,
+  trackAddShippingInfo,
+  trackBeginCheckout,
+  trackViewCart
+} from "@/lib/analytics";
+import {
   formatBrTaxDocument,
   getBrTaxDocumentValidationMessage,
   isValidBrTaxDocument,
@@ -27,11 +33,19 @@ export function CartPage() {
   const { items, total, updateQuantity, removeItem } = useCart();
   const [paymentResult, setPaymentResult] = useState("");
   const [pendingRemovalId, setPendingRemovalId] = useState("");
+  const viewCartTrackedRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setPaymentResult(params.get("payment") || "");
   }, []);
+
+  // Medicao: um view_cart por visita ao carrinho, depois de restaurar os itens.
+  useEffect(() => {
+    if (viewCartTrackedRef.current || items.length === 0) return;
+    viewCartTrackedRef.current = true;
+    trackViewCart(items);
+  }, [items]);
 
   return (
     <section className="cart-shell">
@@ -216,6 +230,8 @@ function CheckoutForm({ cartTotal }) {
     postalCode: "", street: "", number: "", complement: "", district: "", city: "", state: ""
   });
   const demoPrefillAttemptedRef = useRef(false);
+  const beginCheckoutTrackedRef = useRef(false);
+  const shippingInfoTrackedRef = useRef("");
   const lastPostalCodeLookupRef = useRef("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -272,6 +288,9 @@ function CheckoutForm({ cartTotal }) {
     && !regionValidationMessage
     && quoteReady
     && couponReady;
+  const shippingInfoKey = quoteReady
+    ? [commerce.shipping.serviceName, commerce.shipping.amountBrl, commerce.totalBrl].join("|")
+    : "";
   const recoverySnapshotKey = JSON.stringify({
     items,
     name,
@@ -477,6 +496,20 @@ function CheckoutForm({ cartTotal }) {
     };
   }, [loaded, recoverySnapshotKey, createdOrder]);
 
+  // Medicao: add_shipping_info quando uma cotacao valida chega (uma vez por cotacao).
+  useEffect(() => {
+    if (!shippingInfoKey || shippingInfoTrackedRef.current === shippingInfoKey) return;
+    shippingInfoTrackedRef.current = shippingInfoKey;
+    trackAddShippingInfo(items, commerce);
+  }, [shippingInfoKey]);
+
+  // Medicao: begin_checkout na primeira interacao com o formulario.
+  function handleCheckoutFocus() {
+    if (beginCheckoutTrackedRef.current || items.length === 0) return;
+    beginCheckoutTrackedRef.current = true;
+    trackBeginCheckout(items, quoteReady ? commerce : null);
+  }
+
   function updateAddress(key, value) {
     setAddress((current) => ({ ...current, [key]: value }));
   }
@@ -660,6 +693,7 @@ function CheckoutForm({ cartTotal }) {
         );
       }
 
+      trackAddPaymentInfo(items, commerce, "mercado_pago");
       window.location.assign(payment.payload.checkoutUrl);
     } catch (caughtError) {
       setError(caughtError.message || "Não foi possível finalizar o pedido.");
@@ -671,7 +705,7 @@ function CheckoutForm({ cartTotal }) {
   const submitLabel = submitting ? "Gerando pedido..." : "Seguir para pagamento";
 
   return (
-    <form className="checkout-form" onSubmit={handleSubmit}>
+    <form className="checkout-form" onSubmit={handleSubmit} onFocusCapture={handleCheckoutFocus}>
       <button className="button button-primary button-block checkout-submit--top" type="submit" disabled={!canSubmit || submitting}>
         {submitLabel}
       </button>
