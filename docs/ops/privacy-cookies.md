@@ -4,7 +4,8 @@ Este documento registra o inventario tecnico verificado em 13/07/2026 e a regra 
 
 ## Estado atual
 
-- Nao ha Google Analytics, Google Tag Manager, pixels de publicidade, mapas de calor, videos incorporados ou scripts remotos de marketing.
+- Google Analytics 4 e **opcional e condicional**: so existe quando `NEXT_PUBLIC_GA_MEASUREMENT_ID` esta definido no build e so carrega apos o aceite da categoria `analytics`. Sem a variavel, nao ha nenhum script de medicao. Detalhes e passo a passo do painel em `docs/ops/analytics.md`.
+- Nao ha Google Tag Manager, pixels de publicidade, mapas de calor, videos incorporados ou outros scripts remotos de marketing.
 - `components/structured-data.jsx` gera apenas JSON-LD estatico. Ele nao executa codigo externo nem grava dados no navegador.
 - A fonte declarada com `next/font` e servida pela propria aplicacao; nao ha requisicao do navegador ao Google Fonts.
 - ViaCEP, Mercado Pago, Melhor Envio, Focus NFe e Resend sao integracoes funcionais chamadas pelo servidor ou destinos abertos por acao explicita do usuario. Nao sao scripts de rastreamento carregados nas paginas.
@@ -21,7 +22,17 @@ Este documento registra o inventario tecnico verificado em 13/07/2026 e a regra 
 | `baseforma-last-order-id` | sessionStorage | reabertura da confirmacao do pedido | pedido criado | ate fechar a aba |
 | `baseforma-cookie-consent` | localStorage | escolha e validade do consentimento | aviso/centro de preferencias | 180 dias |
 
-Todas as tecnologias acima sao funcionais. O cookie de conta e HttpOnly, SameSite=Lax, Secure em producao e carrega token opaco aleatorio; somente seu hash e persistido. O valor de `baseforma-cart-recovery` contem somente identificador e token; os dados do lead ficam no armazenamento do servidor, sujeito a `CART_RECOVERY_RETENTION_DAYS`.
+Todas as tecnologias acima sao funcionais.
+
+### Opcionais (somente com `NEXT_PUBLIC_GA_MEASUREMENT_ID` e aceite de `analytics`)
+
+| Nome | Tecnologia | Fornecedor | Finalidade | Criacao | Prazo |
+| --- | --- | --- | --- | --- | --- |
+| `_ga` | cookie primario, SameSite=Lax, Secure em HTTPS | Google (Google Analytics 4) | identificador pseudonimo para medicao agregada de visitas e compras | apos aceitar opcionais | 13 meses |
+| `_ga_<ID sem "G-">` | cookie primario, SameSite=Lax, Secure em HTTPS | Google (Google Analytics 4) | estado da sessao de medicao | apos aceitar opcionais | 13 meses |
+| `baseforma-analytics-purchases` | localStorage | Baseforma | numeros de pedido ja medidos, para nao contar `purchase` duas vezes | primeira compra aprovada medida | ate revogar ou limpar |
+
+A revogacao apaga os tres itens e ativa o opt-out `ga-disable-<ID>` do gtag. Google Signals, sinais de anuncios e `ad_storage`/`ad_user_data`/`ad_personalization` ficam sempre desativados. A pagina `/privacidade` mostra a tabela de opcionais apenas quando o ID esta configurado. O cookie de conta e HttpOnly, SameSite=Lax, Secure em producao e carrega token opaco aleatorio; somente seu hash e persistido. O valor de `baseforma-cart-recovery` contem somente identificador e token; os dados do lead ficam no armazenamento do servidor, sujeito a `CART_RECOVERY_RETENTION_DAYS`.
 
 ## Regra para scripts opcionais
 
@@ -29,19 +40,20 @@ O estado inicial e a ausencia de permissao. Um novo script de medicao ou marketi
 
 1. ser inventariado neste documento e na pagina `/privacidade` antes da ativacao;
 2. ter finalidade, fornecedor e prazo definidos;
-3. incrementar `COOKIE_CONSENT_VERSION`, invalidando escolhas anteriores e apresentando o aviso atualizado;
+3. mudar a revisao do inventario (`getCookieInventoryRevision` em `lib/analytics-config.js`, gravada como `revision` no consentimento), invalidando escolhas anteriores e apresentando o aviso atualizado. `COOKIE_CONSENT_VERSION` so muda se a estrutura salva mudar;
 4. consultar `hasCookieConsentCategory(consent, "analytics")` antes de ser injetado;
 5. reagir ao evento `baseforma:cookie-consent-changed`;
 6. remover cookies e interromper a coleta quando houver revogacao, se o fornecedor permitir;
 7. receber teste de carregamento antes e depois da escolha.
 
-Aceitar a categoria opcional hoje apenas persiste a escolha: nenhum script opcional esta configurado. Recusar mantem a categoria `analytics` desabilitada. Uma escolha invalida, expirada ou de outra versao volta a ser tratada como ausencia de consentimento.
+Sem `NEXT_PUBLIC_GA_MEASUREMENT_ID`, aceitar a categoria opcional apenas persiste a escolha (revisao `base`). Com o ID, a revisao vira `ga4-1`: quem respondeu antes ve o aviso de novo, e aceitar carrega o GA4. Recusar mantem a categoria `analytics` desabilitada. Uma escolha invalida, expirada, de outra versao ou de outra revisao volta a ser tratada como ausencia de consentimento.
 
 ## Verificacao rapida
 
 ```bash
 rg -n "cookies\\(|document\\.cookie|Set-Cookie|localStorage|sessionStorage|next/script|<script|gtag|GTM-|pixel|hotjar|clarity" app components lib
 npm run test:cookie-consent
+node --test test/analytics.test.js
 npm run build
 ```
 
@@ -52,3 +64,4 @@ No navegador, validar:
 3. limpar a preferencia e recusar salva `analytics: false`;
 4. o botao do rodape reabre o painel, informa a escolha e devolve o foco ao fechar;
 5. `Escape` fecha apenas um painel reaberto, nunca descarta uma primeira escolha.
+6. com `NEXT_PUBLIC_GA_MEASUREMENT_ID` definido: sem escolha ou com recusa nao ha request a `googletagmanager.com`; apos aceitar, o script `data-baseforma-analytics` aparece; revogar apaga `_ga*`.

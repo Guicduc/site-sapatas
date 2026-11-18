@@ -72,3 +72,20 @@ function createMemoryStorage() {
     }
   };
 }
+
+test("escolha gravada antes da revisao continua valida sem GA configurado", () => {
+  const legacy = { ...createCookieConsent(true, NOW), revision: undefined };
+  delete legacy.revision;
+
+  assert.equal(parseCookieConsent(legacy, NOW, { revision: "base" })?.analytics, true);
+  assert.equal(parseCookieConsent(legacy, NOW)?.revision, "base");
+});
+
+test("ligar o GA muda a revisao e pede a escolha novamente", () => {
+  const before = createCookieConsent(false, NOW, { revision: "base" });
+  const after = createCookieConsent(true, NOW, { revision: "ga4-1" });
+
+  assert.equal(parseCookieConsent(before, NOW, { revision: "ga4-1" }), null);
+  assert.equal(parseCookieConsent(after, NOW, { revision: "ga4-1" })?.analytics, true);
+  assert.equal(parseCookieConsent(after, NOW, { revision: "base" }), null);
+});
