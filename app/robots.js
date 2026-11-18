@@ -1,4 +1,4 @@
-import { siteUrl } from "@/lib/site-data";
+import { siteUrl } from "../lib/site-data.js";
 
 export default function robots() {
   return {
@@ -6,14 +6,9 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: [
-          "/admin",
-          "/api",
-          "/conta",
-          "/carrinho",
-          "/pedido-confirmado",
-          "/demonstracao"
-        ]
+        // /carrinho, /conta e /pedido-confirmado ficam liberados para o robo ler o
+        // noindex declarado no metadata dessas paginas.
+        disallow: ["/admin", "/api", "/demonstracao"]
       }
     ],
     sitemap: `${siteUrl}/sitemap.xml`

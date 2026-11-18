@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ProductConfigurator } from "@/components/product-configurator";
+import { buildCatalogTrail } from "@/lib/breadcrumbs";
 import { getCategoryBySlug, productCategories } from "@/lib/configurator-data";
 import { buildPageMetadata } from "@/lib/page-metadata";
 
@@ -32,5 +34,10 @@ export default async function ConfigurePage({ params, searchParams }) {
     notFound();
   }
 
-  return <ProductConfigurator category={category} initialFormatSlug={resolvedSearchParams?.formato} />;
+  return (
+    <>
+      <Breadcrumbs items={buildCatalogTrail(category.name, `/configurar/${category.slug}`)} />
+      <ProductConfigurator category={category} initialFormatSlug={resolvedSearchParams?.formato} />
+    </>
+  );
 }

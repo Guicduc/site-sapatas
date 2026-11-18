@@ -7,7 +7,11 @@ import { DemoAccount } from "@/components/demo-account";
 
 export const metadata = {
   title: "Minha conta",
-  description: "Pedidos, pagamentos e dados da sua relação com a Baseforma."
+  description: "Pedidos, pagamentos e dados da sua relação com a Baseforma.",
+  robots: {
+    index: false,
+    follow: true
+  }
 };
 
 export const dynamic = "force-dynamic";
