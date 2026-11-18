@@ -108,6 +108,15 @@ O preco "A partir de" das familias (`priceFromBrl`) e o teto (`priceToBrl`) nao 
 - Frete e cotado por CEP, por isso nao ha `shippingDetails`. Ao mudar a politica de `/trocas`, atualize `buildMerchantReturnPolicy`.
 - `lib/page-metadata.js`: `buildPageMetadata` aceita `image`; familias usam `getFamilyOgImage` e configuradores `getConfiguratorOgImage`. As imagens (1200 x 630, JPEG leve) ficam em `public/og/` e sao geradas por `node scripts/build-og-images.mjs`, que tambem reescreve `lib/og-image-manifest.js`. Rode o script ao trocar a imagem principal de uma familia/categoria ou ao criar uma; `test/structured-data.test.js` falha se faltar imagem.
 
+### SEO e conteudo editorial
+
+- `docs/seo/keyword-research.md`: pesquisa de palavras-chave, mapeamento termo -> pagina, nomenclatura e termos a evitar. Consulte antes de mudar titles, H1 ou nomes publicos.
+- Nome operacional x nome publico: `name` em `catalog/categories.json` e nos manifests vai para carrinho, pedido, e-mail, NF-e e Mercado Pago e nao muda por SEO. Rotulos publicos ficam em `publicName`, `seoTitle`, `description`, `heading` e `lead` da categoria, e em `ui.summaryName` do manifest (resumo do configurador).
+- `lib/seo-copy.js`: title e description de home, catalogo, paginas institucionais.
+- `lib/family-content.js`: guia unico de cada familia (aplicacoes, como medir, tabelas de medidas, parede do tubo), renderizado por `components/family-guide.jsx`, e o texto publico das familias geradas do manifesto (`manifestFamilyCopy`). As familias editoriais continuam com o texto em `lib/site-data.js`.
+- `components/content-blocks.jsx`: paragrafos com links internos, listas e tabelas editoriais sem rolagem horizontal no celular.
+- `test/seo-content.test.js`: title ate 60 caracteres com a marca, description ate 155, nomes operacionais preservados e links internos validos.
+
 O total de familias/produtos ativos deve ser derivado dos manifests ativos em `catalog/products/`, e nao hard-coded neste mapa. As paginas editoriais em `lib/site-data.js` continuam sendo responsabilidade manual e precisam ser revisadas quando um manifest novo ou alterado muda a cobertura publica.
 
 ## Componentes centrais

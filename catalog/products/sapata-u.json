@@ -20,15 +20,15 @@
   "drawingType": "base-u",
   "ui": {
     "fixation": "encaixe por pressão",
-    "summaryName": "Sapata U",
+    "summaryName": "Sapata U para base trenó",
     "applications": ["estruturas metálicas", "mobiliário", "tubos redondos"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-u-family-v2.png", "alt": "Família de sapatas U em diferentes medidas, com e sem haste" },
-    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-u-sem-haste-v2.png", "alt": "Sapata U sem haste em vista de produto final" },
-    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-u-com-haste-v2.png", "alt": "Sapata U com haste central em vista de produto final" },
+    { "role": "family", "src": "/products/final/sapata-u-family-v2.png", "alt": "Sapatas U (meia-cana) para tubo redondo em diferentes medidas, com e sem haste" },
+    { "role": "product", "variantId": "sem-haste", "src": "/products/final/sapata-u-sem-haste-v2.png", "alt": "Sapata U sem haste para tubo redondo, vista do produto" },
+    { "role": "product", "variantId": "haste", "src": "/products/final/sapata-u-com-haste-v2.png", "alt": "Sapata U com haste central para tubo redondo, vista do produto" },
     { "role": "manual", "src": "/products/final/manual-sapata-u-v2.png", "alt": "Sequência de instalação da sapata U por encaixe no tubo redondo" },
-    { "role": "usage", "src": "/products/final/uso-sapata-u-v2.png", "alt": "Sapata U aplicada em estrutura tubular de mobiliário" }
+    { "role": "usage", "src": "/products/final/uso-sapata-u-v2.png", "alt": "Sapata U encaixada no tubo de uma cadeira base trenó, apoiada no piso" }
   ],
   "notes": ["Modelos com e sem haste validados em CAD, fatiamento e cobertura de preço."],
   "parameters": [

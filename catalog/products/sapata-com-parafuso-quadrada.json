@@ -29,14 +29,14 @@
   "drawingType": "base-rect-screw",
   "ui": {
     "fixation": "parafuso central",
-    "summaryName": "Com parafuso quadrada",
+    "summaryName": "Sapata quadrada com parafuso",
     "applications": ["cadeiras", "mesas", "poltronas", "bases quadradas"]
   },
   "visuals": [
     { "role": "family", "src": "/products/final/sapata-com-parafuso-quadrada-family.png", "alt": "Família de sapatas quadradas com furo central para parafuso em diferentes medidas e cores" },
     { "role": "product", "src": "/products/final/sapata-com-parafuso-quadrada-product.png", "alt": "Sapata quadrada com furo central para parafuso em vista de produto final" },
     { "role": "manual", "src": "/products/final/sapata-com-parafuso-quadrada-manual.png", "alt": "Sequência de instalação da sapata quadrada com parafuso separado" },
-    { "role": "usage", "src": "/products/final/sapata-com-parafuso-quadrada-uso.png", "alt": "Sapata quadrada com parafuso aplicada sob pé de madeira" }
+    { "role": "usage", "src": "/products/final/sapata-com-parafuso-quadrada-uso.png", "alt": "Sapata quadrada com parafuso fixada sob pé de madeira" }
   ],
   "notes": ["O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso."],
   "parameters": [

@@ -29,14 +29,14 @@
   "drawingType": "base-round-screw",
   "ui": {
     "fixation": "parafuso central",
-    "summaryName": "Com parafuso redonda",
+    "summaryName": "Sapata redonda com parafuso",
     "applications": ["cadeiras", "mesas", "poltronas", "bases circulares"]
   },
   "visuals": [
     { "role": "family", "src": "/products/final/sapata-com-parafuso-redonda-family.png", "alt": "Família de sapatas redondas com furo central para parafuso em diferentes medidas e cores" },
     { "role": "product", "src": "/products/final/sapata-com-parafuso-redonda-product.png", "alt": "Sapata redonda com furo central para parafuso em vista de produto final" },
     { "role": "manual", "src": "/products/final/sapata-com-parafuso-redonda-manual.png", "alt": "Sequência de instalação da sapata redonda com parafuso separado" },
-    { "role": "usage", "src": "/products/final/sapata-com-parafuso-redonda-uso.png", "alt": "Sapata redonda com parafuso aplicada sob pé de madeira" }
+    { "role": "usage", "src": "/products/final/sapata-com-parafuso-redonda-uso.png", "alt": "Sapata redonda com parafuso fixada sob pé de madeira" }
   ],
   "notes": ["O furo central acompanha o diâmetro configurado; o parafuso metálico não está incluso."],
   "parameters": [

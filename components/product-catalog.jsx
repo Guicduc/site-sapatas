@@ -122,9 +122,10 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
         <>
           <div className="shop-hero">
             <div className="shop-hero__copy">
-              <h1>Sapatas plásticas customizáveis para o seu projeto</h1>
+              <h1>Ponteiras e sapatas sob medida para pés de móveis</h1>
               <p className="lead">
-                Sapatas feitas sob medida para encaixar no seu projeto, proteger melhor e dar um acabamento mais bonito.
+                Ponteira interna para tubo redondo, metalon e tubo oblongo, e sapatas para pés de mesa,
+                cadeira, sofá e poltrona. Feitas em TPU pela medida real do seu móvel, a partir de 1 unidade.
               </p>
             </div>
             <div className="shop-hero__media" aria-label="Imagens de produtos Baseforma">
@@ -184,13 +185,16 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
           {catalogOnly ? (
             <>
               <p className="eyebrow">Produtos Baseforma</p>
-              <h1 id="products-heading">Catálogo de produtos</h1>
-              <p>Escolha uma família para configurar formato e medidas conforme o seu projeto.</p>
+              <h1 id="products-heading">Catálogo de ponteiras e sapatas sob medida</h1>
+              <p>
+                Escolha pelo tipo de encaixe: dentro do tubo, sob um pé plano, com parafuso ou abraçando
+                o tubo da base trenó. Depois informe as medidas e veja preço e prazo na hora.
+              </p>
             </>
           ) : (
             <>
               <p className="eyebrow">Catálogo</p>
-              <h2 id="products-heading">Produtos</h2>
+              <h2 id="products-heading">Ponteiras e sapatas por tipo de encaixe</h2>
             </>
           )}
         </div>
@@ -211,7 +215,7 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
                   />
                 )}
                 <div className="category-card__body">
-                  <h2>{category.name}</h2>
+                  <h2>{category.publicName || category.name}</h2>
                   <p>{category.description}</p>
                   <div className="meta-list">
                     <span>{category.primaryFixation}</span>

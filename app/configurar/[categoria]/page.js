@@ -19,7 +19,7 @@ export async function generateMetadata({ params }) {
   }
 
   return buildPageMetadata({
-    title: `Configurar ${category.name}`,
+    title: category.seoTitle || `${category.publicName || category.name} sob medida`,
     description: category.description,
     path: `/configurar/${category.slug}`,
     image: getConfiguratorOgImage(category.slug)
@@ -37,7 +37,7 @@ export default async function ConfigurePage({ params, searchParams }) {
 
   return (
     <>
-      <Breadcrumbs items={buildCatalogTrail(category.name, `/configurar/${category.slug}`)} />
+      <Breadcrumbs items={buildCatalogTrail(category.publicName || category.name, `/configurar/${category.slug}`)} />
       <ProductConfigurator category={category} initialFormatSlug={resolvedSearchParams?.formato} />
     </>
   );

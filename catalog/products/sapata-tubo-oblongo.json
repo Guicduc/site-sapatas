@@ -34,13 +34,13 @@
   "drawingType": "tube-oblong",
   "ui": {
     "fixation": "press-fit interno",
-    "summaryName": "Sapata interna tubo oblongo",
+    "summaryName": "Ponteira interna para tubo oblongo",
     "applications": ["cadeiras", "móveis importados", "reposição especial"]
   },
   "visuals": [
-    { "role": "family", "src": "/products/final/sapata-tubo-oblongo-family.png", "alt": "Família de sapatas para tubo oblongo em diferentes medidas e cores" },
-    { "role": "product", "src": "/products/final/sapata-tubo-oblongo-product.png", "alt": "Sapata para tubo oblongo em vista de produto final" },
-    { "role": "manual", "src": "/products/final/manual-sapata-tubo-oblongo.png", "alt": "Sequência de instalação da sapata para tubo oblongo" }
+    { "role": "family", "src": "/products/final/sapata-tubo-oblongo-family.png", "alt": "Ponteiras internas para tubo oblongo (oval) em diferentes medidas e cores" },
+    { "role": "product", "src": "/products/final/sapata-tubo-oblongo-product.png", "alt": "Ponteira interna para tubo oblongo, vista do produto" },
+    { "role": "manual", "src": "/products/final/manual-sapata-tubo-oblongo.png", "alt": "Sequência de instalação da ponteira interna no tubo oblongo" }
   ],
   "notes": ["Informe largura e altura externas do perfil; a parede determina o vão interno disponível."],
   "parameters": [

@@ -2,13 +2,9 @@ import { Suspense } from "react";
 
 import { SpecialRequestBuilder } from "@/components/special-request-builder";
 import { buildPageMetadata } from "@/lib/page-metadata";
+import { pageSeo } from "@/lib/seo-copy";
 
-export const metadata = buildPageMetadata({
-  title: "Projeto especial de sapatas",
-  description:
-    "Descreva a necessidade de uma sapata ou peça que não está disponível no catálogo da Baseforma.",
-  path: "/projeto-especial"
-});
+export const metadata = buildPageMetadata(pageSeo.projetoEspecial);
 
 export default function ProjetoEspecialPage() {
   return (
@@ -16,17 +12,17 @@ export default function ProjetoEspecialPage() {
       <section className="special-request-hero">
         <div className="special-request-hero__title">
           <p className="eyebrow">Projeto especial</p>
-          <h1>Uma peça fora do catálogo começa com um briefing bem definido.</h1>
+          <h1>Projeto especial: ponteiras e sapatas personalizadas</h1>
         </div>
         <div className="special-request-hero__intro">
           <p className="lead">
-            Conte onde a peça será usada, quais medidas importam e o que as opções atuais ainda
-            não resolvem. A Baseforma avalia o caso e retorna por e-mail com o caminho de
-            desenvolvimento.
+            Precisa de uma ponteira fora do catálogo, de uma peça de reposição que saiu de linha ou
+            de um lote para a sua fábrica? Conte onde a peça será usada, quais medidas importam e o
+            que as opções atuais não resolvem. A Baseforma avalia o caso e responde por e-mail.
           </p>
           <p className="special-request-hero__note">
-            Indicado para novas geometrias, encaixes específicos e aplicações com requisitos
-            técnicos fora da matriz atual.
+            Indicado para novas geometrias, encaixes específicos, medidas fora da faixa do
+            configurador e lotes para marcenarias, serralherias e fábricas de móveis.
           </p>
         </div>
       </section>

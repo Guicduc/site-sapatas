@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FamilyGuide } from "@/components/family-guide";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { FamilyCard } from "@/components/family-card";
@@ -93,7 +94,7 @@ export default async function FamilyPage({ params }) {
               <p>{family.defaultMaterial}</p>
             </article>
             <article className="surface-card spec-card">
-              <strong>Lead time</strong>
+              <strong>Prazo de produção</strong>
               <p>{family.leadTimeDays} dias úteis</p>
             </article>
             <article className="surface-card spec-card">
@@ -134,7 +135,7 @@ export default async function FamilyPage({ params }) {
                     <th>Altura</th>
                     <th>Cor</th>
                     <th>Preço</th>
-                    <th>Lead time</th>
+                    <th>Prazo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -183,12 +184,14 @@ export default async function FamilyPage({ params }) {
                 className="button button-secondary button-block"
                 href={`/projeto-especial?family=${family.slug}`}
               >
-                Pedir medida fora da matriz
+                Pedir medida fora da faixa
               </Link>
             </div>
           </div>
         </aside>
       </section>
+
+      <FamilyGuide family={family} />
 
       <section className="grid-two">
         <article className="surface-card faq-column">
