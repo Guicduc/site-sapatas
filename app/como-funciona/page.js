@@ -76,11 +76,6 @@ export default function ComoFuncionaPage() {
             <li>a quantidade de peças e a cor</li>
             <li>o CEP de entrega e o CPF ou CNPJ para a nota fiscal</li>
           </ul>
-          <p>
-            Dúvida na medição? Veja o{" "}
-            <Link href="/guias/como-medir-tubo-para-ponteira">guia de como medir o tubo</Link> e
-            a <Link href="/guias/tabela-medidas-tubo-metalon">tabela de medidas</Link>.
-          </p>
         </article>
 
         <article className="surface-card panel-copy">

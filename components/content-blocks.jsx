@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import styles from "./content-blocks.module.css";
 
-// Blocos de texto editorial usados pelos guias (/guias) e pelo guia de cada familia.
+// Blocos de texto editorial usados pelo guia de cada familia.
 // Um "texto rico" e uma string ou um array de trechos (string ou link interno { href, label }).
 
 export function RichText({ value }) {

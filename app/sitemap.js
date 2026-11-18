@@ -1,5 +1,4 @@
 import { productCategories } from "../lib/configurator-data.js";
-import { guidePath, guides } from "../lib/guides.js";
 import { families, siteUrl } from "../lib/site-data.js";
 
 // Sem lastModified: nao ha fonte confiavel de data de alteracao por pagina
@@ -39,13 +38,7 @@ export default function sitemap() {
     )
   }));
 
-  const guidePages = ["/guias", ...guides.map((guide) => guidePath(guide.slug))].map((path) => ({
-    url: `${siteUrl}${path}`,
-    changeFrequency: "monthly",
-    priority: 0.6
-  }));
-
-  return [...staticPages, ...familyPages, ...configuratorPages, ...guidePages];
+  return [...staticPages, ...familyPages, ...configuratorPages];
 }
 
 function toAbsoluteImageUrls(images = []) {

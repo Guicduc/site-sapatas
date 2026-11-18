@@ -23,14 +23,12 @@ const faqSections = [
       {
         question: "Como devo medir antes de configurar?",
         answer:
-          "Meça a peça real com paquímetro, não a medida nominal do móvel. Em tubos, informe a medida externa e a espessura da parede: o configurador calcula o vão interno. Em pés planos, meça a face que toca o piso.",
-        link: { href: "/guias/como-medir-tubo-para-ponteira", label: "Guia: como medir o tubo" }
+          "Meça a peça real com paquímetro, não a medida nominal do móvel. Em tubos, informe a medida externa e a espessura da parede: o configurador calcula o vão interno. Em pés planos, meça a face que toca o piso."
       },
       {
         question: "Qual a diferença entre ponteira interna e externa?",
         answer:
-          "A ponteira interna entra no tubo e a externa veste o tubo por fora. A Baseforma fabrica ponteiras internas, feitas para a medida externa e a parede do seu tubo.",
-        link: { href: "/guias/ponteira-interna-ou-externa", label: "Guia: ponteira interna ou externa" }
+          "A ponteira interna entra no tubo e a externa veste o tubo por fora. A Baseforma fabrica ponteiras internas, feitas para a medida externa e a parede do seu tubo."
       },
       {
         question: "Qual é o limite de medida?",
@@ -106,8 +104,7 @@ const faqSections = [
       {
         question: "A ponteira risca o piso?",
         answer:
-          "A ponteira inteira e bem encaixada mantém o metal longe do piso. O que costuma riscar é metal exposto, quando a ponteira cai ou gasta, e areia presa sob o pé.",
-        link: { href: "/guias/cadeira-riscando-o-piso", label: "Guia: cadeira riscando o piso" }
+          "A ponteira inteira e bem encaixada mantém o metal longe do piso. O que costuma riscar é metal exposto, quando a ponteira cai ou gasta, e areia presa sob o pé."
       },
       {
         question: "Quais cores estão disponíveis?",

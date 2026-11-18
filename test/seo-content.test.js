@@ -1,14 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import sitemap from "../app/sitemap.js";
 import categoriesDocument from "../catalog/categories.json" with { type: "json" };
 import { productCategories } from "../lib/configurator-data.js";
 import { familyGuides, manifestFamilyCopy } from "../lib/family-content.js";
-import { guidePath, guides } from "../lib/guides.js";
 import { withBrandSuffix } from "../lib/page-metadata.js";
 import { pageSeo } from "../lib/seo-copy.js";
-import { families, siteUrl } from "../lib/site-data.js";
+import { families } from "../lib/site-data.js";
 
 const MAX_TITLE = 60;
 const MAX_DESCRIPTION = 155;
@@ -50,12 +48,6 @@ const indexablePages = [
     title: category.seoTitle,
     description: category.description,
     heading: category.heading
-  })),
-  ...guides.map((guide) => ({
-    label: `guia ${guide.slug}`,
-    title: guide.title,
-    description: guide.description,
-    heading: guide.heading
   }))
 ];
 
@@ -112,24 +104,6 @@ test("toda familia tem guia proprio, categoria de produto e FAQs", () => {
   }
 });
 
-test("todo guia tem os campos obrigatorios e aparece no sitemap", () => {
-  const urls = new Set(sitemap().map((entry) => entry.url));
-  const slugs = guides.map((guide) => guide.slug);
-
-  assert.ok(guides.length >= 4, "publique ao menos 4 guias");
-  assert.equal(new Set(slugs).size, slugs.length, "slugs de guia repetidos");
-  assert.ok(urls.has(`${siteUrl}/guias`), "indice /guias fora do sitemap");
-
-  for (const guide of guides) {
-    assert.match(guide.slug, /^[a-z0-9]+(-[a-z0-9]+)*$/, `${guide.slug}: slug invalido`);
-    assert.ok(guide.title && guide.description && guide.heading && guide.lead, guide.slug);
-    assert.match(guide.datePublished, /^\d{4}-\d{2}-\d{2}$/, `${guide.slug}: datePublished`);
-    assert.ok(guide.sections.length >= 3, `${guide.slug}: poucas secoes`);
-    assert.ok(guide.cta?.length > 0, `${guide.slug}: sem chamada para o configurador`);
-    assert.ok(urls.has(`${siteUrl}${guidePath(guide.slug)}`), `${guide.slug}: fora do sitemap`);
-  }
-});
-
 function collectLinks(value, found = []) {
   if (Array.isArray(value)) {
     value.forEach((item) => collectLinks(item, found));
@@ -142,25 +116,17 @@ function collectLinks(value, found = []) {
   return found;
 }
 
-test("links internos dos guias e das familias apontam para rotas existentes", () => {
+test("links internos das familias apontam para rotas existentes", () => {
   const routes = new Set([
     "/catalogo",
     "/projeto-especial",
-    "/guias",
     ...families.map((family) => family.url),
-    ...productCategories.map((category) => `/configurar/${category.slug}`),
-    ...guides.map((guide) => guidePath(guide.slug))
+    ...productCategories.map((category) => `/configurar/${category.slug}`)
   ]);
-  const hrefs = collectLinks([guides, familyGuides]);
+  const hrefs = collectLinks(familyGuides);
 
   assert.ok(hrefs.length > 0);
   for (const href of hrefs) {
     assert.ok(routes.has(href), `link interno quebrado: ${href}`);
-  }
-
-  for (const guide of Object.values(familyGuides)) {
-    for (const slug of guide.guides || []) {
-      assert.ok(guides.some((item) => item.slug === slug), `guia relacionado inexistente: ${slug}`);
-    }
   }
 });
