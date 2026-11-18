@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -77,19 +78,42 @@ const moodIcons = {
   )
 };
 
+// Coluna de midia do hero: metade do conteudo (max 1500px) no desktop, largura total ate 980px.
+const HERO_IMAGE_SIZES = "(max-width: 980px) 100vw, (max-width: 1540px) 50vw, 740px";
+
 export function ProductCatalog({ categories, catalogOnly = false }) {
   const [heroIndex, setHeroIndex] = useState(0);
+  // So a 1a foto do hero entra no HTML inicial (LCP); as demais sao montadas depois do load.
+  const [heroQueueReady, setHeroQueueReady] = useState(false);
+  // No /catalogo o 1o card fica acima da dobra e costuma ser o LCP.
+  const priorityCardSlug = catalogOnly ? categories[0]?.slug : null;
 
   useEffect(() => {
     if (catalogOnly || homeHeroImages.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return undefined;
     }
 
+    let queueTimer;
+    const mountQueue = () => {
+      queueTimer = window.setTimeout(() => setHeroQueueReady(true), 1500);
+    };
+
+    if (document.readyState === "complete") {
+      mountQueue();
+    } else {
+      window.addEventListener("load", mountQueue, { once: true });
+    }
+
     const timer = window.setInterval(() => {
+      setHeroQueueReady(true);
       setHeroIndex((current) => (current + 1) % homeHeroImages.length);
     }, 6500);
 
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(queueTimer);
+      window.removeEventListener("load", mountQueue);
+    };
   }, [catalogOnly]);
 
   return (
@@ -104,16 +128,23 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
               </p>
             </div>
             <div className="shop-hero__media" aria-label="Imagens de produtos Baseforma">
-              {homeHeroImages.map((image, index) => (
-                <img
-                  className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
-                  key={image.src}
-                  src={image.src}
-                  style={{ "--hero-image-position": image.objectPosition }}
-                  alt={index === heroIndex ? image.alt : ""}
-                  aria-hidden={index === heroIndex ? undefined : "true"}
-                />
-              ))}
+              {homeHeroImages.map((image, index) =>
+                index === heroIndex || heroQueueReady ? (
+                  <Image
+                    className={`shop-hero__image${index === heroIndex ? " is-active" : ""}`}
+                    key={image.src}
+                    src={image.src}
+                    style={{ "--hero-image-position": image.objectPosition }}
+                    alt={image.alt}
+                    aria-hidden={index === heroIndex ? undefined : "true"}
+                    fill
+                    sizes={HERO_IMAGE_SIZES}
+                    preload={index === 0}
+                    fetchPriority={index === 0 ? "high" : undefined}
+                    loading={index === 0 ? undefined : "lazy"}
+                  />
+                ) : null
+              )}
             </div>
           </div>
 
@@ -176,6 +207,7 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
                     images={cardImages}
                     label={`Fotos de ${category.name}`}
                     aspectRatio="1.65 / 1"
+                    priority={category.slug === priorityCardSlug}
                   />
                 )}
                 <div className="category-card__body">
