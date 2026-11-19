@@ -14,7 +14,7 @@ Este documento registra o inventario tecnico verificado em 13/07/2026 e a regra 
 
 | Nome | Tecnologia | Finalidade | Criacao | Prazo |
 | --- | --- | --- | --- | --- |
-| `baseforma-admin` | cookie HttpOnly, SameSite=Lax | sessao administrativa | login em `/admin` | 12 horas |
+| `baseforma-admin` | cookie HttpOnly, SameSite=Lax, Secure em producao | sessao administrativa | login em `/admin` | 180 dias, renovados com o uso |
 | `baseforma-account` | cookie HttpOnly, SameSite=Lax, Secure em producao, Priority=High | sessao da conta do cliente; token opaco, apenas hash persistido | confirmacao do codigo ou senha | 30 dias |
 | `baseforma-order-access` | cookie HttpOnly, SameSite=Lax | acesso temporario ao pedido criado | `POST /api/orders` | 2 horas |
 | `baseforma-cart` | localStorage | persistencia do carrinho | uso do configurador/carrinho | ate limpeza do navegador |

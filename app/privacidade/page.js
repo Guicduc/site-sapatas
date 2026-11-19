@@ -19,7 +19,7 @@ const storageItems = [
     name: "baseforma-admin",
     type: "Cookie HttpOnly",
     purpose: "Mantém a sessão da área administrativa depois do acesso autorizado.",
-    duration: "12 horas"
+    duration: "180 dias, renovados com o uso"
   },
   {
     name: "baseforma-account",

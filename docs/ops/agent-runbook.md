@@ -27,7 +27,8 @@ Use este arquivo no inicio de sessoes futuras antes de alterar checkout, pedidos
 - O checkout exige CPF/CNPJ do cliente (validado no servidor) porque a NF-e exige documento do destinatario.
 - Com a automacao ativa e sem `FOCUS_NFE_TOKEN`, a NF fica `api_pending` e o health check indica a pendencia; registro manual no admin e contingencia.
 - O adaptador `INVOICE_PROVIDER=mercado_pago` (endpoint fiscal MP) permanece dormente; o Mercado Pago nao tem API publica de NF-e.
-- O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`.
+- O admin usa `/admin` para criar sessao assinada por cookie HttpOnly; Server Actions administrativas devem validar acesso com `assertAdminAccess`. A sessao dura 180 dias e se renova com o uso; para encerrar todas de uma vez (aparelho perdido, troca de operador), troque `ADMIN_ACCESS_TOKEN` ou `ADMIN_SESSION_SECRET`.
+- Arquivar um pedido no admin (`lib/order-archive.js`) e so organizacao de lista: nao cancela pedido, pagamento ou NF e nao deve ser usado como status operacional.
 - A API externa de producao usa somente `PRODUCTION_SYSTEM_TOKEN`; nunca aceite o token/cookie humano do admin nessa fronteira.
 - `print_jobs` permanece ativo ate auditoria, migracao e corte. Preserve `production_work_routes` para nao duplicar o mesmo pedido entre a ponte e o sistema externo.
 
