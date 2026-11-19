@@ -60,7 +60,8 @@ export default async function AdminLoginPage({ searchParams }) {
       </form>
 
       <p className="admin-note">
-        O token nao fica na URL apos o login. A sessao expira automaticamente.
+        O token nao fica na URL apos o login. A sessao permanece ativa neste navegador por 180 dias
+        e se renova com o uso. Em computador compartilhado, use Sair ao terminar.
       </p>
       <Link className="button button-secondary" href="/">
         Voltar ao site

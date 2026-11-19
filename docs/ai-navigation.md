@@ -32,11 +32,11 @@ Links internos para SEO: os cards do catalogo, o configurador (formato atual) e 
 
 ## Rotas administrativas
 
-- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, fila manual de nota fiscal, com automacao Focus NFe pausada e expedicao.
+- `/admin/pedidos`: lista pedidos, pagamentos, fila de impressao, fila manual de nota fiscal, com automacao Focus NFe pausada e expedicao. A aba "Arquivados" (`?fila=arquivados`) guarda os pedidos retirados das listas.
 - `/admin/relatorios`: indicadores basicos de receita, status, pagamentos, origem e pedidos recentes.
 - `/admin/operacao`: fila de producao, capacidade, fila manual de nota fiscal, com automacao Focus NFe pausada, expedicao e observacoes internas.
-- `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly.
-- `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`.
+- `/admin`: login operacional. `ADMIN_ACCESS_TOKEN` inicia uma sessao assinada em cookie HttpOnly, valida por 180 dias e renovada com o uso.
+- `lib/admin-session.js`: centraliza validacao de token, sessao e links administrativos. Server Actions devem chamar `assertAdminAccess`; as que gravam pedidos tambem chamam `renewAdminSession`. A assinatura da sessao inclui a impressao digital de `ADMIN_ACCESS_TOKEN`: trocar o token ou `ADMIN_SESSION_SECRET` encerra todas as sessoes abertas.
 
 ## APIs
 
@@ -134,6 +134,7 @@ O total de familias/produtos ativos deve ser derivado dos manifests ativos em `c
 - A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
 - `app/admin/orders-workspace.jsx`: ficha unica em todos os filtros; formularios independentes para producao, NF e expedicao. O filtro `atencao` reune revisoes, bloqueios e alertas de pagamento. Jobs de arquivos, dados CAD e ajustes de prioridade ficam recolhidos.
 - `app/admin/admin.css`, `components/admin-top-bar.jsx`, `components/admin-stage-tabs.jsx` e `components/admin-submit-button.jsx`: interface visual isolada da loja, navegacao responsiva e feedback de envio. O resumo de andamento mostra pendencias; "Expedidos" nao presume entrega confirmada.
+- `lib/order-archive.js`: arquivamento administrativo. O marcador fica em `orders.metadata.adminArchive` (sem migration) e so tira o pedido das listas e contadores de `/admin/pedidos`; nao cancela pedido, pagamento ou NF, nao muda a conta do cliente nem `/admin/relatorios`. O marcador guarda a situacao do pagamento: se ela mudar depois (boleto pago, reembolso, revisao ou alerta), o pedido volta sozinho as listas. `listOrders({ archive })` filtra pelo marcador e `setOrderArchived` grava sob lock.
 - `lib/admin-order-workflow.js`: opcoes manuais de status, elegibilidade por etapa e patches de formulario. O store executa o montador sob lock e verifica o timestamp da secao antes de gravar; estados de integracoes e campos omitidos sao preservados.
 
 ## Pedidos e persistencia

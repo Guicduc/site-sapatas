@@ -7,7 +7,7 @@ import { AdminStageTabs } from "@/components/admin-stage-tabs";
 import { AdminSubmitButton } from "@/components/admin-submit-button";
 import { AdminTopBar } from "@/components/admin-top-bar";
 import { CopyJsonButton } from "@/components/copy-json-button";
-import { adminHref, assertAdminAccess, getAdminAccess } from "@/lib/admin-session";
+import { adminHref, assertAdminAccess, getAdminAccess, renewAdminSession } from "@/lib/admin-session";
 import {
   ADMIN_PRODUCTION_OPTIONS,
   ADMIN_SHIPMENT_OPTIONS,
@@ -43,9 +43,11 @@ import {
 } from "@/lib/invoice-provider";
 import { deliverShipmentNotification } from "@/lib/shipment-notification";
 import { getShipmentNotificationErrorMessage } from "@/lib/shipment-notification-policy";
+import { getOrderArchive, splitArchivedOrders, wasOrderReactivated } from "@/lib/order-archive";
 import {
   getOrderById,
   listOrders,
+  setOrderArchived,
   updateOrderFulfillmentState
 } from "@/lib/order-store";
 import { ORDER_STATUS, PAYMENT_STATUS, getPaymentStatusLabel } from "@/lib/order-status";
@@ -66,8 +68,12 @@ const FILTERS = [
   { id: "impressao", label: "Produção" },
   { id: "notafiscal", label: "NF a emitir" },
   { id: "expedicao", label: "Expedição" },
-  { id: "concluidos", label: "Expedidos" }
+  { id: "concluidos", label: "Expedidos" },
+  { id: "arquivados", label: "Arquivados" }
 ];
+
+// Filtros em que o pedido ainda pede trabalho; arquivar o tira dessas filas.
+const OPEN_WORK_FILTERS = ["atencao", "impressao", "notafiscal", "expedicao"];
 
 const SECTION_LABELS = {
   production: "Produção",
@@ -84,20 +90,27 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
 
   const activeFilter = normalizeFilter(searchParams?.fila || searchParams?.tab || defaultFilter);
   const query = cleanFormValue(searchParams?.q).slice(0, 80);
-  const [orders, printJobs] = await Promise.all([
-    listOrders({ limit: 200 }),
+  const [{ active: orders, archived: archivedOrders }, printJobs] = await Promise.all([
+    listAdminOrders(),
     listPrintJobs({ limit: 200 })
   ]);
   const queue = buildProductionQueue(orders.filter((order) => isPrintQueueRelevant(order, normalizeFulfillment(order))));
   const rows = buildOrderRows(orders, queue);
+  // Arquivados ficam fora da fila, dos contadores e de todos os outros filtros.
+  const archivedRows = buildOrderRows(archivedOrders, [], { archived: true });
+  const allRows = [...rows, ...archivedRows];
   const printQueueRows = buildPrintQueueRows(rows);
   const printJobSummary = summarizePrintJobs(printJobs);
-  const counts = countFilters(rows);
-  const stageRows = activeFilter === "impressao" ? printQueueRows : rows.filter((row) => row.filters.includes(activeFilter));
+  const counts = countFilters(allRows);
+  const stageRows = activeFilter === "impressao" ? printQueueRows : allRows.filter((row) => row.filters.includes(activeFilter));
   const filteredRows = query ? stageRows.filter((row) => matchesQuery(row.order, query)) : stageRows;
+  const archivedMatches = query && activeFilter !== "arquivados"
+    ? archivedRows.filter((row) => matchesQuery(row.order, query)).length
+    : 0;
   const invoiceConfig = getInvoiceConfig();
   const activeLabel = FILTERS.find((filter) => filter.id === activeFilter)?.label || "Todos";
   const selectedOrderId = searchParams?.pedido;
+  const selectedRow = allRows.find((row) => row.order.id === selectedOrderId);
   const selectedVisible = filteredRows.some((row) => row.order.id === selectedOrderId);
   const feedback = { error: searchParams?.erro, saved: searchParams?.salvo };
 
@@ -163,6 +176,18 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
             Pedidos já despachados. Após conferir a entrega, abra o pedido e use “Confirmar entrega” em Expedição. Confira também as pendências de cada pedido.
           </p>
         )}
+        {activeFilter === "arquivados" && (
+          <p className="aw-filter-hint">
+            Pedidos arquivados ficam fora das filas e dos contadores. Arquivar não cancela pedido, pagamento ou nota fiscal, e o cliente continua vendo o pedido na conta. Se o pagamento mudar, o pedido volta sozinho às listas.
+          </p>
+        )}
+        {archivedMatches > 0 && (
+          <p className="aw-filter-hint">
+            <Link href={adminHref(`/admin/pedidos?fila=arquivados&q=${encodeURIComponent(query)}`)}>
+              {archivedMatches} {archivedMatches === 1 ? "pedido arquivado corresponde" : "pedidos arquivados correspondem"} a “{query}”
+            </Link>
+          </p>
+        )}
 
         {feedback.error && !selectedVisible && (
           <p className="aw-alert aw-alert--danger" role="alert">{getOperationErrorMessage(feedback.error)}</p>
@@ -170,7 +195,13 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
         {!feedback.error && !selectedVisible && SECTION_LABELS[feedback.saved] && (
           <p className="aw-alert aw-alert--success" role="status">
             {SECTION_LABELS[feedback.saved]} salva. O pedido foi atualizado e saiu desta lista.{" "}
-            <Link href={adminHref(`/admin/pedidos?pedido=${encodeURIComponent(selectedOrderId || "")}`)}>Ver pedido atualizado</Link>
+            <Link href={adminHref(`/admin/pedidos?fila=${selectedRow?.archived ? "arquivados" : "todos"}&pedido=${encodeURIComponent(selectedOrderId || "")}`)}>Ver pedido atualizado</Link>
+          </p>
+        )}
+        {!feedback.error && feedback.saved === "arquivado" && selectedRow?.archived && activeFilter !== "arquivados" && (
+          <p className="aw-alert aw-alert--success" role="status">
+            Pedido <span className="aw-mono">{selectedRow.order.orderNumber}</span> arquivado. Ele saiu das listas e dos contadores.{" "}
+            <Link href={adminHref(`/admin/pedidos?fila=arquivados&pedido=${encodeURIComponent(selectedOrderId)}#order-${encodeURIComponent(selectedOrderId)}`)}>Ver em Arquivados</Link>
           </p>
         )}
 
@@ -186,11 +217,13 @@ export async function AdminOrdersWorkspace({ searchParams, defaultFilter = "todo
 
         {filteredRows.length === 0 ? (
           <div className="aw-empty">
-            <h2>{query ? "Nenhum pedido encontrado." : "Nenhum pedido nesta etapa."}</h2>
+            <h2>{query ? "Nenhum pedido encontrado." : activeFilter === "arquivados" ? "Nenhum pedido arquivado." : "Nenhum pedido nesta etapa."}</h2>
             <p>
               {query
                 ? <>Nenhum pedido em {activeLabel.toLowerCase()} corresponde a “{query}”.</>
-                : <>Quando um pedido entrar em {getFilterEmptyLabel(activeFilter)}, ele aparecerá nesta lista.</>}
+                : activeFilter === "arquivados"
+                  ? <>Para tirar um pedido das listas, abra a ficha e use “Arquivar pedido”.</>
+                  : <>Quando um pedido entrar em {getFilterEmptyLabel(activeFilter)}, ele aparecerá nesta lista.</>}
             </p>
           </div>
         ) : (
@@ -318,7 +351,9 @@ function GrasshopperSection({ order }) {
 }
 
 function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrderId, feedback }) {
-  const { order, fulfillment } = row;
+  const { order, fulfillment, archived } = row;
+  const archive = getOrderArchive(order);
+  const hasOpenWork = row.filters.some((filter) => OPEN_WORK_FILTERS.includes(filter));
   const payment = order.payments?.[0];
   const stage = getOrderStage(row);
   const steps = getFulfillmentSteps(row);
@@ -327,13 +362,25 @@ function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrde
   const invoiceFocus = activeFilter === "notafiscal" && needsInvoiceIssue(order, fulfillment)
     && canEditAdminOrderSection(order, "invoice");
   const primarySection = invoiceFocus ? "invoice" : getPrimarySection(row);
-  const nextAction = invoiceFocus && !isCompleted(order, fulfillment)
-    ? {
-      tone: "warning",
-      title: isAutomatedInvoiceProvider(invoiceConfig.provider) ? "Conferir emissão da NF" : "Emitir e registrar NF",
-      detail: "Confira a emissão no emissor e registre número, série e chave neste pedido."
+  const nextAction = getCardNextAction();
+
+  function getCardNextAction() {
+    if (archived) {
+      return {
+        tone: "info",
+        title: "Pedido arquivado",
+        detail: `Fora das listas operacionais desde ${formatDateTime(archive?.archivedAt)}. Desarquive para retomar o atendimento.`
+      };
     }
-    : row.nextAction;
+    if (invoiceFocus && !isCompleted(order, fulfillment)) {
+      return {
+        tone: "warning",
+        title: isAutomatedInvoiceProvider(invoiceConfig.provider) ? "Conferir emissão da NF" : "Emitir e registrar NF",
+        detail: "Confira a emissão no emissor e registre número, série e chave neste pedido."
+      };
+    }
+    return row.nextAction;
+  }
   const commerce = order.metadata?.commerce;
 
   return (
@@ -380,6 +427,19 @@ function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrde
             <p className="aw-alert aw-alert--success" role="status">
               {SECTION_LABELS[feedback.saved]} salva. Os dados abaixo já estão atualizados.
             </p>
+          )}
+          {!feedback?.error && feedback?.saved === "desarquivado" && !archived && (
+            <p className="aw-alert aw-alert--success" role="status">
+              Pedido desarquivado. Ele voltou às listas operacionais.
+            </p>
+          )}
+          {wasOrderReactivated(order) && (
+            <p className="aw-alert aw-alert--warning" role="status">
+              Este pedido estava arquivado e voltou às listas porque o pagamento mudou depois do arquivamento. Confira a situação antes de arquivar de novo.
+            </p>
+          )}
+          {archived && (
+            <ArchiveForm order={order} access={access} activeFilter={activeFilter} archive={false} />
           )}
 
           <OperationForms
@@ -452,6 +512,21 @@ function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrde
                   <div><dt>Pagamento</dt><dd className="aw-mono">{order.metadata?.paymentReview?.providerPaymentId || payment?.providerPaymentId || "N/A"}</dd></div>
                   <div><dt>Status</dt><dd>{pt(getPaymentStatusLabel(payment?.status || order.paymentStatus))}</dd></div>
                 </dl>
+              </details>
+            )}
+
+            {!archived && (
+              <details className="aw-disclosure">
+                <summary><span>Arquivar pedido</span></summary>
+                <p className="aw-note">
+                  Tira o pedido das listas e dos contadores do painel. Não cancela pedido, pagamento nem nota fiscal, e o cliente continua vendo o pedido na conta. Ele fica na aba Arquivados e pode ser desarquivado a qualquer momento.
+                </p>
+                {hasOpenWork && (
+                  <p className="aw-alert aw-alert--warning">
+                    Este pedido ainda tem pendências de produção, nota fiscal, expedição ou conferência. Arquivado, ele some dessas filas.
+                  </p>
+                )}
+                <ArchiveForm order={order} access={access} activeFilter={activeFilter} archive />
               </details>
             )}
           </div>
@@ -836,6 +911,23 @@ function buildManualInvoiceSheet(order, invoiceConfig) {
   }
 }
 
+function ArchiveForm({ order, access, activeFilter, archive }) {
+  return (
+    <form className="aw-form aw-form--inline" action={updateOrderArchive}>
+      <input type="hidden" name="orderId" value={order.id} />
+      <input type="hidden" name="token" value={access.token} />
+      <input type="hidden" name="filter" value={activeFilter} />
+      <input type="hidden" name="archive" value={archive ? "1" : "0"} />
+      <AdminSubmitButton
+        className="aw-button aw-button--quiet"
+        pendingLabel={archive ? "Arquivando…" : "Desarquivando…"}
+      >
+        {archive ? "Arquivar pedido" : "Desarquivar pedido"}
+      </AdminSubmitButton>
+    </form>
+  );
+}
+
 function InvoiceRequestForm({ order, access, providerLabel }) {
   return (
     <form className="aw-form aw-form--inline" action={requestAutomatedInvoice}>
@@ -889,6 +981,7 @@ async function updateOperation(formData) {
   "use server";
 
   await assertAdminAccess(cleanFormValue(formData.get("token")));
+  await renewAdminSession();
   const orderId = cleanFormValue(formData.get("orderId"));
   const section = cleanFormValue(formData.get("section"));
   const filter = normalizeFilter(formData.get("filter"));
@@ -911,6 +1004,26 @@ async function updateOperation(formData) {
   redirect(adminHref(`/admin/pedidos?fila=${filter}&pedido=${selected}${outcome}#order-${selected}`));
 }
 
+async function updateOrderArchive(formData) {
+  "use server";
+
+  await assertAdminAccess(cleanFormValue(formData.get("token")));
+  await renewAdminSession();
+  const orderId = cleanFormValue(formData.get("orderId"));
+  const archive = cleanFormValue(formData.get("archive")) === "1";
+  const filter = normalizeFilter(formData.get("filter"));
+  const updatedOrder = orderId ? await setOrderArchived(orderId, archive) : null;
+  revalidateAdminOrderPaths();
+  const selected = encodeURIComponent(orderId);
+  if (!updatedOrder) {
+    redirect(adminHref(`/admin/pedidos?fila=${filter}&pedido=${selected}&erro=admin_operation_unavailable`));
+  }
+  // Arquivado, o pedido sai da lista atual; desarquivado, volta para "Todos".
+  redirect(adminHref(archive
+    ? `/admin/pedidos?fila=${filter}&pedido=${selected}&salvo=arquivado`
+    : `/admin/pedidos?fila=todos&pedido=${selected}&salvo=desarquivado#order-${selected}`));
+}
+
 function getOperationErrorMessage(code) {
   if (code === "admin_operation_stale") return "Este pedido mudou desde que a ficha foi aberta. Confira os dados atualizados e salve novamente.";
   if (code === "admin_operation_invalid_status") return "Selecione um status operacional válido.";
@@ -928,7 +1041,7 @@ async function syncPrintFileJobs(formData) {
     return;
   }
 
-  const orders = await listOrders({ limit: 200 });
+  const { active: orders } = await listAdminOrders();
   await syncSiteOrderPrintJobs(orders);
   revalidateAdminOrderPaths();
 }
@@ -991,7 +1104,22 @@ async function cancelAutomatedInvoice(formData) {
   revalidateAdminOrderPaths();
 }
 
-function buildOrderRows(orders, queue) {
+// Pedidos do painel separados em ativos e arquivados. As duas consultas tem
+// limite proprio, para que arquivados nao ocupem a janela dos pedidos ativos.
+// Um pedido marcado cujo pagamento mudou volta para os ativos.
+async function listAdminOrders() {
+  const [unmarked, marked] = await Promise.all([
+    listOrders({ limit: 200, archive: "exclude" }),
+    listOrders({ limit: 200, archive: "only" })
+  ]);
+  const { active: reactivated, archived } = splitArchivedOrders(marked);
+  const active = reactivated.length
+    ? [...unmarked, ...reactivated].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : unmarked;
+  return { active, archived };
+}
+
+function buildOrderRows(orders, queue, { archived = false } = {}) {
   const queueByOrderId = new Map(queue.map((item) => [item.order.id, item]));
 
   return orders.map((order) => {
@@ -1000,13 +1128,14 @@ function buildOrderRows(orders, queue) {
     const row = {
       order,
       fulfillment,
+      archived,
       queuePosition: queued?.queuePosition || null,
       capacity: queued?.capacity || null
     };
     return {
       ...row,
       nextAction: getNextOrderAction(row),
-      filters: getRowFilters(row)
+      filters: archived ? ["arquivados"] : getRowFilters(row)
     };
   });
 }
@@ -1445,7 +1574,8 @@ function getFilterEmptyLabel(filter) {
     impressao: "produção",
     expedicao: "expedição",
     notafiscal: "nota fiscal a emitir",
-    concluidos: "expedidos"
+    concluidos: "expedidos",
+    arquivados: "arquivados"
   };
   return labels[filter] || "pedidos";
 }
