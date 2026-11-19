@@ -30,6 +30,7 @@ import {
   PRODUCTION_STATUS,
   SHIPMENT_STATUS,
 } from "@/lib/fulfillment";
+import { colorMap } from "@/lib/brand-colors";
 import { formatBrTaxDocument } from "@/lib/br-tax-document";
 import { buildFocusNfePayload } from "@/lib/focus-nfe";
 import { formatCurrency } from "@/lib/format";
@@ -296,6 +297,7 @@ function GrasshopperSection({ order }) {
           <article className="aw-cad__item" key={item.id}>
             <div className="aw-cad__item-head">
               <strong>{formatProductName(item)}</strong>
+              <ColorChip color={item.color} compact />
               <span>{item.quantity} un.</span>
             </div>
             <dl className="aw-kv">
@@ -344,6 +346,7 @@ function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrde
         <span className="aw-row__order">
           <strong className="aw-mono">{order.orderNumber}</strong>
           <small>{productSummary}</small>
+          <OrderColorSummary items={order.items} />
         </span>
         <span className="aw-row__customer">
           <span>{order.customer.name || "Sem nome"}</span>
@@ -401,6 +404,7 @@ function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrde
                         <strong>{formatProductName(item)}</strong>
                         <small className="aw-mono">{item.sku}</small>
                       </div>
+                      <ColorChip color={item.color} />
                       <div className="aw-item__qty">
                         <span>{item.quantity} un.</span>
                         <strong>{formatCurrency(item.totalPriceBrl)}</strong>
@@ -410,7 +414,6 @@ function AdminOrderCard({ row, access, invoiceConfig, activeFilter, selectedOrde
                       {getVisibleMeasures(item).map(([key, value]) => (
                         <li key={key}><span>{formatParameterLabel(key)}</span> {formatParameterValue(value)}</li>
                       ))}
-                      {item.color && <li><span>Cor</span> {item.color}</li>}
                       {item.finish && <li><span>Acabamento</span> {item.finish}</li>}
                     </ul>
                   </li>
@@ -1456,6 +1459,76 @@ function formatOrderProducts(order) {
   if (!remainingItems.length) return firstName;
 
   return `${firstName} + ${remainingItems.length} item${remainingItems.length > 1 ? "s" : ""}`;
+}
+
+// Cor da peca em destaque: amostra + nome, para nao depender do texto miudo.
+// Item sem cor gravada aparece em alerta, pois a producao precisa confirmar.
+function ColorChip({ color, compact = false }) {
+  const name = String(color || "").trim();
+  const swatch = getColorSwatch(name);
+  const classes = ["aw-color", compact && "aw-color--compact", !name && "aw-color--missing"]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <span className={classes} title={name ? `Cor: ${name}` : "Cor não informada"}>
+      <span
+        className={`aw-color__swatch${swatch ? "" : " aw-color__swatch--unknown"}`}
+        style={swatch ? { "--aw-swatch": swatch } : undefined}
+        aria-hidden="true"
+      />
+      <span className="aw-color__label">
+        {!compact && <small>Cor</small>}
+        <strong>{name || "Não informada"}</strong>
+      </span>
+    </span>
+  );
+}
+
+// Na linha recolhida: uma amostra por cor distinta, com a contagem de unidades.
+function OrderColorSummary({ items = [] }) {
+  if (!items.length) return null;
+
+  const totals = new Map();
+  for (const item of items) {
+    const name = String(item.color || "").trim();
+    totals.set(name, (totals.get(name) || 0) + (Number(item.quantity) || 0));
+  }
+
+  const entries = [...totals.entries()];
+  const label = entries
+    .map(([name, quantity]) => `${quantity} un. ${name || "sem cor informada"}`)
+    .join(", ");
+
+  return (
+    <span className="aw-row__colors" aria-label={`Cores: ${label}`} title={label}>
+      {entries.map(([name, quantity]) => {
+        const swatch = getColorSwatch(name);
+        return (
+          <span className={`aw-row__color${name ? "" : " aw-row__color--missing"}`} key={name || "sem-cor"} aria-hidden="true">
+            <span
+              className={`aw-color__swatch${swatch ? "" : " aw-color__swatch--unknown"}`}
+              style={swatch ? { "--aw-swatch": swatch } : undefined}
+            />
+            {name || "Sem cor"} <span className="aw-row__color-qty">×{quantity}</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+function getColorSwatch(name) {
+  if (!name) return "";
+  if (colorMap[name]) return colorMap[name];
+
+  const normalized = normalizeColorName(name);
+  const match = Object.keys(colorMap).find((key) => normalizeColorName(key) === normalized);
+  return match ? colorMap[match] : "";
+}
+
+function normalizeColorName(value) {
+  return String(value).normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
 }
 
 function formatProductName(item) {
