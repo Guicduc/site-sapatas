@@ -1,4 +1,5 @@
 import { CookiePreferencesButton } from "@/components/cookie-preferences-button";
+import { ADS_COOKIE_DURATION_LABEL, getConfiguredAdsTags } from "@/lib/ads-config";
 import { brand } from "@/lib/site-data";
 import {
   ANALYTICS_COOKIE_DURATION_LABEL,
@@ -85,9 +86,55 @@ function getOptionalItems(measurementId) {
   ];
 }
 
+function getAdsItems(tags) {
+  const items = [];
+
+  if (tags.googleAdsId) {
+    items.push({
+      name: "_gcl_au, _gcl_aw, _gcl_gb",
+      type: "Cookie do Google Ads (Google)",
+      purpose: "Liga o clique em um anúncio do Google à visita e à compra, para medir o resultado da campanha.",
+      duration: ADS_COOKIE_DURATION_LABEL
+    });
+  }
+
+  if (tags.metaPixelId) {
+    items.push(
+      {
+        name: "_fbp",
+        type: "Cookie do Meta Pixel (Meta)",
+        purpose: "Identificador pseudônimo do navegador para medir anúncios do Facebook e Instagram e formar públicos de quem visitou o site.",
+        duration: ADS_COOKIE_DURATION_LABEL
+      },
+      {
+        name: "_fbc",
+        type: "Cookie do Meta Pixel (Meta)",
+        purpose: "Guarda o clique em um anúncio do Facebook ou Instagram para atribuir a compra à campanha.",
+        duration: ADS_COOKIE_DURATION_LABEL
+      }
+    );
+  }
+
+  if (items.length > 0) {
+    items.push({
+      name: "baseforma-ads-purchases",
+      type: "Armazenamento local",
+      purpose: "Guarda os números de pedido já informados às plataformas de anúncio para não contar a mesma compra duas vezes.",
+      duration: "Até revogar a escolha ou limpar o navegador"
+    });
+  }
+
+  return items;
+}
+
 export default function PrivacyPage() {
   const measurementId = getConfiguredMeasurementId();
-  const optionalItems = getOptionalItems(measurementId);
+  const adsTags = getConfiguredAdsTags();
+  const adsItems = getAdsItems(adsTags);
+  const adsVendors = [adsTags.googleAdsId && "Google Ads (Google)", adsTags.metaPixelId && "Meta Pixel (Meta, Facebook e Instagram)"]
+    .filter(Boolean)
+    .join(" e ");
+  const optionalItems = [...getOptionalItems(measurementId), ...adsItems];
 
   return (
     <div className="privacy-page">
@@ -101,11 +148,44 @@ export default function PrivacyPage() {
         <CookiePreferencesButton />
       </section>
 
+      {adsItems.length > 0 && (
+        <section className="page-panel privacy-section" aria-labelledby="ads-use-title">
+          <div>
+            <p className="eyebrow">Estado atual</p>
+            <h2 id="ads-use-title">Publicidade opcional</h2>
+          </div>
+          <div className="privacy-copy">
+            <p>
+              A Baseforma anuncia no Google e nas redes da Meta. Com a sua permissão na categoria
+              “Publicidade”, usamos {adsVendors} para saber quais anúncios trouxeram visitas e
+              compras e para mostrar anúncios a quem já visitou o site. Essas tags só são
+              carregadas depois do aceite dessa categoria, separada da medição de audiência.
+            </p>
+            <p>
+              Enviamos às plataformas a página visitada (os identificadores de pagamento do
+              retorno do checkout são removidos do endereço antes), os produtos vistos ou
+              adicionados ao carrinho e o valor e o número público do pedido quando a compra é
+              aprovada. Nome, e-mail, CPF/CNPJ, telefone e endereço não são enviados, e a
+              correspondência avançada de dados está desligada. A área do cliente, a área
+              administrativa e o modo demonstração não carregam essas tags.
+            </p>
+            <p>
+              Ao revogar a escolha no rodapé, as tags param de enviar dados nesta navegação e os
+              cookies de publicidade deste site são apagados. Google e Meta tratam os dados
+              recebidos conforme as próprias políticas de privacidade, inclusive com possível
+              transferência internacional.
+            </p>
+          </div>
+        </section>
+      )}
+
       {measurementId ? (
         <section className="page-panel privacy-section" aria-labelledby="current-use-title">
           <div>
             <p className="eyebrow">Estado atual</p>
-            <h2 id="current-use-title">Medição de audiência opcional, sem publicidade</h2>
+            <h2 id="current-use-title">
+              {adsItems.length > 0 ? "Medição de audiência opcional" : "Medição de audiência opcional, sem publicidade"}
+            </h2>
           </div>
           <div className="privacy-copy">
             <p>
@@ -115,11 +195,13 @@ export default function PrivacyPage() {
               não envia nenhuma medição.
             </p>
             <p>
-              Não usamos anúncios, pixels de publicidade, Google Signals nem compartilhamento
-              de dados para anúncios. Nome, e-mail, CPF/CNPJ, telefone e endereço não são
-              enviados ao Google, e parâmetros de endereço das páginas que possam identificar
-              pedidos ou acessos são removidos antes do envio. A área administrativa e o modo
-              demonstração não são medidos.
+              {adsItems.length > 0
+                ? "O Google Analytics não usa Google Signals nem compartilha dados para anúncios; a publicidade tem tags e aceite próprios, descritos acima."
+                : "Não usamos anúncios, pixels de publicidade, Google Signals nem compartilhamento de dados para anúncios."}{" "}
+              Nome, e-mail, CPF/CNPJ, telefone e endereço não são enviados ao Google, e
+              parâmetros de endereço das páginas que possam identificar pedidos ou acessos são
+              removidos antes do envio. A área administrativa e o modo demonstração não são
+              medidos.
             </p>
             <p>
               Ao revogar a escolha no rodapé, a medição é interrompida nesta navegação e os
@@ -129,7 +211,7 @@ export default function PrivacyPage() {
             </p>
           </div>
         </section>
-      ) : (
+      ) : adsItems.length === 0 && (
         <section className="page-panel privacy-section" aria-labelledby="current-use-title">
           <div>
             <p className="eyebrow">Estado atual</p>
@@ -222,8 +304,11 @@ export default function PrivacyPage() {
         <div className="privacy-copy">
           <p>
             Use “Preferências de cookies” no rodapé a qualquer momento. A opção “Recusar
-            opcionais” mantém apenas as tecnologias necessárias listadas acima. A escolha expira
-            em 180 dias para que o site possa apresentá-la novamente.
+            opcionais” mantém apenas as tecnologias necessárias listadas acima
+            {adsItems.length > 0
+              ? "; “Escolher por finalidade” permite aceitar a medição e a publicidade separadamente"
+              : ""}
+            . A escolha expira em 180 dias para que o site possa apresentá-la novamente.
           </p>
           <p>
             Apagar os dados deste site nas configurações do navegador também remove o carrinho e

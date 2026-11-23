@@ -1,3 +1,4 @@
+import { AdsLoader } from "@/components/ads-loader";
 import { AnalyticsLoader } from "@/components/analytics-loader";
 import { CartProvider } from "@/components/cart-provider";
 import { CookiePreferences } from "@/components/cookie-preferences";
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }) {
           </div>
           <CookiePreferences />
           <AnalyticsLoader />
+          <AdsLoader />
         </CartProvider>
       </body>
     </html>
