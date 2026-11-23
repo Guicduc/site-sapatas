@@ -69,6 +69,28 @@ export default async function FamilyPage({ params }) {
               </span>
             ))}
           </div>
+          {/* CTA no topo: no celular a coluna lateral fica abaixo das especificacoes, e quem
+              chega por anuncio precisa ver preco e o proximo passo sem rolar. */}
+          <div className="family-hero__actions">
+            {family.priceFromBrl > 0 && (
+              <p className="family-hero__price">
+                A partir de <strong>{formatCurrency(family.priceFromBrl)}</strong> por {family.salesUnit},
+                sem pedido mínimo
+              </p>
+            )}
+            {family.configuratorPath ? (
+              <Link className="button button-primary" href={family.configuratorPath}>
+                Configurar e ver o preço
+              </Link>
+            ) : (
+              <a
+                className="button button-primary"
+                href={buildMailtoUrl(brand.email, contactSubject, contactBody)}
+              >
+                Confirmar a variante por e-mail
+              </a>
+            )}
+          </div>
         </div>
         {family.images?.length ? (
           <ProductImageCarousel

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { ProductImageCarousel } from "@/components/product-image-carousel";
+import { formatCurrency } from "@/lib/format";
 import { getCategoryCardGallery, homeHeroImages } from "@/lib/product-visuals";
 
 const moodTerms = [
@@ -81,7 +82,7 @@ const moodIcons = {
 // Coluna de midia do hero: metade do conteudo (max 1500px) no desktop, largura total ate 980px.
 const HERO_IMAGE_SIZES = "(max-width: 980px) 100vw, (max-width: 1540px) 50vw, 740px";
 
-export function ProductCatalog({ categories, catalogOnly = false }) {
+export function ProductCatalog({ categories, catalogOnly = false, priceFromByCategory = {} }) {
   const [heroIndex, setHeroIndex] = useState(0);
   // So a 1a foto do hero entra no HTML inicial (LCP); as demais sao montadas depois do load.
   const [heroQueueReady, setHeroQueueReady] = useState(false);
@@ -220,6 +221,11 @@ export function ProductCatalog({ categories, catalogOnly = false }) {
                   <div className="meta-list">
                     <span>{category.primaryFixation}</span>
                   </div>
+                  {priceFromByCategory?.[category.slug] > 0 && (
+                    <p className="category-card__price">
+                      A partir de <strong>{formatCurrency(priceFromByCategory[category.slug])}</strong> por unidade
+                    </p>
+                  )}
                   <CategoryFamilyLinks category={category} />
                 </div>
                 <Link className="button button-primary" href={`/configurar/${category.slug}`}>
