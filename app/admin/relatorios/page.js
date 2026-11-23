@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AdminAccessRequired } from "@/components/admin-access-required";
 import { AdminTopBar } from "@/components/admin-top-bar";
 import { adminHref, getAdminAccess } from "@/lib/admin-session";
+import { buildCampaignReport } from "@/lib/campaign-report";
 import { formatCurrency } from "@/lib/format";
 import { buildOrderAnalytics } from "@/lib/order-analytics";
 import { getStoreMode, listOrders } from "@/lib/order-store";
@@ -27,6 +28,7 @@ export default async function AdminReportsPage() {
 
   const orders = await listOrders({ limit: 500 });
   const analytics = buildOrderAnalytics(orders);
+  const campaigns = buildCampaignReport(orders);
   const maxDailyRevenue = Math.max(...analytics.daily.map((day) => day.totalBrl), 1);
 
   return (
@@ -129,6 +131,57 @@ export default async function AdminReportsPage() {
               />
             </article>
           </section>
+
+          <article className="surface-card report-panel">
+            <div className="report-panel__heading">
+              <div>
+                <p className="eyebrow">Últimos {campaigns.days} dias</p>
+                <h2>Origem das vendas</h2>
+              </div>
+              <a className="chip" href="/api/admin/google-ads-conversions" download>
+                Baixar conversões Google Ads (CSV)
+              </a>
+            </div>
+            <p className="admin-note">
+              Última origem externa antes do pedido (utm ou site de referência). Valor aprovado =
+              produtos menos desconto, sem frete, o mesmo enviado às plataformas. Pedidos com
+              origem: {campaigns.attributedOrders}; com clique de anúncio guardado (aceite de
+              publicidade): {campaigns.ordersWithClick}. O CSV traz os pedidos pagos com gclid dos
+              últimos 90 dias para Google Ads &gt; Metas &gt; Conversões &gt; Uploads.
+            </p>
+            {campaigns.rows.length > 0 ? (
+              <div className="table-wrap">
+                <table className="compact-report-table">
+                  <thead>
+                    <tr>
+                      <th>Canal</th>
+                      <th>Origem</th>
+                      <th>Mídia</th>
+                      <th>Campanha</th>
+                      <th>Pedidos</th>
+                      <th>Pagos</th>
+                      <th>Valor aprovado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaigns.rows.map((row) => (
+                      <tr key={row.key}>
+                        <td>{row.channelLabel}</td>
+                        <td>{row.source || "-"}</td>
+                        <td>{row.medium || "-"}</td>
+                        <td>{row.campaign || "-"}</td>
+                        <td>{row.ordersCount}</td>
+                        <td>{row.approvedOrdersCount}</td>
+                        <td><strong>{formatCurrency(row.approvedValueBrl)}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="admin-note">Sem pedidos do configurador no período.</p>
+            )}
+          </article>
 
           <article className="surface-card report-panel">
             <div className="report-panel__heading">

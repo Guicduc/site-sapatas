@@ -17,7 +17,9 @@ import {
   isValidBrTaxDocument,
   normalizeBrTaxDocument
 } from "@/lib/br-tax-document";
+import { buildOrderAttributionPayload } from "@/lib/campaign-attribution";
 import { MAX_CART_ITEM_QUANTITY } from "@/lib/client-cart";
+import { readCookieConsent } from "@/lib/cookie-consent";
 import { calculateCommerceAdjustments, normalizeCouponCode } from "@/lib/commerce-adjustments";
 import { getCategoryBySlug, getFormat, productCategories } from "@/lib/client-configurator-data";
 import { formatCurrency } from "@/lib/format";
@@ -602,7 +604,8 @@ function CheckoutForm({ cartTotal }) {
               couponCode: normalizeCouponCode(couponCode),
               items
             }),
-            replacesOrderId: supersededOrderId
+            replacesOrderId: supersededOrderId,
+            attribution: readOrderAttribution()
           })
         });
         const orderPayload = await orderResponse.json();
@@ -1088,6 +1091,21 @@ function readSavedRecoveryLead() {
   try {
     const saved = window.localStorage.getItem(recoveryStorageKey);
     return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Origem da visita para o pedido: campanha sempre; cliques de anuncio e client_id do GA4
+// apenas com as categorias aceitas agora (lib/campaign-attribution.js).
+function readOrderAttribution() {
+  try {
+    const consent = readCookieConsent(window.localStorage);
+    return buildOrderAttributionPayload({
+      storage: window.localStorage,
+      cookie: document.cookie,
+      consent: { analytics: consent?.analytics === true, marketing: consent?.marketing === true }
+    });
   } catch {
     return null;
   }

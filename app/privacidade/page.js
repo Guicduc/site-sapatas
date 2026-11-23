@@ -57,6 +57,12 @@ const storageItems = [
     type: "Armazenamento local",
     purpose: "Registra a escolha de cookies e quando ela deve ser solicitada novamente.",
     duration: "180 dias"
+  },
+  {
+    name: "baseforma-attribution",
+    type: "Armazenamento local",
+    purpose: "Guarda a campanha (parâmetros utm), a página de entrada e o site de origem da visita para registrar no pedido. Não identifica o visitante.",
+    duration: "30 dias"
   }
 ];
 
@@ -116,6 +122,12 @@ function getAdsItems(tags) {
   }
 
   if (items.length > 0) {
+    items.push({
+      name: "baseforma-ad-clicks",
+      type: "Armazenamento local",
+      purpose: "Guarda o identificador do clique no anúncio (gclid/fbclid) para registrar no pedido de qual anúncio veio a compra, inclusive quando o Pix é aprovado depois.",
+      duration: "90 dias ou até revogar a escolha"
+    });
     items.push({
       name: "baseforma-ads-purchases",
       type: "Armazenamento local",
@@ -295,6 +307,29 @@ export default function PrivacyPage() {
           </div>
         </section>
       )}
+
+      <section className="page-panel privacy-section" aria-labelledby="attribution-title">
+        <div>
+          <p className="eyebrow">Pedidos</p>
+          <h2 id="attribution-title">Origem da visita registrada no pedido</h2>
+        </div>
+        <div className="privacy-copy">
+          <p>
+            Para saber quais campanhas e canais trazem vendas, o pedido guarda a origem da visita:
+            os parâmetros de campanha do link (utm), a página de entrada e o site de origem. Essa
+            informação não identifica quem visitou; ela passa a fazer parte do pedido apenas
+            quando você compra, com base no legítimo interesse de medir o resultado das
+            campanhas da Baseforma.
+          </p>
+          <p>
+            Com a categoria “Publicidade” aceita, o pedido também guarda o identificador do clique
+            no anúncio do Google ou da Meta, usado para informar ao Google Ads compras aprovadas
+            depois (por exemplo, Pix), sem nome, e-mail, documento ou endereço. Com a “Medição”
+            aceita, guarda o identificador pseudônimo do Google Analytics. Recusar essas
+            categorias impede esses registros.
+          </p>
+        </div>
+      </section>
 
       <section className="page-panel privacy-section" aria-labelledby="choices-title">
         <div>
