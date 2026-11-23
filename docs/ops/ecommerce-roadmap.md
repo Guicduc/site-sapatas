@@ -40,6 +40,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Capacidade operacional de producao configuravel por `PRODUCTION_DAILY_UNIT_CAPACITY`.
 - Login administrativo em `/admin`, com `ADMIN_ACCESS_TOKEN` usado para criar sessao assinada em cookie HttpOnly.
 - Aviso e centro de preferencias de cookies com inventario publico em `/privacidade`, escolha revisavel e bloqueio padrao de categorias opcionais.
+- Trafego pago: tags de Google Ads e Meta Pixel com aceite proprio (`docs/ops/ads-tracking.md`), origem da visita gravada no pedido, relatorio "Origem das vendas" e CSV de conversoes offline em `/admin/relatorios`. Plano de campanhas e rotina semanal em `docs/marketing/paid-traffic-launch.md`.
 
 ## Condicoes para operar em producao
 
@@ -80,6 +81,7 @@ Para a arquitetura de producao e o corte futuro da fila atual, use tambem `docs/
 - Observabilidade de producao: logs estruturados, alertas para falha de pagamento, erro de e-mail e fila operacional.
 - LGPD operacional alem de cookies: tela de exclusao/anonimizacao de cliente e politica formal de retencao.
 - Canais externos de venda somente se houver decisao futura de sincronizacao sem substituir o checkout proprio.
+- Conversoes server-side (Meta Conversions API, upload automatico de conversoes offline do Google Ads, GA4 Measurement Protocol) a partir do webhook do Mercado Pago, usando `orders.metadata.attribution`; feed do Merchant Center se houver SKUs de preco fixo.
 
 ## Ordem recomendada da proxima fase
 
