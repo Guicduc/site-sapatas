@@ -22,8 +22,9 @@ Este documento registra o inventario tecnico verificado em 13/07/2026 e a regra 
 | `baseforma-cart-recovery` | localStorage | identificador e token do carrinho salvo | recuperacao de carrinho no checkout | ate conversao ou limpeza |
 | `baseforma-last-order-id` | sessionStorage | reabertura da confirmacao do pedido | pedido criado | ate fechar a aba |
 | `baseforma-cookie-consent` | localStorage | escolha e validade do consentimento | aviso/centro de preferencias | 180 dias |
+| `baseforma-attribution` | localStorage | primeira e ultima origem externa da visita (utm_*, pagina de entrada, dominio de referencia), gravada no pedido; sem identificador | entrada com campanha ou vinda de outro site | 30 dias |
 
-Todas as tecnologias acima sao funcionais.
+Todas as tecnologias acima sao funcionais, exceto `baseforma-attribution`, que serve a medicao das proprias campanhas com base no legitimo interesse (finalidade publicada em `/privacidade`, secao "Origem da visita registrada no pedido"). Ela nao contem identificador de visitante nem cliques de anuncio e so passa a fazer parte de dado pessoal quando o cliente cria um pedido (`orders.metadata.attribution`). Codigo em `lib/campaign-attribution.js` e `components/campaign-attribution-capture.jsx`.
 
 ### Opcionais (somente com `NEXT_PUBLIC_GA_MEASUREMENT_ID` e aceite de `analytics`)
 
@@ -42,9 +43,10 @@ A revogacao apaga os tres itens e ativa o opt-out `ga-disable-<ID>` do gtag. No 
 | `_gcl_au`, `_gcl_aw`, `_gcl_gb` | cookies primarios | Google (Google Ads) | ligar o clique no anuncio a visita e a compra | apos aceitar Publicidade | 90 dias |
 | `_fbp` | cookie primario | Meta (Meta Pixel) | identificador pseudonimo do navegador para medir anuncios e formar publicos de visitantes | apos aceitar Publicidade | 90 dias |
 | `_fbc` | cookie primario | Meta (Meta Pixel) | guardar o clique em anuncio do Facebook/Instagram (`fbclid`) | apos aceitar Publicidade, com `fbclid` na entrada | 90 dias |
+| `baseforma-ad-clicks` | localStorage | Baseforma | `gclid`/`gbraid`/`wbraid`/`fbclid` da entrada, gravados no pedido para a importacao de conversoes offline | apos aceitar Publicidade, com clique de anuncio na entrada | 90 dias ou ate revogar |
 | `baseforma-ads-purchases` | localStorage | Baseforma | numeros de pedido ja enviados as plataformas de anuncio | primeira compra aprovada enviada | ate revogar ou limpar |
 
-`ad_storage`/`ad_user_data`/`ad_personalization` so viram `granted` com esse aceite. Nao ha correspondencia avancada nem enhanced conversions. A revogacao nega os sinais, chama `fbq('consent', 'revoke')` e apaga os quatro itens. A pagina `/privacidade` mostra a tabela de opcionais apenas quando o ID esta configurado. O cookie de conta e HttpOnly, SameSite=Lax, Secure em producao e carrega token opaco aleatorio; somente seu hash e persistido. O valor de `baseforma-cart-recovery` contem somente identificador e token; os dados do lead ficam no armazenamento do servidor, sujeito a `CART_RECOVERY_RETENTION_DAYS`.
+`ad_storage`/`ad_user_data`/`ad_personalization` so viram `granted` com esse aceite. Nao ha correspondencia avancada nem enhanced conversions. A revogacao nega os sinais, chama `fbq('consent', 'revoke')` e apaga os cinco itens. Pedidos ja criados mantem a atribuicao gravada. Com o aceite de `analytics`, o pedido tambem guarda o `client_id` pseudonimo do GA4 (lido do cookie `_ga`). A pagina `/privacidade` mostra a tabela de opcionais apenas quando o ID esta configurado. O cookie de conta e HttpOnly, SameSite=Lax, Secure em producao e carrega token opaco aleatorio; somente seu hash e persistido. O valor de `baseforma-cart-recovery` contem somente identificador e token; os dados do lead ficam no armazenamento do servidor, sujeito a `CART_RECOVERY_RETENTION_DAYS`.
 
 ## Regra para scripts opcionais
 

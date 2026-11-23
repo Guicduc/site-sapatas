@@ -131,6 +131,8 @@ O total de familias/produtos ativos deve ser derivado dos manifests ativos em `c
 - `components/pending-boleto.jsx`: link e vencimento do boleto Mercado Pago pendente, usado na confirmacao e na conta.
 - `components/cookie-preferences.jsx`: aviso e revisao do consentimento persistido em `baseforma-cookie-consent`.
 - `components/analytics-loader.jsx` + `lib/analytics.js` + `lib/analytics-config.js`: Google Analytics 4 opcional (`NEXT_PUBLIC_GA_MEASUREMENT_ID`), carregado so apos consentimento `analytics`, fora de `/admin` e da demonstracao; eventos de e-commerce sem PII. Ver `docs/ops/analytics.md`.
+- `components/ads-loader.jsx` + `lib/ads.js` + `lib/ads-config.js` + `lib/gtag-runtime.js`: Google Ads e Meta Pixel opcionais (`NEXT_PUBLIC_GOOGLE_ADS_*`, `NEXT_PUBLIC_META_PIXEL_ID`), carregados so apos consentimento `marketing`; as funcoes `track*` de `lib/analytics.js` repassam os eventos. Ver `docs/ops/ads-tracking.md`.
+- `components/campaign-attribution-capture.jsx` + `lib/campaign-attribution.js`: origem da visita (utm_*, referencia e, com `marketing`, cliques de anuncio) enviada no `POST /api/orders` e gravada em `orders.metadata.attribution`.
 - A ficha expandida em `/admin/pedidos` mantem os dados parametricos e o JSON para Grasshopper como apoio ao trabalho manual, sem registrar CAD como etapa do pedido.
 - `app/admin/orders-workspace.jsx`: ficha unica em todos os filtros; formularios independentes para producao, NF e expedicao. O filtro `atencao` reune revisoes, bloqueios e alertas de pagamento. Jobs de arquivos, dados CAD e ajustes de prioridade ficam recolhidos.
 - `app/admin/admin.css`, `components/admin-top-bar.jsx`, `components/admin-stage-tabs.jsx` e `components/admin-submit-button.jsx`: interface visual isolada da loja, navegacao responsiva e feedback de envio. O resumo de andamento mostra pendencias; "Expedidos" nao presume entrega confirmada.
@@ -171,6 +173,7 @@ commit.
 - `lib/invoice-provider.js`: registra NF `manual_pending` apos pagamento aprovado enquanto `INVOICE_AUTOMATION_ENABLED` estiver desligado. Emissao, consulta e cancelamento via Focus NFe permanecem implementados para religamento; o adaptador `mercado_pago` segue dormente.
 - `scripts/audit-focus-nfe.mjs`: auditoria segura de provider, credenciais e gancho, com verificacao de empresa/certificado quando o token expoe esse endpoint, sem imprimir segredos.
 - `lib/order-analytics.js`: agregacoes usadas por `/admin/relatorios`.
+- `lib/campaign-report.js`: "Origem das vendas" em `/admin/relatorios` e CSV de conversoes offline do Google Ads em `GET /api/admin/google-ads-conversions` (sessao admin). Rotina em `docs/marketing/paid-traffic-launch.md`.
 - `docs/ops/ecommerce-roadmap.md`: fonte de verdade para prontidao operacional e backlog futuro.
 - `docs/ops/print-queue.md`: regra operacional simplificada da fila de impressao.
 - `docs/ops/production-system-transition.md`: limite de responsabilidade, fluxo alvo e criterios de corte para o sistema externo de producao.
