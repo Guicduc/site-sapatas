@@ -27,12 +27,41 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
     }
   }, [cartLoaded, clearCart, initialPaymentResult]);
 
+  // O retorno do Mercado Pago traz payment_id, collection_id, external_reference e o id
+  // do pedido na URL. O id fica so na sessao desta aba e a URL perde os identificadores
+  // antes de qualquer tag de medicao/anuncio ler document.location.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const keep = new URLSearchParams();
+    for (const key of ["payment", "demo"]) {
+      const value = url.searchParams.get(key);
+      if (value) keep.set(key, value);
+    }
+    const cleanSearch = keep.toString() ? `?${keep.toString()}` : "";
+    if (url.search === cleanSearch) return;
+
+    if (initialOrderId) {
+      try {
+        window.sessionStorage.setItem("baseforma-last-order-id", initialOrderId);
+      } catch {
+        // Sem sessionStorage, o pedido segue no estado desta pagina.
+      }
+    }
+
+    window.history.replaceState(window.history.state, "", `${url.pathname}${cleanSearch}${url.hash}`);
+  }, [initialOrderId]);
+
   useEffect(() => {
     if (orderId) {
       return;
     }
 
-    const savedId = window.sessionStorage.getItem("baseforma-last-order-id");
+    let savedId = "";
+    try {
+      savedId = window.sessionStorage.getItem("baseforma-last-order-id") || "";
+    } catch {
+      // Sem sessionStorage nao ha pedido salvo para reabrir.
+    }
 
     if (savedId) {
       setOrderId(savedId);

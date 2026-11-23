@@ -117,7 +117,11 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
 
   function handleFormatChange(nextSlug) {
     setFormatSlug(nextSlug);
-    router.replace(`/configurar/${category.slug}?formato=${nextSlug}`, { scroll: false });
+    // Mantem utm_* e cliques de anuncio na URL: trocar o formato nao pode apagar a origem
+    // da visita antes do aceite de cookies.
+    const params = new URLSearchParams(window.location.search);
+    params.set("formato", nextSlug);
+    router.replace(`/configurar/${category.slug}?${params.toString()}`, { scroll: false });
   }
 
   function handleValueChange(key, value) {

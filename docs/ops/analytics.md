@@ -16,21 +16,27 @@ Regras aplicadas:
 
 - **Sem `NEXT_PUBLIC_GA_MEASUREMENT_ID`**: nada e renderizado, nenhum request ao Google; banner e
   `/privacidade` mantem o texto "sem medicao". Escolhas antigas continuam validas.
-- **Consent Mode v2, modo basico**: o script so existe depois do aceite. `ad_storage`,
-  `ad_user_data` e `ad_personalization` ficam sempre `denied`; `analytics_storage` vira
-  `granted` apos o aceite e `denied` na revogacao.
+- **Consent Mode v2, modo basico**: o script so existe depois do aceite. `analytics_storage`
+  vira `granted` apos o aceite e `denied` na revogacao. `ad_storage`, `ad_user_data` e
+  `ad_personalization` seguem a categoria `marketing`, que pertence as tags de anuncio
+  (`docs/ops/ads-tracking.md`); o gtag.js e compartilhado (`lib/gtag-runtime.js`), mas cada
+  destino so recebe `config` com o proprio aceite.
 - **Revogacao**: `window['ga-disable-<ID>'] = true` (opt-out oficial do gtag), consent update
   `denied`, remocao de `_ga`/`_ga_<ID>` em todos os dominios possiveis e do registro local de
   compras (`baseforma-analytics-purchases`).
 - **Revisao do consentimento**: com o GA configurado, a revisao passa de `base` para `ga4-1`
-  e todo mundo que ja respondeu ao banner e perguntado de novo.
+  e todo mundo que ja respondeu ao banner e perguntado de novo. Com tags de anuncio, vira
+  `ga4-1+ads-1`.
 - **Sem Google Signals / sem anuncios**: `allow_google_signals: false`,
   `allow_ad_personalization_signals: false`, `ads_data_redaction`. O GA4 nao registra nem
   armazena IP completo (anonimizacao e nativa; nao existe `anonymize_ip` no GA4).
 - **Cookies**: `cookie_expires` de ~13 meses, `SameSite=Lax;Secure` em HTTPS.
 - **Sem PII**: payloads montados por allowlist; filtro defensivo descarta chaves como
   `email`/`name`/`cpf`/`address` e valores com formato de e-mail, CPF, CNPJ ou telefone.
-- **URLs**: `page_location` mantem apenas `utm_*` e `formato`. Todos os demais parametros
+- **URLs**: `page_location` mantem apenas `utm_*` e `formato` (e `gclid`/`gbraid`/`wbraid`
+  quando a categoria `marketing` tambem foi aceita). O primeiro `page_view` herda `utm_*` e
+  cliques da URL de entrada, guardada so em memoria, se o aceite vier depois de navegar.
+  Todos os demais parametros
   (ex.: `orderId`, `payment`, `collection_id`, `payment_id`, `external_reference`,
   `preference_id` do retorno do Mercado Pago, `pedido` em `/conta`) sao removidos.
   `page_referrer` vira origem + caminho, sem query.
@@ -101,7 +107,10 @@ enviado nesse momento. Compras aprovadas sem retorno ao site nao sao medidas pel
     Configuracoes de dados > Coleta de dados > Google Signals **desligado**; "Permitir sinais
     de personalizacao de anuncios" desligado para todas as regioes. Em Configuracoes da conta >
     Compartilhamento de dados, desmarque "Produtos e servicos do Google", "Especialistas
-    tecnicos" e "Modelagem de contribuicoes" se nao forem necessarios. Nao vincule Google Ads.
+    tecnicos" e "Modelagem de contribuicoes" se nao forem necessarios. Vincular ao Google Ads
+    e opcional (relatorios de campanha no GA4); se vincular, **nao** importe o `purchase` do
+    GA4 como conversao primaria no Ads: a compra primaria e a tag nativa do Google Ads
+    (`docs/ops/ads-tracking.md`), e importar as duas conta cada venda duas vezes.
 11. **Granularidade de dados de local e dispositivo**: Configuracoes de dados > Coleta de dados
     > desligar "Coleta de dados granular de local e dispositivo" (minimiza dados).
 12. **Validar**: abra o site em aba anonima, aceite os opcionais, navegue ate o carrinho e use
@@ -118,10 +127,12 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-TEST000000 npm start
 ```
 
 - Sem escolha/recusa: o HTML e a aba Rede nao contem `googletagmanager.com`.
-- Apos "Aceitar opcionais": aparece `<script data-baseforma-analytics="ga4" src="https://www.googletagmanager.com/gtag/js?id=G-TEST000000">`.
+- Apos "Aceitar opcionais": aparece `<script data-baseforma-analytics="ga4" src="https://www.googletagmanager.com/gtag/js?id=G-TEST000000">` (ou `data-baseforma-analytics="google-ads"` com o ID `AW-`, se a tag de anuncio carregou primeiro; o script e unico).
 - Revogar no rodape: `window['ga-disable-G-TEST000000'] === true` e os cookies `_ga*` somem.
 - Em `/admin` e na sessao demo o script nao e injetado.
 
 Se a CSP de `next.config.mjs` passar a restringir `script-src`/`connect-src`, inclua
 `https://www.googletagmanager.com` e `https://*.google-analytics.com`
-(`https://*.analytics.google.com`) antes de ativar.
+(`https://*.analytics.google.com`) antes de ativar, alem dos dominios das tags de anuncio
+(`https://www.googleadservices.com`, `https://googleads.g.doubleclick.net`,
+`https://www.google.com`, `https://connect.facebook.net`, `https://www.facebook.com`).
