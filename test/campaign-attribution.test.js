@@ -188,6 +188,46 @@ test("CSV de conversoes offline traz so pedidos pagos com gclid, em horario de S
   assert.equal(formatSaoPauloTime("2026-01-01T02:00:00.000Z"), "2025-12-31 23:00:00");
 });
 
+test("revisao: fbclid organico nao apaga gclid, Gmail conta como e-mail, primeira origem expira", () => {
+  const storage = createMemoryStorage();
+  const later = new Date(NOW.getTime() + 2 * 24 * 60 * 60 * 1000);
+  recordAdClicks(storage, { gclid: "Cj0KCQ-abc_123" }, NOW);
+  recordAdClicks(storage, { fbclid: "IwAR1_organico" }, later);
+  const clicks = readStoredAdClicks(storage, later);
+  assert.equal(clicks.gclid, "Cj0KCQ-abc_123");
+  assert.equal(clicks.fbclid, "IwAR1_organico");
+  assert.equal(clicks.googleCapturedAt, NOW.toISOString());
+  recordAdClicks(storage, { gbraid: "0AAAAAx_gb" }, later);
+  assert.equal(readStoredAdClicks(storage, later).gclid, undefined, "novo clique do Google substitui o anterior");
+  assert.equal(readStoredAdClicks(storage, later).fbclid, "IwAR1_organico");
+
+  assert.equal(buildCampaignTouch({ href: `${SITE}/conta`, referrer: "https://mail.google.com/", now: NOW }).channel, "email");
+  assert.equal(buildCampaignTouch({ href: `${SITE}/conta`, referrer: "android-app://com.google.android.gm/", now: NOW }).channel, "email");
+  assert.equal(buildCampaignTouch({ href: `${SITE}/`, referrer: "https://www.google.com.br/", now: NOW }).channel, "organic_search");
+
+  const touches = createMemoryStorage();
+  const old = buildCampaignTouch({ href: `${SITE}/?utm_source=google&utm_medium=cpc`, now: NOW });
+  recordCampaignTouch(touches, old, NOW);
+  for (let day = 20; day <= 40; day += 20) {
+    const when = new Date(NOW.getTime() + day * 24 * 60 * 60 * 1000);
+    recordCampaignTouch(touches, buildCampaignTouch({ href: `${SITE}/?utm_source=meta&utm_medium=paid_social`, now: when }), when);
+  }
+  const stored = readStoredAttribution(touches, new Date(NOW.getTime() + 40 * 24 * 60 * 60 * 1000));
+  assert.equal(stored.firstTouch.source, "meta", "primeira origem com mais de 30 dias e substituida");
+
+  const sanitized = sanitizeOrderAttribution({ adClicks: { gclid: "Cj0KCQ-abc_123", capturedAt: "1", googleCapturedAt: NOW.toISOString() } });
+  assert.deepEqual(sanitized.adClicks, { gclid: "Cj0KCQ-abc_123", googleCapturedAt: NOW.toISOString() });
+});
+
+test("relatorio ignora pedidos substituidos ou cancelados", () => {
+  const report = buildCampaignReport([
+    paidGoogleOrder,
+    { ...paidGoogleOrder, id: "2", paymentStatus: "cancelled" },
+    { ...paidGoogleOrder, id: "3", paymentStatus: "rejected" }
+  ], { now: NOW });
+  assert.equal(report.rows[0].ordersCount, 1);
+});
+
 function createMemoryStorage() {
   const values = new Map();
   return {

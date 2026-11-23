@@ -21,7 +21,8 @@ export async function GET(request) {
   const url = new URL(request.url);
   const days = clampDays(url.searchParams.get("dias"));
   const conversionName = url.searchParams.get("conversao") || DEFAULT_OFFLINE_CONVERSION_NAME;
-  const orders = await listOrders({ limit: 500 });
+  // listOrders vem do mais recente para o mais antigo; 5000 cobre com folga 90 dias.
+  const orders = await listOrders({ limit: 5000 });
   const { csv } = buildGoogleAdsOfflineConversionsCsv(orders, { days, conversionName });
   const stamp = new Date().toISOString().slice(0, 10);
 
@@ -35,6 +36,7 @@ export async function GET(request) {
 }
 
 function clampDays(value) {
-  const days = Math.round(Number(value) || 90);
+  const parsed = Math.round(Number(value));
+  const days = value === null || !Number.isFinite(parsed) ? 90 : parsed;
   return Math.min(90, Math.max(1, days));
 }

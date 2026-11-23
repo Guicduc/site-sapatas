@@ -45,7 +45,7 @@ Em Metas > Conversões > Resumo > Nova ação de conversão:
 | Ação | Origem | Categoria | Valor | Contagem | Status inicial |
 | --- | --- | --- | --- | --- | --- |
 | `Compra (site)` | Site, configuração manual com código | Compra | valores diferentes por conversão, padrão em BRL | Todas | **Principal** |
-| `Compra (importação)` | Importar > outras fontes/CRM > conversões de cliques | Compra | valores diferentes por conversão | Todas | **Secundária** (ver seção 6.2) |
+| `Compra importacao` (exatamente assim, sem acento: o CSV usa esse nome) | Importar > outras fontes/CRM > conversões de cliques | Compra | valores diferentes por conversão | Todas | **Secundária** (ver seção 6.2) |
 | `Lead projeto especial` (opcional) | Site, configuração manual | Enviar formulário de lead | sem valor ou valor fixo (**Decisão do responsável**) | Uma | Secundária |
 
 - [ ] Copie o **ID da conta** (`AW-XXXXXXXXX`) e o **rótulo** de `Compra (site)` (o texto após
@@ -148,7 +148,9 @@ Regras: **tudo em minúsculas**, sem acento, sem espaço (use hífen). Os nomes 
 utm_source=google&utm_medium=cpc&utm_campaign={_campanha}&utm_content={creative}&utm_term={keyword}&utm_id={campaignid}
 ```
 
-- Em cada campanha, crie o parâmetro personalizado `_campanha` com o nome no padrão acima. Não há
+- Em cada campanha, em Opções de URL > Parâmetros personalizados, crie o parâmetro `campanha`
+  (o painel mostra `{_` antes do nome; na URL ele é referenciado como `{_campanha}`) com o nome no
+  padrão acima. Não há
   ValueTrack com nome de campanha; `utm_id={campaignid}` cruza com o relatório. Teste a URL no
   editor antes de publicar.
 
@@ -356,8 +358,9 @@ Dia fixo (ex.: segunda). Com a importação como Principal, repita o upload na q
 1. `/admin/relatorios` > "Baixar conversões Google Ads (CSV)". O arquivo traz os pedidos
    **pagos** com `gclid` dos últimos 90 dias (`?dias=7` na URL do botão encurta o período), com
    horário de São Paulo e valor = produtos menos desconto. Remova pedidos teste ou estornados.
-   O nome da conversão no arquivo é `Compra (importacao)`; se a ação tiver outro nome, use
-   `?conversao=<nome exato>` na URL ou ajuste a coluna antes de enviar.
+   O nome da conversão no arquivo é `Compra importacao`; se a ação tiver outro nome, use
+   `?conversao=<nome exato>` na URL ou ajuste a coluna antes de enviar. O horário da conversão é
+   o da criação do pedido (checkout), não o da aprovação do pagamento.
 2. Google Ads > Metas > Conversões > Uploads > enviar o arquivo.
 3. Reenviar uma linha já importada (mesmo `gclid`, ação e horário) é rejeitado como duplicada e
    não conta de novo, então enviar os 90 dias inteiros toda semana é seguro.
@@ -367,17 +370,17 @@ Dia fixo (ex.: segunda). Com a importação como Principal, repita o upload na q
 
 **Por que duas ações e qual deve ser Principal.** O Google Ads não deduplica entre ações de
 conversão diferentes: o mesmo pedido pago com cartão aparece na tag (`Compra (site)`) e no CSV
-(`Compra (importação)`). Como o export não indica se o pedido já foi medido no navegador, não dá
+(`Compra importacao`). Como o export não indica se o pedido já foi medido no navegador, não dá
 para enviar só a diferença. Com as duas como Principais, cada venda com cartão contaria duas vezes
 e o Maximizar conversões daria lances altos demais.
 
 Recomendação:
 
-- **Semanas 1 a 4 (lances por clique):** `Compra (site)` **Principal**, `Compra (importação)`
+- **Semanas 1 a 4 (lances por clique):** `Compra (site)` **Principal**, `Compra importacao`
   **Secundária**. Lance por clique não usa conversões; a comparação semanal mostra quanto a tag
   perde (Pix/boleto aprovados depois, cliente que não volta ao site).
 - **Antes de ligar Maximizar conversões:** se a importação trouxer consistentemente mais pedidos
-  que a tag (por exemplo, 20% ou mais), inverta: `Compra (importação)` **Principal**,
+  que a tag (por exemplo, 20% ou mais), inverta: `Compra importacao` **Principal**,
   `Compra (site)` Secundária, com upload duas vezes por semana. A importação é completa para quem
   tem `gclid` (cartão, Pix e boleto); a tag é imediata mas cega para pagamentos posteriores. Se a
   diferença for pequena, mantenha a tag como Principal: ela não depende da rotina manual nem
