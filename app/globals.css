@@ -2755,6 +2755,39 @@ dt {
   margin: 0;
 }
 
+.family-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-top: 6px;
+}
+
+.family-hero__price {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.family-hero__price strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+.category-card__price {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.category-card__price strong {
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .family-hero__actions .button {
+    width: 100%;
+  }
+}
+
 .family-hero__gallery {
   border: 1px solid var(--line);
   border-radius: var(--radius);

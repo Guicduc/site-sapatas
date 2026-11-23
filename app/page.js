@@ -4,7 +4,7 @@ import { productCategories } from "@/lib/configurator-data";
 import { pageSeo } from "@/lib/seo-copy";
 import { getInvoiceConfig } from "@/lib/invoice-config";
 import { buildPageMetadata } from "@/lib/page-metadata";
-import { brand, company, siteUrl } from "@/lib/site-data";
+import { brand, company, getCategoryPriceFromMap, siteUrl } from "@/lib/site-data";
 import { buildOrganizationJsonLd, buildWebSiteJsonLd } from "@/lib/structured-data";
 
 export const metadata = buildPageMetadata(pageSeo.home);
@@ -22,7 +22,7 @@ export default function HomePage() {
     <>
       <StructuredData data={organization} />
       <StructuredData data={buildWebSiteJsonLd({ siteUrl, brand })} />
-      <ProductCatalog categories={productCategories} />
+      <ProductCatalog categories={productCategories} priceFromByCategory={getCategoryPriceFromMap()} />
     </>
   );
 }
