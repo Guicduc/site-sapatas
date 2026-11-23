@@ -34,16 +34,24 @@ Regras aplicadas:
   `collection_id`, `external_reference` etc.) antes de qualquer tag ler a pagina; o id do
   pedido fica so na sessao da aba.
 - **Clique antes do aceite**: a URL de entrada fica em memoria (nada e gravado antes do
-  aceite). Se o visitante aceitar depois de navegar, o Google Ads recebe o `gclid` da entrada
-  em `page_location` e o `_fbc` do Meta e recriado a partir do `fbclid` da entrada. O
+  aceite). Se o visitante aceitar depois de navegar, os cookies `_gcl_aw`/`_gcl_gb` (Google)
+  e `_fbc` (Meta) sao recriados a partir do `gclid`/`gbraid`/`fbclid` da entrada, e o
+  primeiro evento do Google Ads leva a campanha da entrada em `page_location`. O
   configurador preserva `utm_*` e cliques ao trocar de formato.
+- **page_location por evento**: cada evento do Google Ads leva a URL atual saneada (o valor
+  do `config` ficaria preso a primeira pagina). O GA4 repete o `config` a cada rota.
+- **Retorno do pagamento**: antes de ligar as tags, o carregador remove da URL os
+  parametros que o Mercado Pago acrescenta (`payment_id`, `collection_id`, `status`,
+  `external_reference`, `merchant_order_id`, `preference_id` etc.), inclusive no retorno de
+  falha em `/carrinho`.
 - **GA4**: continua sem Google Signals e sem sinais de anuncio. Com o aceite de `marketing`,
   o `page_location` enviado ao GA4 passa a manter o `gclid` (necessario se o GA4 for
   vinculado ao Google Ads).
 - **Revogacao**: consent update `denied`, `fbq('consent', 'revoke')`, remocao de `_gcl_*`,
   `_fbp`, `_fbc` e do registro `baseforma-ads-purchases`.
-- **Rotas excluidas e demonstracao**: iguais as do GA4 (`/admin`, `/demonstracao`, `/api`,
-  `?demo=1`, sessao demo).
+- **Rotas excluidas e demonstracao**: as do GA4 (`/admin`, `/demonstracao`, `/api`,
+  `?demo=1`, sessao demo) e tambem `/conta`, cuja URL pode ter o numero do pedido
+  (`?pedido=`) e o Meta Pixel le o endereco completo da pagina.
 
 ### Eventos
 
@@ -80,10 +88,14 @@ navegador. A compensacao e a importacao de conversoes offline a partir dos pedid
 3. **So uma compra primaria**: se o GA4 for vinculado ao Google Ads, nao importe o
    `purchase` do GA4 como primario, senao cada venda conta duas vezes. Mantenha a tag nativa
    como primaria.
-4. **Auto-tagging**: Administrador > Configuracoes da conta > Codificacao automatica ligada
+4. **Nao combine as tags do Google**: no Google Ads e no GA4, em "Tag do Google" >
+   "Gerenciar tag", recuse "Combinar tags" e nao adicione o ID `AW-` como destino da tag do
+   GA4 (nem o contrario). Uma tag combinada dispara todos os destinos a partir de um unico
+   `config`, e quem aceitou so Medicao passaria a enviar dados ao Google Ads.
+5. **Auto-tagging**: Administrador > Configuracoes da conta > Codificacao automatica ligada
    (gera o `gclid`).
-5. **Enhanced conversions**: deixe desligado. O site nao envia dados fornecidos pelo usuario.
-6. **Vercel**: Project `site-sapatas` > Settings > Environment Variables, ambiente
+6. **Enhanced conversions**: deixe desligado. O site nao envia dados fornecidos pelo usuario.
+7. **Vercel**: Project `site-sapatas` > Settings > Environment Variables, ambiente
    **Production**:
    - `NEXT_PUBLIC_GOOGLE_ADS_ID` = `AW-XXXXXXXXX`
    - `NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL` = rotulo da compra
@@ -103,8 +115,9 @@ navegador. A compensacao e a importacao de conversoes offline a partir dos pedid
 4. **Verificar o dominio** por DNS: Configuracoes do negocio > Seguranca da marca > Dominios
    > Adicionar `baseforma.com.br` > registro TXT. Crie o TXT na zona DNS do Registro.br
    (modo avancado) e confirme no painel.
-5. **Eventos da web (Aggregated Event Measurement)**: depois da verificacao, priorize
-   `Purchase` em primeiro, depois `InitiateCheckout`, `AddToCart`, `ViewContent`, `Lead`.
+5. **Eventos da web**: se o painel ainda pedir a priorizacao de eventos (Aggregated Event
+   Measurement, que a Meta vem descontinuando), coloque `Purchase` em primeiro, depois
+   `InitiateCheckout`, `AddToCart`, `ViewContent`, `Lead`. Se a tela nao existir mais, pule.
 6. **Vercel**: `NEXT_PUBLIC_META_PIXEL_ID` = ID numerico, ambiente **Production**, e novo
    deploy de `main`.
 
@@ -116,12 +129,14 @@ Em aba anonima, com o deploy de producao:
    `googleadservices.com`, `google.com/pagead`, `connect.facebook.net` nem `facebook.com/tr`.
 2. "Escolher por finalidade" com so Medicao: aparece o GA4, nenhuma tag de anuncio.
 3. Abra `https://www.baseforma.com.br/?gclid=teste123&fbclid=teste456&utm_source=google`,
-   navegue para uma familia e so depois aceite Publicidade: no Tag Assistant o Google Ads
-   recebe `page_location` com `gclid=teste123`; o cookie `_fbc` termina em `.teste456`.
+   navegue para uma familia e so depois aceite Publicidade: os cookies `_gcl_aw` (termina em
+   `.teste123`) e `_fbc` (termina em `.teste456`) existem, e no Tag Assistant o primeiro
+   `page_view` do Google Ads traz a campanha da entrada. Repita aceitando na propria pagina
+   de entrada.
 4. Meta Pixel Helper mostra `PageView` uma vez por rota; `AddToCart` ao adicionar ao
    carrinho; `InitiateCheckout` ao focar o checkout.
 5. Pedido real aprovado (cartao): no retorno, a URL fica `/pedido-confirmado?payment=success`
-   sem `payment_id`; o Tag Assistant mostra a conversao com `transaction_id` = numero do
+   sem `payment_id` (recarregar na mesma aba reabre o pedido pela sessao); o Tag Assistant mostra a conversao com `transaction_id` = numero do
    pedido e o Pixel Helper mostra `Purchase` com o mesmo numero no `eventID`. Recarregar a
    pagina nao repete a conversao.
 6. Revogar no rodape: `_gcl_*`, `_fbp` e `_fbc` somem e nenhum novo request sai.

@@ -5,8 +5,11 @@ import { useEffect, useState } from "react";
 
 import {
   buildFbcCookieValue,
+  buildGclCookieValue,
+  buildUrlWithoutPaymentParams,
   clearAdsData,
   getLandingUrl,
+  isAdsExcludedPath,
   mergeLandingCampaign,
   readAdClickIds,
   rememberLandingUrl,
@@ -15,7 +18,7 @@ import {
   trackAdsPageView
 } from "@/lib/ads";
 import { getConfiguredAdsTags, hasAdsTags } from "@/lib/ads-config";
-import { isAnalyticsExcludedPath } from "@/lib/analytics-config";
+import { sanitizeReferrer } from "@/lib/analytics";
 import {
   COOKIE_CONSENT_CHANGED_EVENT,
   COOKIE_CONSENT_STORAGE_KEY,
@@ -28,18 +31,20 @@ import { ensureGtag, loadGtagScript } from "@/lib/gtag-runtime";
 if (typeof window !== "undefined") rememberLandingUrl(window.location.href);
 
 const META_SCRIPT_ATTRIBUTE = "data-baseforma-ads";
-const FBC_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
+const AD_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 90;
+// Valores embutidos no build: um objeto estavel evita reexecutar o efeito (e repetir o
+// PageView) a cada re-render do layout, como em router.refresh().
+const CONFIGURED_TAGS = getConfiguredAdsTags();
 
 // Sem NEXT_PUBLIC_GOOGLE_ADS_ID nem NEXT_PUBLIC_META_PIXEL_ID nada e renderizado.
 export function AdsLoader() {
-  const tags = getConfiguredAdsTags();
-  if (!hasAdsTags(tags)) return null;
-  return <AdsRuntime tags={tags} />;
+  if (!hasAdsTags(CONFIGURED_TAGS)) return null;
+  return <AdsRuntime tags={CONFIGURED_TAGS} />;
 }
 
 function AdsRuntime({ tags }) {
   const pathname = usePathname();
-  const excluded = isAnalyticsExcludedPath(pathname);
+  const excluded = isAdsExcludedPath(pathname);
   const [consented, setConsented] = useState(null);
   const [demo, setDemo] = useState(null);
 
@@ -94,12 +99,18 @@ function AdsRuntime({ tags }) {
       return;
     }
 
+    stripPaymentReturnParams();
     enableAds(tags);
     trackAdsPageView();
     setAdsStatus("ready");
   }, [consented, demo, excluded, pathname, tags]);
 
   return null;
+}
+
+function stripPaymentReturnParams() {
+  const cleanUrl = buildUrlWithoutPaymentParams(window.location.href);
+  if (cleanUrl) window.history.replaceState(window.history.state, "", cleanUrl);
 }
 
 function currentAdsPageLocation() {
@@ -125,11 +136,13 @@ function enableGoogleAds(adsId) {
 
   if (!window.__baseformaGoogleAdsConfigured) {
     window.__baseformaGoogleAdsConfigured = true;
-    // page_location com o gclid da entrada: o aceite pode vir depois de navegar no site.
-    // Sem dados fornecidos pelo usuario (enhanced conversions fica desligado).
+    restoreGclCookies();
+    // Cada evento leva o proprio page_location (lib/ads.js). Sem dados fornecidos pelo
+    // usuario: enhanced conversions fica desligado.
     gtag("config", adsId, {
       send_page_view: false,
       page_location: currentAdsPageLocation(),
+      page_referrer: sanitizeReferrer(document.referrer),
       allow_enhanced_conversions: false
     });
   }
@@ -183,8 +196,25 @@ function restoreFbcCookie() {
   if (!fbclid || readAdClickIds(window.location.href).fbclid) return;
   if (/(?:^|;\s*)_fbc=/.test(document.cookie)) return;
 
+  writeAdCookie("_fbc", buildFbcCookieValue(fbclid));
+}
+
+// Mesmo caso para o Google: o conversion linker so le o gclid/gbraid da URL atual.
+function restoreGclCookies() {
+  const landing = readAdClickIds(getLandingUrl());
+  const current = readAdClickIds(window.location.href);
+  if (landing.gclid && !current.gclid && !/(?:^|;\s*)_gcl_aw=/.test(document.cookie)) {
+    writeAdCookie("_gcl_aw", buildGclCookieValue(landing.gclid));
+  }
+  if (landing.gbraid && !current.gbraid && !/(?:^|;\s*)_gcl_gb=/.test(document.cookie)) {
+    writeAdCookie("_gcl_gb", buildGclCookieValue(landing.gbraid));
+  }
+}
+
+function writeAdCookie(name, value) {
+  if (!value) return;
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `_fbc=${buildFbcCookieValue(fbclid)}; Max-Age=${FBC_MAX_AGE_SECONDS}; path=/; SameSite=Lax${secure}`;
+  document.cookie = `${name}=${value}; Max-Age=${AD_COOKIE_MAX_AGE_SECONDS}; path=/; SameSite=Lax${secure}`;
 }
 
 // Rotas excluidas e demonstracao: interrompe o envio sem apagar a escolha.

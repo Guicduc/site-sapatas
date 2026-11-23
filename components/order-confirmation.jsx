@@ -33,8 +33,10 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
   useEffect(() => {
     const url = new URL(window.location.href);
     const keep = new URLSearchParams();
-    const payment = url.searchParams.get("payment");
-    if (payment) keep.set("payment", payment);
+    for (const key of ["payment", "demo"]) {
+      const value = url.searchParams.get(key);
+      if (value) keep.set(key, value);
+    }
     const cleanSearch = keep.toString() ? `?${keep.toString()}` : "";
     if (url.search === cleanSearch) return;
 
@@ -54,7 +56,12 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
       return;
     }
 
-    const savedId = window.sessionStorage.getItem("baseforma-last-order-id");
+    let savedId = "";
+    try {
+      savedId = window.sessionStorage.getItem("baseforma-last-order-id") || "";
+    } catch {
+      // Sem sessionStorage nao ha pedido salvo para reabrir.
+    }
 
     if (savedId) {
       setOrderId(savedId);

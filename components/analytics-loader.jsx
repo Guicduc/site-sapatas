@@ -108,22 +108,22 @@ function enableAnalytics(measurementId) {
   window[`ga-disable-${measurementId}`] = false;
   const gtag = ensureGtag(window);
 
-  if (!window.__baseformaAnalyticsConfigured) {
-    window.__baseformaAnalyticsConfigured = true;
-    // O GA4 nunca usa sinais de publicidade, mesmo com a categoria "marketing" aceita:
-    // conversoes de anuncio vao pela tag propria do Google Ads (components/ads-loader.jsx).
-    // page_location vai por destino (config e eventos), nunca por `set` global, para nao
-    // tirar o gclid da tag do Google Ads.
-    gtag("config", measurementId, {
-      send_page_view: false,
-      allow_google_signals: false,
-      allow_ad_personalization_signals: false,
-      page_location: buildAnalyticsPageLocation(window.location.href),
-      page_referrer: sanitizeReferrer(document.referrer),
-      cookie_expires: ANALYTICS_COOKIE_MAX_AGE_SECONDS,
-      cookie_flags: window.location.protocol === "https:" ? "SameSite=Lax;Secure" : "SameSite=Lax"
-    });
-  }
+  // O GA4 nunca usa sinais de publicidade, mesmo com a categoria "marketing" aceita:
+  // conversoes de anuncio vao pela tag propria do Google Ads (components/ads-loader.jsx).
+  // page_location vai por destino, nunca por `set` global, para nao tirar o gclid da tag
+  // do Google Ads; o `config` e repetido a cada rota para os eventos automaticos do GA4
+  // (rolagem, downloads) usarem a pagina atual.
+  const firstConfig = !window.__baseformaAnalyticsConfigured;
+  window.__baseformaAnalyticsConfigured = true;
+  gtag("config", measurementId, {
+    send_page_view: false,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+    page_location: buildAnalyticsPageLocation(window.location.href),
+    ...(firstConfig ? { page_referrer: sanitizeReferrer(document.referrer) } : {}),
+    cookie_expires: ANALYTICS_COOKIE_MAX_AGE_SECONDS,
+    cookie_flags: window.location.protocol === "https:" ? "SameSite=Lax;Secure" : "SameSite=Lax"
+  });
 
   gtag("consent", "update", { analytics_storage: "granted" });
   loadGtagScript(measurementId, "ga4", window);

@@ -4,14 +4,19 @@ import { afterEach, beforeEach, test } from "node:test";
 import {
   ADS_PURCHASE_LOG_STORAGE_KEY,
   buildFbcCookieValue,
+  buildGclCookieValue,
+  buildUrlWithoutPaymentParams,
   buildGoogleAdsCalls,
   buildMetaPixelCalls,
   clearAdsData,
   configureAds,
   forwardAdsEvent,
+  isAdsExcludedPath,
   mergeLandingCampaign,
   readAdClickIds,
+  rememberLandingUrl,
   resetAdsRuntime,
+  resetLandingUrl,
   sanitizeAdsPageLocation,
   setAdsStatus,
   trackAdsPageView
@@ -173,7 +178,8 @@ test("compra aprovada vira conversao no Google Ads e Purchase no Meta, uma vez",
     send_to: "AW-123456789/AbC-dEf_123",
     value: 10,
     currency: "BRL",
-    transaction_id: "BF-20261123-0001"
+    transaction_id: "BF-20261123-0001",
+    page_location: "https://www.baseforma.com.br/carrinho"
   }]]);
   assert.equal(fbqCalls.length, 1);
   assert.equal(fbqCalls[0][2], "Purchase");
@@ -199,13 +205,20 @@ test("eventos esperam o carregador e respeitam rotas excluidas", () => {
   assert.equal(trackAdsPageView(), true, "enfileira enquanto o carregador decide");
   assert.equal(gtagCalls.length + fbqCalls.length, 0);
   setAdsStatus("ready");
-  assert.deepEqual(gtagCalls, [["event", "page_view", { send_to: "AW-123456789" }]]);
+  assert.deepEqual(gtagCalls, [["event", "page_view", {
+    send_to: "AW-123456789",
+    page_location: "https://www.baseforma.com.br/carrinho"
+  }]]);
   assert.deepEqual(fbqCalls, [["trackSingle", TAGS.metaPixelId, "PageView"]]);
 
   installWindow({ consent: { marketing: true }, href: "https://www.baseforma.com.br/admin/pedidos" });
   assert.equal(trackAdsPageView(), false);
   installWindow({ consent: { marketing: true }, href: "https://www.baseforma.com.br/?demo=1" });
   assert.equal(trackAdsPageView(), false);
+  installWindow({ consent: { marketing: true }, href: "https://www.baseforma.com.br/conta?pedido=BF-1" });
+  assert.equal(trackAdsPageView(), false, "area do cliente fica fora das tags de anuncio");
+  assert.equal(isAdsExcludedPath("/conta"), true);
+  assert.equal(isAdsExcludedPath("/contato"), false);
 
   setAdsStatus("blocked");
   installWindow({ consent: { marketing: true } });
@@ -272,6 +285,28 @@ test("revogacao apaga cookies de anuncio e o registro de compras", () => {
   assert.equal(window.localStorage.getItem(ADS_PURCHASE_LOG_STORAGE_KEY), null);
   assert.equal(buildFbcCookieValue("IwAR1", 1700000000000), "fb.1.1700000000000.IwAR1");
   assert.equal(buildFbcCookieValue(""), "");
+});
+
+test("primeiro evento do Google Ads herda a campanha da entrada; os seguintes nao", () => {
+  resetLandingUrl();
+  rememberLandingUrl("https://www.baseforma.com.br/?gclid=abc123&utm_source=google");
+  installWindow({ consent: { marketing: true }, href: "https://www.baseforma.com.br/catalogo" });
+
+  trackAdsPageView();
+  trackAdsPageView();
+  resetLandingUrl();
+
+  assert.equal(gtagCalls[0][2].page_location, "https://www.baseforma.com.br/catalogo?gclid=abc123&utm_source=google");
+  assert.equal(gtagCalls[1][2].page_location, "https://www.baseforma.com.br/catalogo");
+});
+
+test("retorno do Mercado Pago perde os identificadores de pagamento", () => {
+  assert.equal(
+    buildUrlWithoutPaymentParams("https://www.baseforma.com.br/carrinho?payment=failure&collection_id=1&payment_id=2&status=rejected&external_reference=abc&preference_id=p&merchant_order_id=9&site_id=MLB&processing_mode=aggregator&utm_source=google"),
+    "/carrinho?payment=failure&utm_source=google"
+  );
+  assert.equal(buildUrlWithoutPaymentParams("https://www.baseforma.com.br/catalogo?utm_source=google"), "");
+  assert.equal(buildGclCookieValue("abc", 1700000000999), "GCL.1700000000.abc");
 });
 
 function installWindow({

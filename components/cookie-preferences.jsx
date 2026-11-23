@@ -28,6 +28,7 @@ export function CookiePreferences() {
   const consentRef = useRef(null);
   const openerRef = useRef(null);
   const acceptButtonRef = useRef(null);
+  const firstChoiceRef = useRef(null);
 
   useEffect(() => {
     const savedConsent = readCookieConsent(window.localStorage);
@@ -141,6 +142,7 @@ export function CookiePreferences() {
             {analyticsConfigured && (
               <label>
                 <input
+                  ref={firstChoiceRef}
                   type="checkbox"
                   checked={draft.analytics}
                   onChange={(event) => setDraft((current) => ({ ...current, analytics: event.target.checked }))}
@@ -153,6 +155,7 @@ export function CookiePreferences() {
             )}
             <label>
               <input
+                ref={analyticsConfigured ? undefined : firstChoiceRef}
                 type="checkbox"
                 checked={draft.marketing}
                 onChange={(event) => setDraft((current) => ({ ...current, marketing: event.target.checked }))}
@@ -196,7 +199,11 @@ export function CookiePreferences() {
             <button
               className="button button-secondary"
               type="button"
-              onClick={() => setCustomizing(true)}
+              onClick={() => {
+                // O botao some ao abrir as opcoes: o foco vai para a primeira caixa.
+                setCustomizing(true);
+                window.requestAnimationFrame(() => firstChoiceRef.current?.focus());
+              }}
             >
               Escolher por finalidade
             </button>

@@ -162,11 +162,12 @@ export default function PrivacyPage() {
               carregadas depois do aceite dessa categoria, separada da medição de audiência.
             </p>
             <p>
-              Enviamos às plataformas apenas a página visitada (sem identificadores de pedido ou
-              de pagamento), os produtos vistos ou adicionados ao carrinho e o valor e o número
-              público do pedido quando a compra é aprovada. Nome, e-mail, CPF/CNPJ, telefone e
-              endereço não são enviados, e a correspondência avançada de dados está desligada.
-              A área administrativa e o modo demonstração não são medidos.
+              Enviamos às plataformas a página visitada (os identificadores de pagamento do
+              retorno do checkout são removidos do endereço antes), os produtos vistos ou
+              adicionados ao carrinho e o valor e o número público do pedido quando a compra é
+              aprovada. Nome, e-mail, CPF/CNPJ, telefone e endereço não são enviados, e a
+              correspondência avançada de dados está desligada. A área do cliente, a área
+              administrativa e o modo demonstração não carregam essas tags.
             </p>
             <p>
               Ao revogar a escolha no rodapé, as tags param de enviar dados nesta navegação e os
