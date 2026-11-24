@@ -9,6 +9,7 @@ import { ParametricDrawing } from "@/components/parametric-drawing";
 import { useCart } from "@/components/cart-provider";
 import { colorMap } from "@/lib/brand-colors";
 import { formatCurrency } from "@/lib/format";
+import { formatBusinessDays } from "@/lib/production-lead-time";
 import {
   MEASUREMENT_SYSTEMS,
   formatMeasurement,
@@ -89,7 +90,10 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
     && pricingAvailable;
   const unitPrice = priceBreakdown.unitPriceBrl;
   const totalPrice = priceBreakdown.totalPriceBrl;
-  const leadTime = useMemo(() => calculateLeadTime(format, quantity), [format, quantity]);
+  const leadTime = useMemo(
+    () => calculateLeadTime(format, quantity, priceBreakdown.printMinutes),
+    [format, quantity, priceBreakdown.printMinutes]
+  );
   const sku = useMemo(() => buildConfigurationSku(format, values, { color }), [format, values, color]);
   const headingDescription = getConfiguratorDescription(category);
   const hasColorChoices = category.colors.length > 1;
@@ -317,6 +321,7 @@ export function ProductConfigurator({ category, initialFormatSlug }) {
               unitPrice={unitPrice}
               totalPrice={totalPrice}
               priceBreakdown={priceBreakdown}
+              leadTime={leadTime}
               validForCart={validForCart}
               added={added}
               onAddToCart={handleAddToCart}
@@ -1004,6 +1009,7 @@ function ConfigurationSummary({
   unitPrice,
   totalPrice,
   priceBreakdown,
+  leadTime,
   validForCart,
   added,
   onAddToCart
@@ -1026,6 +1032,12 @@ function ConfigurationSummary({
           <span>{pricingAvailable ? formatCurrency(totalPrice) : "Sob avaliação"}</span>
         </article>
       </div>
+      {pricingAvailable && (
+        <p className="summary-lead-time">
+          Produção em até <strong>{formatBusinessDays(leadTime)}</strong> após o pagamento.
+          O prazo do frete é somado no carrinho.
+        </p>
+      )}
       {!pricingAvailable && (
         <div className="validation-note has-issues">
           <span>{priceBreakdown.pricingUnavailableReason}</span>

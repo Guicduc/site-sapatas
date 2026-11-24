@@ -20,7 +20,7 @@
   "material": "TPU",
   "colors": ["Preto", "Branco", "Cinza", "Marrom"],
   "finishes": [],
-  "leadTimeBaseDays": 4,
+  "leadTimeBaseDays": 7,
   "generationMode": "local_manual",
   "drawingType": "base-round",
   "ui": {

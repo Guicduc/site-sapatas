@@ -26,6 +26,12 @@ import { formatCurrency } from "@/lib/format";
 import { buildConfiguratorOrderPayload } from "@/lib/order-payload";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@/lib/order-status";
 import { getPostalCodeStateValidationMessage } from "@/lib/postal-code-region";
+import {
+  buildDeliveryEstimate,
+  calculateProductionLeadTime,
+  formatBusinessDays,
+  leadTimeLineForFormat
+} from "@/lib/production-lead-time";
 import { saveDemoOrder } from "@/components/demo-account";
 
 const recoveryStorageKey = "baseforma-cart-recovery";
@@ -255,6 +261,7 @@ function CheckoutForm({ cartTotal }) {
     status: "idle",
     quote: null,
     commerce: null,
+    deliveryEstimate: null,
     key: "",
     message: ""
   });
@@ -290,6 +297,10 @@ function CheckoutForm({ cartTotal }) {
     && shippingQuoteState.status === "quoted"
     && Boolean(shippingQuoteState.commerce);
   const commerce = quoteReady ? shippingQuoteState.commerce : localCommerce;
+  // Previa local ate a cotacao chegar; depois vale o prazo recalculado pelo servidor.
+  const deliveryEstimate = quoteReady && shippingQuoteState.deliveryEstimate
+    ? shippingQuoteState.deliveryEstimate
+    : buildDeliveryEstimate(estimateCartProductionDays(items), null);
   const couponReady = !couponCode || commerce.discount.applied;
   const canSubmit = items.length > 0 && name.trim() && lastName.trim() && email.trim() && contact.trim()
     && isValidBrTaxDocument(documentDigits)
@@ -448,6 +459,7 @@ function CheckoutForm({ cartTotal }) {
             status: "quoted",
             quote: payload.shippingQuote || null,
             commerce: payload.commerce || null,
+            deliveryEstimate: payload.deliveryEstimate || null,
             key: snapshotKey,
             message: ""
           });
@@ -458,6 +470,7 @@ function CheckoutForm({ cartTotal }) {
             status: "error",
             quote: null,
             commerce: null,
+            deliveryEstimate: null,
             key: snapshotKey,
             message: quoteError?.message || "Nao foi possivel cotar o frete."
           });
@@ -853,6 +866,29 @@ function CheckoutForm({ cartTotal }) {
           <dd>{formatCurrency(commerce.totalBrl)}</dd>
         </div>
       </dl>
+      <dl className="checkout-totals" aria-label="Prazo estimado" aria-live="polite">
+        <div>
+          <dt>Produção</dt>
+          <dd>até {formatBusinessDays(deliveryEstimate.productionDays)}</dd>
+        </div>
+        <div>
+          <dt>Transporte</dt>
+          <dd>
+            {deliveryEstimate.shippingDays
+              ? `até ${formatBusinessDays(deliveryEstimate.shippingDays)}`
+              : shippingQuoteState.status === "loading" ? "Calculando..." : "Informe o CEP"}
+          </dd>
+        </div>
+        {deliveryEstimate.totalDays && (
+          <div className="checkout-totals__total">
+            <dt>Entrega estimada</dt>
+            <dd>até {formatBusinessDays(deliveryEstimate.totalDays)}</dd>
+          </div>
+        )}
+      </dl>
+      <p className="checkout-note">
+        Prazos em dias úteis, contados a partir da confirmação do pagamento.
+      </p>
       {couponCode && (
         <p className={`checkout-note${commerce.discount.status === "invalid" || commerce.discount.status === "not_eligible" ? " checkout-note--warning" : ""}`}>
           {commerce.discount.message}
@@ -893,6 +929,14 @@ function CheckoutForm({ cartTotal }) {
       </button>
     </form>
   );
+}
+
+function estimateCartProductionDays(items) {
+  return calculateProductionLeadTime(items.map((item) => leadTimeLineForFormat(
+    getFormat(getCategoryBySlug(item.categorySlug), item.formatSlug),
+    item.quantity,
+    item.priceBreakdown?.printMinutes
+  ))).days;
 }
 
 function RequiredMark() {

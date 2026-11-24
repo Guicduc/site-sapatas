@@ -14,6 +14,7 @@ import {
 } from "@/lib/order-status";
 import { brand } from "@/lib/site-data";
 import { PendingBoleto } from "@/components/pending-boleto";
+import { OrderDeliveryEstimate } from "@/components/order-delivery-estimate";
 
 const FILTERS = [
   ["all", "Todos"],
@@ -584,6 +585,7 @@ function OrderRow({ order, onPay }) {
             <section className="account-order__block" aria-labelledby={`delivery-${order.id}`}>
               <div className="account-order__block-heading"><h3 id={`delivery-${order.id}`}>Entrega</h3><span className="account-status">{order.fulfillment?.shipment?.label || "Aguardando"}</span></div>
               <p className="account-order__address">{formatAddress(order.shippingAddress) || "Endereço não registrado neste pedido."}</p>
+              <OrderDeliveryEstimate estimate={order.deliveryEstimate} className="checkout-totals account-order__totals" />
               {(order.fulfillment?.shipment?.carrier || order.fulfillment?.shipment?.trackingCode) && <dl className="account-order__facts">{order.fulfillment.shipment.carrier && <div><dt>Transportadora</dt><dd>{order.fulfillment.shipment.carrier}</dd></div>}{order.fulfillment.shipment.trackingCode && <div><dt>Rastreio</dt><dd>{order.fulfillment.shipment.trackingCode}</dd></div>}</dl>}
             </section>
 

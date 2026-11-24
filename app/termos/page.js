@@ -134,9 +134,11 @@ export default function TermsPage() {
         </div>
         <div className="legal-copy">
           <p>
-            O prazo total é a soma do prazo de produção com o prazo de transporte. A produção
-            começa após a aprovação do pagamento e o prazo de produção aparece no produto
-            configurado, variando conforme família, medida, quantidade e fila de produção.
+            O prazo total é a soma do prazo de produção com o prazo de transporte, ambos em dias
+            úteis. A produção começa após a aprovação do pagamento e leva até 7 dias úteis; quando
+            a quantidade pedida exige mais tempo de impressão, o prazo aumenta na mesma proporção.
+            O prazo de produção aparece no produto configurado e no carrinho, e o prazo total
+            fica registrado no pedido.
           </p>
           <p>
             O carrinho calcula ou estima o frete a partir do endereço e dos itens configurados. O

@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format";
 import { getOrderStatusLabel, getPaymentStatusLabel } from "@/lib/order-status";
 import { readDemoOrders } from "@/components/demo-account";
 import { PendingBoleto } from "@/components/pending-boleto";
+import { OrderDeliveryEstimate } from "@/components/order-delivery-estimate";
 import { trackPurchase } from "@/lib/analytics";
 
 export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = "" }) {
@@ -273,6 +274,14 @@ export function OrderConfirmation({ initialOrderId = "", initialPaymentResult = 
               <dd>{formatCurrency(order.commerce.totalBrl)}</dd>
             </div>
           </dl>
+        </article>
+      )}
+
+      {order.deliveryEstimate && (
+        <article className="surface-card order-commerce">
+          <p className="eyebrow">Prazo</p>
+          <h2>Entrega estimada</h2>
+          <OrderDeliveryEstimate estimate={order.deliveryEstimate} />
         </article>
       )}
 
