@@ -15,7 +15,7 @@
   "material": "TPU",
   "colors": ["Preto", "Branco", "Cinza", "Marrom"],
   "finishes": [],
-  "leadTimeBaseDays": 5,
+  "leadTimeBaseDays": 7,
   "generationMode": "local_manual",
   "manufacturing": {
     "screwClearance": {

@@ -27,7 +27,8 @@ export async function POST(request) {
 
     return NextResponse.json({
       shippingQuote: result.quote,
-      commerce: result.commerce
+      commerce: result.commerce,
+      deliveryEstimate: result.deliveryEstimate
     });
   } catch (error) {
     const clientError = Number.isInteger(error?.status) && error.status >= 400 && error.status < 500;

@@ -117,7 +117,7 @@ export default async function FamilyPage({ params }) {
             </article>
             <article className="surface-card spec-card">
               <strong>Prazo de produção</strong>
-              <p>{family.leadTimeDays} dias úteis</p>
+              <p>Até {family.leadTimeDays} dias úteis após o pagamento; lotes grandes podem levar mais.</p>
             </article>
             <article className="surface-card spec-card">
               <strong>Venda</strong>
@@ -176,7 +176,7 @@ export default async function FamilyPage({ params }) {
                         <br />
                         {variant.salesUnit}
                       </td>
-                      <td>{variant.leadTimeDays} dias úteis</td>
+                      <td>até {variant.leadTimeDays} dias úteis</td>
                     </tr>
                   ))}
                 </tbody>

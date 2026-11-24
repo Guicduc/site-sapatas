@@ -52,6 +52,7 @@ Use `.env.example` como base.
 - `INVOICE_AUTOMATION_ENABLED`: padrao `false`. `true` religa o provider de API configurado, somente depois da homologacao e da decisao de religamento descritas em `docs/ops/invoice-manual.md`.
 - `FOCUS_NFE_TOKEN`, `FOCUS_NFE_ENV` e `FOCUS_NFE_WEBHOOK_TOKEN`: credenciais e ambiente da Focus NFe. Com `FOCUS_NFE_ENV=homologacao`, as notas nao tem validade fiscal. Use `npm run invoice:audit` para validar a configuracao sem imprimir segredos.
 - `PRODUCTION_DAILY_UNIT_CAPACITY`: capacidade diaria usada no painel operacional. Padrao interno: `120`.
+- `NEXT_PUBLIC_PRODUCTION_DAILY_PRINT_HOURS`: horas de impressao por dia util (todas as impressoras somadas) usadas no prazo de producao mostrado ao cliente. Padrao interno: `30`. Variavel publica, aplicada no build.
 - `ORCA_*`: configuracoes para integracao local com Orca Slicer.
 
 ## Documentacao para agentes

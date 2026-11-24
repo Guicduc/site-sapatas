@@ -84,7 +84,7 @@ Funcoes importantes:
 - `getInitialValues`: monta valores padrao do configurador.
 - `validateConfiguration`: valida limites de medidas.
 - `calculatePriceBreakdown`: calcula preco, custo e fonte da precificacao.
-- `calculateLeadTime`: calcula prazo em dias uteis.
+- `calculateLeadTime` / `calculateOrderLeadTime`: prazo de producao em dias uteis pela regra de `lib/production-lead-time.js` (piso de 7 dias; acima disso, minutos de impressao por peca x quantidade, somados no pedido, divididos pela capacidade diaria, +1 dia de folga; formato em revisao soma 3). O prazo prometido (producao + transporte) fica em `metadata.deliveryEstimate` do pedido.
 - `buildConfigurationSku`: monta SKU a partir do prefixo e medidas.
 
 `lib/configurator-data.js` preserva o motor compartilhado de validacao, SKU, prazo e preco. O array legado permanece temporariamente como fallback e teste de paridade; produtos novos nao devem ser cadastrados nele.

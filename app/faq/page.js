@@ -55,7 +55,7 @@ const faqSections = [
       {
         question: "Vocês vendem em quantidade para fábricas e serralherias?",
         answer:
-          "Sim. A quantidade é escolhida no próprio configurador, e pedidos com mais de 24 peças do mesmo item somam 2 dias úteis ao prazo de produção. Para linha própria, lotes recorrentes ou medidas fora da faixa, use o projeto especial."
+          "Sim. A quantidade é escolhida no próprio configurador. A produção leva até 7 dias úteis; lotes grandes que não cabem nesse prazo ganham os dias de impressão a mais, e o configurador mostra o prazo da quantidade escolhida. Para linha própria, lotes recorrentes ou medidas fora da faixa, use o projeto especial."
       },
       {
         question: "Quais formas de pagamento estão disponíveis?",
@@ -77,7 +77,7 @@ const faqSections = [
       {
         question: "Qual é o prazo de produção?",
         answer:
-          "O prazo aparece no produto configurado e pode variar conforme família, medida e fila de produção. Projetos especiais levam mais tempo porque exigem avaliação técnica."
+          "Até 7 dias úteis após a aprovação do pagamento. Em lotes grandes, o prazo considera o tempo de impressão de todas as peças do pedido e pode passar de 7 dias; ele aparece no produto configurado e no carrinho. Projetos especiais levam mais tempo porque exigem avaliação técnica."
       },
       {
         question: "Quando a produção começa?",
@@ -87,7 +87,7 @@ const faqSections = [
       {
         question: "Como o frete é calculado?",
         answer:
-          "Informe o CEP no carrinho para ver o valor e o prazo estimado de entrega. O cálculo considera o destino e os itens configurados antes da criação do pedido."
+          "Informe o CEP no carrinho para ver o valor do frete e a entrega estimada, que soma o prazo de produção e o prazo de transporte em dias úteis. O cálculo considera o destino e os itens configurados antes da criação do pedido."
       }
     ]
   },

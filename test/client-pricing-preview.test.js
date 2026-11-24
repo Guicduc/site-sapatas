@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { calculateClientPricePreview } from "../lib/client-pricing-preview.js";
 import { restoreClientCart, updateClientCartItem } from "../lib/client-cart.js";
+import { MIN_PRODUCTION_DAYS } from "../lib/production-lead-time.js";
 import {
   calculatePriceBreakdown,
   getInitialValues,
@@ -62,7 +63,8 @@ test("saved carts reject non-arrays and refresh legacy prices, SKUs and quantiti
   const updated = updateClientCartItem(item, 30);
   assert.equal(updated.priceBrl, item.unitPriceBrl * 30);
   assert.equal(updated.priceBreakdown.quantity, 30);
-  assert.equal(updated.leadTimeDays, format.leadTimeBaseDays + 2);
+  assert.ok(updated.priceBreakdown.printMinutes > 0);
+  assert.equal(updated.leadTimeDays, MIN_PRODUCTION_DAYS);
 });
 
 function representativeConfigurations(format) {
